@@ -88,10 +88,8 @@ type ContentBuilder interface {
 	//
 	// For standard tools, the input expects a RawMessage.
 	//
-	// For non-standard tools, the input expects a map[string]any or RawMessage,
-	// When the input is a map[string]any, it will be marshaled to JSON and
-	// included in the message. When the input is a RawMessage, it will be
-	// treated as a raw message instead of being marshaled to JSON.
+	// For non-standard tools, the input expects anything that can be marshaled
+	// to JSON, including RawMessage.
 	ToolUse(toolID, name string, input any) ContentBuilder
 
 	// ToolResult is used to add the result of a tool use to the content.

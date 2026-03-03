@@ -27,8 +27,31 @@ import (
 // -----------------------------------------------------------------------------
 
 func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
-	// TODO(xsw): name as toolUseID
-	p.content = append(p.content, genai.NewPartFromFunctionCall(name, input.(map[string]any)))
+	var (
+		content *genai.Part
+	)
+	if strings.HasPrefix(name, "std/") {
+		panic("todo")
+	} else {
+		args, ok := input.(map[string]any)
+		if !ok {
+			var b []byte
+			var err error
+			if v, ok := input.(json.RawMessage); ok {
+				b = []byte(v)
+			} else {
+				b, err = json.Marshal(input)
+			}
+			if err == nil {
+				err = json.Unmarshal(b, &args)
+			}
+			if err != nil {
+				panic("invalid tool input: " + err.Error())
+			}
+		}
+		content = genai.NewPartFromFunctionCall(name, args)
+	}
+	p.content = append(p.content, content)
 	return p
 }
 

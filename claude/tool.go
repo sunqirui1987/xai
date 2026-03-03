@@ -29,16 +29,18 @@ import (
 // -----------------------------------------------------------------------------
 
 func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
-	p.content = append(p.content, anthropic.NewBetaToolUseBlock(toolID, input, name))
+	var (
+		content anthropic.BetaContentBlockParamUnion
+	)
+	if strings.HasPrefix(name, "std/") {
+		stdToolName := anthropic.BetaServerToolUseBlockParamName(name[4:])
+		content = anthropic.NewBetaServerToolUseBlock(toolID, input, stdToolName)
+	} else {
+		content = anthropic.NewBetaToolUseBlock(toolID, input, name)
+	}
+	p.content = append(p.content, content)
 	return p
 }
-
-/* TODO(xsw):
-func (p *contentBuilder) serverToolUse(toolID string, input any, name anthropic.BetaServerToolUseBlockParamName) xai.ContentBuilder {
-	p.content = append(p.content, anthropic.NewBetaServerToolUseBlock(toolID, input, name))
-	return p
-}
-*/
 
 // -----------------------------------------------------------------------------
 

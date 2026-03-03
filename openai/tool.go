@@ -17,6 +17,10 @@
 package openai
 
 import (
+	"encoding/json"
+	"strings"
+	"unsafe"
+
 	"github.com/goplus/xai"
 	"github.com/openai/openai-go/v3/responses"
 )
@@ -24,7 +28,25 @@ import (
 // -----------------------------------------------------------------------------
 
 func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
-	return p.addNonMsg(responses.ResponseInputItemParamOfCustomToolCall(toolID, input.(string), name))
+	var (
+		content responses.ResponseInputItemUnionParam
+	)
+	if strings.HasPrefix(name, "std/") {
+		panic("todo")
+	} else {
+		var args []byte
+		var err error
+		if v, ok := input.(json.RawMessage); ok {
+			args = []byte(v)
+		} else {
+			args, err = json.Marshal(input)
+			if err != nil {
+				panic("invalid tool input: " + err.Error())
+			}
+		}
+		content = responses.ResponseInputItemParamOfFunctionCall(toolID, unsafe.String(unsafe.SliceData(args), len(args)), name)
+	}
+	return p.addNonMsg(content)
 }
 
 func (p *contentBuilder) ToolResult(toolID, name string, result any, isError bool) xai.ContentBuilder {

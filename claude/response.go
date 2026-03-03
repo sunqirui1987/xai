@@ -26,6 +26,16 @@ import (
 
 // -----------------------------------------------------------------------------
 
+type contentBlock struct {
+	content *anthropic.BetaContentBlockUnion
+}
+
+func (p contentBlock) Type() xai.ContentBlockType {
+	return xai.ContentBlockType(p.content.Type)
+}
+
+// -----------------------------------------------------------------------------
+
 type response struct {
 	msg *anthropic.BetaMessage
 }
@@ -38,6 +48,14 @@ func (p response) StopReason() xai.StopReason {
 		reason = anthropic.BetaStopReasonEndTurn
 	}
 	return xai.StopReason(reason)
+}
+
+func (p response) Contents() int {
+	return len(p.msg.Content)
+}
+
+func (p response) Content(i int) xai.ContentBlock {
+	return contentBlock{&p.msg.Content[i]}
 }
 
 func (p response) Len() int {

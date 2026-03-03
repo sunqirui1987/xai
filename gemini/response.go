@@ -38,7 +38,7 @@ func (p response) At(i int) xai.Candidate {
 // -----------------------------------------------------------------------------
 
 type candidate struct {
-	*genai.Candidate
+	c *genai.Candidate
 }
 
 var stopReasons = map[genai.FinishReason]xai.StopReason{
@@ -73,18 +73,36 @@ var stopReasons = map[genai.FinishReason]xai.StopReason{
 }
 
 func (p candidate) StopReason() xai.StopReason {
-	if reason, ok := stopReasons[p.FinishReason]; ok {
+	if reason, ok := stopReasons[p.c.FinishReason]; ok {
 		return reason
 	}
 	return xai.Unspecified
 }
 
+func (p candidate) Contents() int {
+	return len(p.c.Content.Parts)
+}
+
+func (p candidate) Content(i int) xai.ContentBlock {
+	return contentBlock{p.c.Content.Parts[i]}
+}
+
 func (p candidate) ToMsg() xai.MsgBuilder {
 	var parts []*genai.Part
-	if c := p.Content; c != nil {
+	if c := p.c.Content; c != nil {
 		parts = c.Parts
 	}
 	return &msgBuilder{content: parts, role: genai.RoleModel}
+}
+
+// -----------------------------------------------------------------------------
+
+type contentBlock struct {
+	content *genai.Part
+}
+
+func (p contentBlock) Type() xai.ContentBlockType {
+	panic("todo")
 }
 
 // -----------------------------------------------------------------------------

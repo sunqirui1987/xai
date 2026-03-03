@@ -26,6 +26,16 @@ import (
 
 // -----------------------------------------------------------------------------
 
+type contentBlock struct {
+	content *responses.ResponseOutputItemUnion
+}
+
+func (p contentBlock) Type() xai.ContentBlockType {
+	return xai.ContentBlockType(p.content.Type)
+}
+
+// -----------------------------------------------------------------------------
+
 type response struct {
 	msg *responses.Response
 }
@@ -46,6 +56,14 @@ func (p response) StopReason() xai.StopReason {
 		panic("todo")
 	}
 	return xai.Unspecified
+}
+
+func (p response) Contents() int {
+	return len(p.msg.Output)
+}
+
+func (p response) Content(i int) xai.ContentBlock {
+	return contentBlock{&p.msg.Output[i]}
 }
 
 func (p response) Len() int {

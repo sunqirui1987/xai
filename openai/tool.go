@@ -22,8 +22,50 @@ import (
 	"unsafe"
 
 	"github.com/goplus/xai"
+	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/responses"
 )
+
+// -----------------------------------------------------------------------------
+
+type tools map[string]*responses.FunctionToolParam
+
+type tool struct {
+	tool *responses.FunctionToolParam
+}
+
+func (p tool) Description(desc string) xai.Tool {
+	p.tool.Description = param.NewOpt(desc)
+	return p
+}
+
+func (p *Provider) ToolIsDefined(name string) bool {
+	_, ok := p.tools[name]
+	return ok
+}
+
+func (p *Provider) ToolDef(name string) xai.Tool {
+	if p.ToolIsDefined(name) {
+		panic("tool already defined: " + name)
+	}
+	ret := &responses.FunctionToolParam{Name: name}
+	p.tools[name] = ret
+	return tool{ret}
+}
+
+func buildTools(tools tools, toolNames []string) []responses.ToolUnionParam {
+	ret := make([]responses.ToolUnionParam, len(toolNames))
+	for i, name := range toolNames {
+		tool, ok := tools[name]
+		if !ok {
+			panic("undefined tool: " + name)
+		}
+		ret[i] = responses.ToolUnionParam{
+			OfFunction: tool,
+		}
+	}
+	return ret
+}
 
 // -----------------------------------------------------------------------------
 

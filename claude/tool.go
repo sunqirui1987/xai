@@ -28,6 +28,47 @@ import (
 
 // -----------------------------------------------------------------------------
 
+type tools map[string]*anthropic.BetaToolParam
+
+type tool struct {
+	tool *anthropic.BetaToolParam
+}
+
+func (p tool) Description(desc string) xai.Tool {
+	p.tool.Description = param.NewOpt(desc)
+	return p
+}
+
+func (p *Provider) ToolIsDefined(name string) bool {
+	_, ok := p.tools[name]
+	return ok
+}
+
+func (p *Provider) ToolDef(name string) xai.Tool {
+	if p.ToolIsDefined(name) {
+		panic("tool already defined: " + name)
+	}
+	ret := &anthropic.BetaToolParam{Name: name}
+	p.tools[name] = ret
+	return tool{ret}
+}
+
+func buildTools(tools tools, toolNames []string) []anthropic.BetaToolUnionParam {
+	ret := make([]anthropic.BetaToolUnionParam, len(toolNames))
+	for i, name := range toolNames {
+		tool, ok := tools[name]
+		if !ok {
+			panic("undefined tool: " + name)
+		}
+		ret[i] = anthropic.BetaToolUnionParam{
+			OfTool: tool,
+		}
+	}
+	return ret
+}
+
+// -----------------------------------------------------------------------------
+
 func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
 	var (
 		content anthropic.BetaContentBlockParamUnion

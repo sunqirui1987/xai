@@ -35,6 +35,7 @@ var (
 
 type Provider struct {
 	messages anthropic.BetaMessageService
+	tools    tools
 }
 
 func (p *Provider) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
@@ -72,6 +73,7 @@ func New(ctx context.Context, uri string) (xai.Provider, error) {
 	}
 	return &Provider{
 		messages: anthropic.NewBetaMessageService(opts...),
+		tools:    make(tools),
 	}, nil
 }
 

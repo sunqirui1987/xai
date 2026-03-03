@@ -29,6 +29,7 @@ type params struct {
 	params responses.ResponseNewParams
 	sys    responses.ResponseInputMessageContentListParam
 	msgs   xai.MessageBuilder
+	tools  tools
 }
 
 func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
@@ -40,6 +41,11 @@ func (p *params) Messages(v xai.MessageBuilder) xai.ParamBuilder {
 	// we will merge system prompt and messages into input param in buildParams
 	// so we just store the messages here
 	p.msgs = v
+	return p
+}
+
+func (p *params) Tools(toolNames ...string) xai.ParamBuilder {
+	p.params.Tools = buildTools(p.tools, toolNames)
 	return p
 }
 
@@ -77,7 +83,7 @@ func (p *params) TopP(v float64) xai.ParamBuilder {
 }
 
 func (p *Provider) Params() xai.ParamBuilder {
-	return &params{}
+	return &params{tools: p.tools}
 }
 
 func buildParams(in xai.ParamBuilder) responses.ResponseNewParams {

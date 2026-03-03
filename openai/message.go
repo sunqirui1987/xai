@@ -173,9 +173,3 @@ func buildTexts(in xai.TextBuilder) responses.ResponseInputMessageContentListPar
 }
 
 // -----------------------------------------------------------------------------
-
-func (p *Provider) Tools() xai.ToolBuilder {
-	panic("todo")
-}
-
-// -----------------------------------------------------------------------------

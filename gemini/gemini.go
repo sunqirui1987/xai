@@ -34,6 +34,7 @@ var (
 
 type Provider struct {
 	models genai.Models
+	tools  tools
 }
 
 func (p *Provider) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
@@ -88,6 +89,7 @@ func New(ctx context.Context, uri string) (xai.Provider, error) {
 	}
 	return &Provider{
 		models: *cli.Models,
+		tools:  make(tools),
 	}, nil
 }
 

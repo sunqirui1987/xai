@@ -144,9 +144,3 @@ func buildTexts(in xai.TextBuilder) []anthropic.BetaTextBlockParam {
 }
 
 // -----------------------------------------------------------------------------
-
-func (p *Provider) Tools() xai.ToolBuilder {
-	panic("todo")
-}
-
-// -----------------------------------------------------------------------------

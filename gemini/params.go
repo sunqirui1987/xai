@@ -27,6 +27,7 @@ type params struct {
 	model    string
 	contents []*genai.Content
 	config   genai.GenerateContentConfig
+	tools    tools
 }
 
 func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
@@ -36,6 +37,11 @@ func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
 
 func (p *params) Messages(v xai.MessageBuilder) xai.ParamBuilder {
 	p.contents = buildMessages(v)
+	return p
+}
+
+func (p *params) Tools(toolNames ...string) xai.ParamBuilder {
+	p.config.Tools = buildTools(p.tools, toolNames)
 	return p
 }
 
@@ -75,7 +81,7 @@ func (p *params) TopP(v float64) xai.ParamBuilder {
 }
 
 func (p *Provider) Params() xai.ParamBuilder {
-	return &params{}
+	return &params{tools: p.tools}
 }
 
 func buildParams(in xai.ParamBuilder) (string, []*genai.Content, *genai.GenerateContentConfig) {

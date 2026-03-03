@@ -83,7 +83,8 @@ type SearchToolBm25Result struct {
 
 // -----------------------------------------------------------------------------
 
-type ToolBuilder interface {
+type Tool interface {
+	Description(string) Tool
 }
 
 // -----------------------------------------------------------------------------

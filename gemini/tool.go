@@ -26,6 +26,46 @@ import (
 
 // -----------------------------------------------------------------------------
 
+type tools map[string]*genai.FunctionDeclaration
+
+type tool struct {
+	tool *genai.FunctionDeclaration
+}
+
+func (p tool) Description(desc string) xai.Tool {
+	return p
+}
+
+func (p *Provider) ToolIsDefined(name string) bool {
+	_, ok := p.tools[name]
+	return ok
+}
+
+func (p *Provider) ToolDef(name string) xai.Tool {
+	if p.ToolIsDefined(name) {
+		panic("tool already defined: " + name)
+	}
+	ret := &genai.FunctionDeclaration{Name: name}
+	p.tools[name] = ret
+	return tool{ret}
+}
+
+func buildTools(tools tools, toolNames []string) []*genai.Tool {
+	ret := make([]*genai.FunctionDeclaration, len(toolNames))
+	for i, name := range toolNames {
+		tool, ok := tools[name]
+		if !ok {
+			panic("undefined tool: " + name)
+		}
+		ret[i] = tool
+	}
+	return []*genai.Tool{
+		{FunctionDeclarations: ret},
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
 	var (
 		content *genai.Part

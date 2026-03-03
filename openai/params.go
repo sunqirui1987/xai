@@ -28,7 +28,7 @@ import (
 type params struct {
 	params responses.ResponseNewParams
 	sys    responses.ResponseInputMessageContentListParam
-	msgs   xai.MessageBuilder
+	msgs   []xai.MsgBuilder
 }
 
 func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
@@ -36,10 +36,10 @@ func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
 	return p
 }
 
-func (p *params) Messages(v xai.MessageBuilder) xai.ParamBuilder {
+func (p *params) Messages(msgs ...xai.MsgBuilder) xai.ParamBuilder {
 	// we will merge system prompt and messages into input param in buildParams
 	// so we just store the messages here
-	p.msgs = v
+	p.msgs = msgs
 	return p
 }
 

@@ -125,7 +125,7 @@ type ParamBuilder interface {
 	// the Messages API.
 	//
 	// There is a limit of 100,000 messages in a single request.
-	Messages(MessageBuilder) ParamBuilder
+	Messages(msgs ...MsgBuilder) ParamBuilder
 
 	// Reference of tools that the model may use. The tool can be:
 	// 1) User-defined tools defined with `ToolDef`.
@@ -189,7 +189,7 @@ type ParamBuilder interface {
 // -----------------------------------------------------------------------------
 
 type Candidate interface {
-	AsContent() ContentBuilder
+	AsContent() MsgBuilder
 }
 
 type GenResponse interface {
@@ -202,11 +202,12 @@ type GenResponse interface {
 type Provider interface {
 	Options() OptionBuilder
 	Params() ParamBuilder
-	Messages() MessageBuilder
-	Contents() ContentBuilder
+
 	Images() ImageBuilder
 	Docs() DocumentBuilder
 	Texts(texts ...string) TextBuilder
+	UserMsg() MsgBuilder
+	ModelMsg() MsgBuilder
 
 	WebSearchTool() WebSearchTool
 

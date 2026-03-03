@@ -95,7 +95,7 @@ func (p *Provider) WebSearchTool() xai.WebSearchTool {
 
 // -----------------------------------------------------------------------------
 
-func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuilder {
+func (p *msgBuilder) ToolUse(toolID, name string, input any) xai.MsgBuilder {
 	var (
 		content anthropic.BetaContentBlockParamUnion
 	)
@@ -144,7 +144,7 @@ func (p *contentBuilder) searchResult(content xai.TextBuilder, source, title str
 }
 */
 
-func (p *contentBuilder) ToolResult(toolID, name string, result any, isError bool) xai.ContentBuilder {
+func (p *msgBuilder) ToolResult(toolID, name string, result any, isError bool) xai.MsgBuilder {
 	var (
 		content anthropic.BetaContentBlockParamUnion
 	)

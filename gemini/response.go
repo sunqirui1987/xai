@@ -41,12 +41,12 @@ type candidate struct {
 	*genai.Candidate
 }
 
-func (p candidate) AsContent() xai.ContentBuilder {
+func (p candidate) AsContent() xai.MsgBuilder {
 	var parts []*genai.Part
 	if c := p.Content; c != nil {
 		parts = c.Parts
 	}
-	return &contentBuilder{parts}
+	return &msgBuilder{content: parts, role: genai.RoleModel}
 }
 
 // -----------------------------------------------------------------------------

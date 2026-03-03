@@ -41,12 +41,12 @@ func (p response) At(i int) xai.Candidate {
 	return p
 }
 
-func (p response) AsContent() xai.ContentBuilder {
+func (p response) AsContent() xai.MsgBuilder {
 	content := make([]anthropic.BetaContentBlockParamUnion, len(p.msg.Content))
 	for i, c := range p.msg.Content {
 		content[i] = c.ToParam()
 	}
-	return &contentBuilder{content}
+	return &msgBuilder{content: content, role: anthropic.BetaMessageParamRoleAssistant}
 }
 
 // -----------------------------------------------------------------------------

@@ -66,19 +66,19 @@ type TextBuilder interface {
 	Text(text string) TextBuilder
 }
 
-type ContentBuilder interface {
-	Text(text string) ContentBuilder
+type MsgBuilder interface {
+	Text(text string) MsgBuilder
 
-	Image(image ImageData) ContentBuilder
-	ImageURL(mime ImageType, url string) ContentBuilder
-	ImageFile(mime ImageType, fileID string) ContentBuilder
+	Image(image ImageData) MsgBuilder
+	ImageURL(mime ImageType, url string) MsgBuilder
+	ImageFile(mime ImageType, fileID string) MsgBuilder
 
-	Doc(doc DocumentData) ContentBuilder
-	DocURL(mime DocumentType, url string) ContentBuilder
-	DocFile(mime DocumentType, fileID string) ContentBuilder
+	Doc(doc DocumentData) MsgBuilder
+	DocURL(mime DocumentType, url string) MsgBuilder
+	DocFile(mime DocumentType, fileID string) MsgBuilder
 
-	Thinking(signature, thinking string) ContentBuilder
-	RedactedThinking(data string) ContentBuilder
+	Thinking(signature, thinking string) MsgBuilder
+	RedactedThinking(data string) MsgBuilder
 
 	// ToolUse is used to add a tool use block to the content. The toolID
 	// should be a unique identifier for the tool being used, and should
@@ -90,7 +90,7 @@ type ContentBuilder interface {
 	//
 	// For non-standard tools, the input expects anything that can be marshaled
 	// to JSON, including RawMessage.
-	ToolUse(toolID, name string, input any) ContentBuilder
+	ToolUse(toolID, name string, input any) MsgBuilder
 
 	// ToolResult is used to add the result of a tool use to the content.
 	// The toolID should match the ID used in ToolUse. The content depends
@@ -103,16 +103,9 @@ type ContentBuilder interface {
 	//
 	// For non-standard tools, the content expects anything that can be marshaled
 	// to JSON, including RawMessage.
-	ToolResult(toolID, name string, result any, isError bool) ContentBuilder
+	ToolResult(toolID, name string, result any, isError bool) MsgBuilder
 }
 
 type RawMessage = json.RawMessage
-
-// -----------------------------------------------------------------------------
-
-type MessageBuilder interface {
-	User(content ContentBuilder) MessageBuilder
-	Assistant(content ContentBuilder) MessageBuilder
-}
 
 // -----------------------------------------------------------------------------

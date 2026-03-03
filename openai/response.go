@@ -41,7 +41,7 @@ func (p response) At(i int) xai.Candidate {
 	return p
 }
 
-func (p response) AsContent() xai.ContentBuilder {
+func (p response) AsContent() xai.MsgBuilder {
 	panic("todo")
 }
 

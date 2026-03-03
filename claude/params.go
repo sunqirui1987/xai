@@ -33,8 +33,8 @@ func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
 	return p
 }
 
-func (p *params) Messages(v xai.MessageBuilder) xai.ParamBuilder {
-	p.params.Messages = buildMessages(v)
+func (p *params) Messages(msgs ...xai.MsgBuilder) xai.ParamBuilder {
+	p.params.Messages = buildMessages(msgs)
 	return p
 }
 

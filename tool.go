@@ -33,9 +33,6 @@ const (
 
 // -----------------------------------------------------------------------------
 
-type WebSearchInput struct {
-}
-
 type WebSearchResultItem struct {
 	Title   string
 	URL     string
@@ -51,18 +48,12 @@ type WebSearchResult struct {
 
 // -----------------------------------------------------------------------------
 
-type WebFetchInput struct {
-}
-
 type WebFetchResult struct {
 	Content any // TODO(xsw): define a more specific type for this
 	Caller  string
 }
 
 // -----------------------------------------------------------------------------
-
-type CodeExecutionInput struct {
-}
 
 type CodeExecutionResult struct {
 	ReturnCode int64
@@ -72,32 +63,20 @@ type CodeExecutionResult struct {
 
 // -----------------------------------------------------------------------------
 
-type BashCodeExecutionInput struct {
-}
-
 type BashCodeExecutionResult struct {
 }
 
 // -----------------------------------------------------------------------------
-
-type TextEditorCodeExecutionInput struct {
-}
 
 type TextEditorCodeExecutionResult struct {
 }
 
 // -----------------------------------------------------------------------------
 
-type SearchToolRegexInput struct {
-}
-
 type SearchToolRegexResult struct {
 }
 
 // -----------------------------------------------------------------------------
-
-type SearchToolBm25Input struct {
-}
 
 type SearchToolBm25Result struct {
 }

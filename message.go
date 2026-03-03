@@ -16,7 +16,10 @@
 
 package xai
 
-import "io"
+import (
+	"encoding/json"
+	"io"
+)
 
 // -----------------------------------------------------------------------------
 
@@ -83,14 +86,12 @@ type ContentBuilder interface {
 	// tool requires to perform its function, and the name is a human-readable
 	// name for the tool that can be displayed in the UI.
 	//
-	// For standard tools (those with names starting with "std/"), the input
-	// should be a specific struct defined for that tool. For example, the web
-	// search tool expects a WebSearchInput struct.
+	// For standard tools, the input expects a RawMessage.
 	//
-	// For non-standard tools, the input expects a map[string]any or RawText,
+	// For non-standard tools, the input expects a map[string]any or RawMessage,
 	// When the input is a map[string]any, it will be marshaled to JSON and
-	// included in the message. When the input is a RawText, it will be treated
-	// as a raw string instead of being marshaled to JSON.
+	// included in the message. When the input is a RawMessage, it will be
+	// treated as a raw message instead of being marshaled to JSON.
 	ToolUse(toolID, name string, input any) ContentBuilder
 
 	// ToolResult is used to add the result of a tool use to the content.
@@ -102,18 +103,14 @@ type ContentBuilder interface {
 	// should be a specific struct defined for that tool. For example, the web
 	// search tool expects a WebSearchResult struct.
 	//
-	// For non-standard tools, the content expects a map[string]any or RawText,
+	// For non-standard tools, the content expects a map[string]any or RawMessage,
 	// When the content is a map[string]any, it will be marshaled to JSON and
-	// included in the message. When the content is a RawText, it will be treated
-	// as a raw string instead of being marshaled to JSON.
+	// included in the message. When the content is a RawMessage, it will be treated
+	// as a raw message instead of being marshaled to JSON.
 	ToolResult(toolID, name string, result any, isError bool) ContentBuilder
 }
 
-// RawText is a wrapper type that indicates the content should be treated as a raw
-// string instead of being marshaled to JSON. This is useful for non-standard tool
-// inputs or results where the content is already marshaled and does not need to be
-// marshaled again.
-type RawText string
+type RawMessage = json.RawMessage
 
 // -----------------------------------------------------------------------------
 

@@ -19,7 +19,6 @@ package gemini
 import (
 	"encoding/json"
 	"strings"
-	"unsafe"
 
 	"github.com/goplus/xai"
 	"google.golang.org/genai"
@@ -56,9 +55,9 @@ func (p *contentBuilder) ToolResult(toolID, name string, result any, isError boo
 		content = conv(toolID, result, isError)
 	} else {
 		var ret map[string]any
-		if v, ok := result.(xai.RawText); ok {
-			// TODO(xsw): optimize by returning raw text?
-			err := json.Unmarshal(unsafe.Slice(unsafe.StringData(string(v)), len(v)), &ret)
+		if v, ok := result.(json.RawMessage); ok {
+			// TODO(xsw): optimize by returning raw message?
+			err := json.Unmarshal([]byte(v), &ret)
 			if err != nil {
 				panic("invalid tool result: " + err.Error())
 			}

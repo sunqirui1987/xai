@@ -33,10 +33,12 @@ func (p *contentBuilder) ToolUse(toolID, name string, input any) xai.ContentBuil
 	return p
 }
 
+/* TODO(xsw):
 func (p *contentBuilder) serverToolUse(toolID string, input any, name anthropic.BetaServerToolUseBlockParamName) xai.ContentBuilder {
 	p.content = append(p.content, anthropic.NewBetaServerToolUseBlock(toolID, input, name))
 	return p
 }
+*/
 
 // -----------------------------------------------------------------------------
 
@@ -85,8 +87,8 @@ func (p *contentBuilder) ToolResult(toolID, name string, result any, isError boo
 		content = conv(toolID, result, isError)
 	} else {
 		var ret string
-		if v, ok := result.(xai.RawText); ok {
-			ret = string(v)
+		if v, ok := result.(xai.RawMessage); ok {
+			ret = unsafe.String(unsafe.SliceData(v), len(v))
 		} else if isError {
 			ret = result.(error).Error()
 		} else {

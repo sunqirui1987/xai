@@ -41,7 +41,7 @@ type candidate struct {
 	*genai.Candidate
 }
 
-func (p candidate) AsContent() xai.MsgBuilder {
+func (p candidate) ToMsg() xai.MsgBuilder {
 	var parts []*genai.Part
 	if c := p.Content; c != nil {
 		parts = c.Parts

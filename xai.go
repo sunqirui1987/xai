@@ -189,7 +189,7 @@ type ParamBuilder interface {
 // -----------------------------------------------------------------------------
 
 type Candidate interface {
-	AsContent() MsgBuilder
+	ToMsg() MsgBuilder
 }
 
 type GenResponse interface {

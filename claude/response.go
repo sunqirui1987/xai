@@ -41,7 +41,7 @@ func (p response) At(i int) xai.Candidate {
 	return p
 }
 
-func (p response) AsContent() xai.MsgBuilder {
+func (p response) ToMsg() xai.MsgBuilder {
 	content := make([]anthropic.BetaContentBlockParamUnion, len(p.msg.Content))
 	for i, c := range p.msg.Content {
 		content[i] = c.ToParam()

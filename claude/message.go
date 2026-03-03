@@ -135,8 +135,15 @@ func (p *textBuilder) Text(text string) xai.TextBuilder {
 	return p
 }
 
-func (p *Provider) Texts() xai.TextBuilder {
-	return &textBuilder{}
+func (p *Provider) Texts(texts ...string) xai.TextBuilder {
+	var content []anthropic.BetaTextBlockParam
+	if len(texts) > 0 {
+		content = make([]anthropic.BetaTextBlockParam, len(texts))
+		for i, text := range texts {
+			content[i].Text = text
+		}
+	}
+	return &textBuilder{content: content}
 }
 
 func buildTexts(in xai.TextBuilder) []anthropic.BetaTextBlockParam {

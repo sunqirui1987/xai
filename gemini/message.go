@@ -141,8 +141,15 @@ func (p *textBuilder) Text(text string) xai.TextBuilder {
 	return p
 }
 
-func (p *Provider) Texts() xai.TextBuilder {
-	return &textBuilder{}
+func (p *Provider) Texts(texts ...string) xai.TextBuilder {
+	var parts []*genai.Part
+	if len(texts) > 0 {
+		parts = make([]*genai.Part, len(texts))
+		for i, text := range texts {
+			parts[i] = genai.NewPartFromText(text)
+		}
+	}
+	return &textBuilder{parts: parts}
 }
 
 func buildTexts(in xai.TextBuilder) *genai.Content {

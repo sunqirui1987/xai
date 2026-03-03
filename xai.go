@@ -206,7 +206,7 @@ type Provider interface {
 	Contents() ContentBuilder
 	Images() ImageBuilder
 	Docs() DocumentBuilder
-	Texts() TextBuilder
+	Texts(texts ...string) TextBuilder
 
 	WebSearchTool() WebSearchTool
 

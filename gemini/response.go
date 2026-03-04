@@ -148,6 +148,9 @@ func (p contentBlock) AsCompaction() (ret xai.Compaction, ok bool) {
 }
 
 func (p contentBlock) Text() string {
+	if p.content.Thought {
+		return "" // we should not treat thought as output text
+	}
 	return p.content.Text
 }
 

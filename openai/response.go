@@ -84,6 +84,9 @@ func (p contentBlock) AsCompaction() (ret xai.Compaction, ok bool) {
 }
 
 func (p contentBlock) Text() string {
+	if len(p.content.Content) == 0 {
+		return "" // for non-text content, we return empty string as text content.
+	}
 	var outputText strings.Builder
 	for _, content := range p.content.Content {
 		if content.Type == "output_text" {

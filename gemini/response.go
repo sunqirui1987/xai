@@ -17,6 +17,8 @@
 package gemini
 
 import (
+	"unsafe"
+
 	"github.com/goplus/xai"
 	"google.golang.org/genai"
 )
@@ -101,8 +103,17 @@ type contentBlock struct {
 	content *genai.Part
 }
 
-func (p contentBlock) Type() xai.PartType {
-	panic("todo")
+func (p contentBlock) AsThinking() (ret xai.Thinking, ok bool) {
+	if ok = p.content.Thought; ok {
+		sig := p.content.ThoughtSignature
+		ret.Signature = unsafe.String(unsafe.SliceData(sig), len(sig))
+		ret.Text = p.content.Text
+	}
+	return
+}
+
+func (p contentBlock) Text() string {
+	return p.content.Text
 }
 
 // -----------------------------------------------------------------------------

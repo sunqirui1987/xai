@@ -30,8 +30,12 @@ type contentBlock struct {
 	content *responses.ResponseOutputItemUnion
 }
 
-func (p contentBlock) Type() xai.PartType {
-	return xai.PartType(p.content.Type)
+func (p contentBlock) AsThinking() (xai.Thinking, bool) {
+	panic("todo")
+}
+
+func (p contentBlock) Text() string {
+	panic("todo")
 }
 
 // -----------------------------------------------------------------------------

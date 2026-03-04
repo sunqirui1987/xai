@@ -110,13 +110,15 @@ type RawMessage = json.RawMessage
 
 // -----------------------------------------------------------------------------
 
-type PartType string
-
-const ( // TODO(xsw): PartType
-)
+type Thinking struct {
+	Text      string
+	Signature string // redacted data is saved here, not in Text
+	Redacted  bool
+}
 
 type Part interface {
-	Type() PartType
+	AsThinking() (ret Thinking, ok bool)
+	Text() string
 }
 
 // -----------------------------------------------------------------------------

@@ -30,8 +30,25 @@ type contentBlock struct {
 	content *anthropic.BetaContentBlockUnion
 }
 
-func (p contentBlock) Type() xai.PartType {
-	return xai.PartType(p.content.Type)
+func (p contentBlock) AsThinking() (ret xai.Thinking, ok bool) {
+	switch p.content.Type {
+	case "thinking":
+		u := p.content.AsThinking()
+		ret.Signature = u.Signature
+		ret.Text = u.Thinking
+	case "redacted_thinking":
+		u := p.content.AsRedactedThinking()
+		ret.Signature = u.Data
+		ret.Redacted = true
+	default:
+		return
+	}
+	ok = true
+	return
+}
+
+func (p contentBlock) Text() string {
+	return p.content.Text
 }
 
 // -----------------------------------------------------------------------------

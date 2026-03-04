@@ -83,6 +83,9 @@ func New(ctx context.Context, uri string) (xai.Provider, error) {
 		conf.Project = project[0]
 		conf.Backend = genai.BackendVertexAI
 	}
+	if key := params["key"]; len(key) > 0 {
+		conf.APIKey = key[0]
+	}
 	cli, err := genai.NewClient(ctx, &conf)
 	if err != nil {
 		return nil, err

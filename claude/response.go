@@ -109,6 +109,24 @@ func (p contentBlock) AsToolResult() (ret xai.ToolResult, ok bool) {
 	return
 }
 
+func (p contentBlock) AsBlob() (ret xai.Blob, ok bool) {
+	// claude does not support blobs in responses for now, so we can just return
+	// false here.
+	return
+}
+
+func (p contentBlock) AsCompaction() (ret xai.Compaction, ok bool) {
+	switch p.content.Type {
+	case "compaction":
+		u := p.content.AsCompaction()
+		ret.Data = u.Content
+	default:
+		return
+	}
+	ok = true
+	return
+}
+
 func (p contentBlock) Text() string {
 	return p.content.Text
 }

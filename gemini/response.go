@@ -128,6 +128,21 @@ func (p contentBlock) AsToolResult() (ret xai.ToolResult, ok bool) {
 	panic("todo")
 }
 
+func (p contentBlock) AsBlob() (ret xai.Blob, ok bool) {
+	blob := p.content.InlineData
+	if ok = blob != nil; ok {
+		ret.DisplayName = blob.DisplayName
+		ret.MIME = blob.MIMEType
+		ret.BlobData = xai.BlobFromRaw(blob.Data)
+	}
+	return
+}
+
+func (p contentBlock) AsCompaction() (ret xai.Compaction, ok bool) {
+	// gemini does not support compaction, so this always returns false.
+	return
+}
+
 func (p contentBlock) Text() string {
 	return p.content.Text
 }

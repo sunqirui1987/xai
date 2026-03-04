@@ -111,6 +111,11 @@ func (p *msgBuilder) Thinking(v xai.Thinking) xai.MsgBuilder {
 	return p
 }
 
+func (p *msgBuilder) Compaction(data string) xai.MsgBuilder {
+	p.content = append(p.content, anthropic.NewBetaCompactionBlock(data))
+	return p
+}
+
 // -----------------------------------------------------------------------------
 
 type textBuilder struct {

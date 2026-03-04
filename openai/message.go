@@ -130,6 +130,10 @@ func (p *msgBuilder) Thinking(v xai.Thinking) xai.MsgBuilder {
 	})
 }
 
+func (p *msgBuilder) Compaction(data string) xai.MsgBuilder {
+	return p.addNonMsg(responses.ResponseInputItemParamOfCompaction(data))
+}
+
 // -----------------------------------------------------------------------------
 
 type textBuilder struct {

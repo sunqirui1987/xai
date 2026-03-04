@@ -17,9 +17,46 @@
 package xai
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 )
+
+// -----------------------------------------------------------------------------
+
+type blobRaw struct {
+	raw []byte
+}
+
+func (b blobRaw) Raw() ([]byte, error) {
+	return b.raw, nil
+}
+
+func (b blobRaw) Base64() string {
+	return base64.StdEncoding.EncodeToString(b.raw)
+}
+
+func BlobFromRaw(raw []byte) BlobData {
+	return blobRaw{raw: raw}
+}
+
+// -----------------------------------------------------------------------------
+
+type blobBase64 struct {
+	base64 string
+}
+
+func (b blobBase64) Raw() ([]byte, error) {
+	return base64.StdEncoding.DecodeString(b.base64)
+}
+
+func (b blobBase64) Base64() string {
+	return b.base64
+}
+
+func BlobFromBase64(base64 string) BlobData {
+	return blobBase64{base64: base64}
+}
 
 // -----------------------------------------------------------------------------
 
@@ -83,7 +120,7 @@ type MsgBuilder interface {
 	// should be a unique identifier for the tool being used, and should
 	// match the ID used in ToolResult.
 	//
-	// The input expects anything that can be marshaled to JSON, including
+	// The Input expects anything that can be marshaled to JSON, including
 	// RawMessage.
 	ToolUse(ToolUse) MsgBuilder
 
@@ -99,11 +136,32 @@ type MsgBuilder interface {
 	// For non-standard tools, the content expects anything that can be marshaled
 	// to JSON, including RawMessage.
 	ToolResult(ToolResult) MsgBuilder
+
+	// Compaction is used to add a compaction block to the content. The content
+	// is an opaque string that is passed back by the provider when the compaction
+	// is triggered. The format of the content is provider-specific.
+	Compaction(data string) MsgBuilder
 }
 
 type RawMessage = json.RawMessage
 
 // -----------------------------------------------------------------------------
+
+type BlobData interface {
+	Raw() ([]byte, error)
+	Base64() string
+}
+
+type Blob struct {
+	// Required.
+	BlobData
+
+	// Optional. Display name of the blob. Used to provide a label or filename to
+	// distinguish blobs.
+	DisplayName string
+
+	MIME string
+}
 
 type Thinking struct {
 	Text      string
@@ -142,10 +200,16 @@ type ToolResult struct {
 	Underlying any // for provider-specific extensions
 }
 
+type Compaction struct {
+	Data string
+}
+
 type Part interface {
+	AsBlob() (ret Blob, ok bool)
 	AsThinking() (ret Thinking, ok bool)
 	AsToolUse() (ret ToolUse, ok bool)
 	AsToolResult() (ret ToolResult, ok bool)
+	AsCompaction() (ret Compaction, ok bool)
 	Text() string
 	Underlying() any
 }

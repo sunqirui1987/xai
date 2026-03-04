@@ -104,6 +104,10 @@ func (p *msgBuilder) Thinking(v xai.Thinking) xai.MsgBuilder {
 	return p
 }
 
+func (p *msgBuilder) Compaction(data string) xai.MsgBuilder {
+	panic("gemini does not support compaction")
+}
+
 // -----------------------------------------------------------------------------
 
 type textBuilder struct {

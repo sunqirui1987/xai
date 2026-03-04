@@ -66,6 +66,22 @@ func (p contentBlock) AsToolResult() (ret xai.ToolResult, ok bool) {
 	panic("todo")
 }
 
+func (p contentBlock) AsBlob() (ret xai.Blob, ok bool) {
+	panic("todo")
+}
+
+func (p contentBlock) AsCompaction() (ret xai.Compaction, ok bool) {
+	switch p.content.Type {
+	case "compaction":
+		u := p.content.AsCompaction()
+		ret.Data = u.EncryptedContent
+	default:
+		return
+	}
+	ok = true
+	return
+}
+
 func (p contentBlock) Text() string {
 	panic("todo")
 }

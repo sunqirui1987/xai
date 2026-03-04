@@ -43,13 +43,27 @@ func (p *params) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
 	return p
 }
 
-func (p *params) MaxTokens(v int64) xai.ParamBuilder {
+func (p *params) Model(model xai.Model) xai.ParamBuilder {
+	p.params.Model = anthropic.Model(model) // TODO(xsw): validate model
+	return p
+}
+
+func (p *params) MaxOutputTokens(v int64) xai.ParamBuilder {
 	p.params.MaxTokens = v
 	return p
 }
 
-func (p *params) Model(model xai.Model) xai.ParamBuilder {
-	p.params.Model = anthropic.Model(model) // TODO(xsw): validate model
+func (p *params) Compact(maxInputTokens int64) xai.ParamBuilder {
+	p.params.Betas = []anthropic.AnthropicBeta{
+		"compact-2026-01-12",
+	}
+	p.params.ContextManagement.Edits = append(p.params.ContextManagement.Edits, anthropic.BetaContextManagementConfigEditUnionParam{
+		OfCompact20260112: &anthropic.BetaCompact20260112EditParam{
+			Trigger: anthropic.BetaInputTokensTriggerParam{
+				Value: maxInputTokens,
+			},
+		},
+	})
 	return p
 }
 

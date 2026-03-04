@@ -44,13 +44,18 @@ func (p *params) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
 	return p
 }
 
-func (p *params) MaxTokens(v int64) xai.ParamBuilder {
+func (p *params) Model(model xai.Model) xai.ParamBuilder {
+	p.model = string(model) // TODO(xsw): validate model
+	return p
+}
+
+func (p *params) MaxOutputTokens(v int64) xai.ParamBuilder {
 	p.config.MaxOutputTokens = int32(v)
 	return p
 }
 
-func (p *params) Model(model xai.Model) xai.ParamBuilder {
-	p.model = string(model) // TODO(xsw): validate model
+func (p *params) Compact(maxInputTokens int64) xai.ParamBuilder {
+	// gemini does not support compaction, so we just ignore this parameter for now.
 	return p
 }
 

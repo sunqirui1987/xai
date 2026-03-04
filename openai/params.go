@@ -48,14 +48,18 @@ func (p *params) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
 	return p
 }
 
-func (p *params) MaxTokens(v int64) xai.ParamBuilder {
+func (p *params) Model(model xai.Model) xai.ParamBuilder {
+	p.params.Model = shared.ResponsesModel(model) // TODO(xsw): validate model
+	return p
+}
+
+func (p *params) MaxOutputTokens(v int64) xai.ParamBuilder {
 	p.params.MaxOutputTokens = param.NewOpt(v)
 	return p
 }
 
-func (p *params) Model(model xai.Model) xai.ParamBuilder {
-	p.params.Model = shared.ResponsesModel(model) // TODO(xsw): validate model
-	return p
+func (p *params) Compact(maxInputTokens int64) xai.ParamBuilder {
+	panic("todo")
 }
 
 func (p *params) Container(v string) xai.ParamBuilder {

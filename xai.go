@@ -137,16 +137,23 @@ type ParamBuilder interface {
 	// return results back to the model using `tool_result` content blocks.
 	Tools(tools ...ToolBase) ParamBuilder
 
+	// The model that will complete your prompt.
+	Model(model Model) ParamBuilder
+
 	// The maximum number of tokens to generate before stopping.
 	//
 	// Note that our models may stop _before_ reaching this maximum. This parameter
 	// only specifies the absolute maximum number of tokens to generate.
 	//
 	// Different models have different maximum values for this parameter.
-	MaxTokens(int64) ParamBuilder
+	MaxOutputTokens(int64) ParamBuilder
 
-	// The model that will complete your prompt.
-	Model(model Model) ParamBuilder
+	// Compact when the input tokens exceed the given value. When the model triggers
+	// compaction, it will return a compaction block in the response and discard part
+	// of the conversation history. The content of the compaction block is an opaque
+	// string that is passed back by the provider when the compaction is triggered.
+	// The format of the content is provider-specific.
+	Compact(maxInputTokens int64) ParamBuilder
 
 	// Container identifier for reuse across requests.
 	Container(string) ParamBuilder

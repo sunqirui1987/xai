@@ -20,7 +20,6 @@ import (
 	"context"
 	"iter"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 
@@ -63,27 +62,33 @@ const (
 )
 
 // New creates a new Service instance based on the scheme in the given URI.
-// uri should be in the format of "gemini:base=xxx&project=xxx", where "base" is
-// the base URL of the API endpoint. "project" is the project ID, which is required
-// when using the Vertex AI.
+// uri should be in the format of "gemini:base=service_base_url&key=api_key".
 //
-// For example, "gemini:base=https://generativelanguage.googleapis.com".
+// `base` is the base URL of the API endpoint.
+// `key` is the API key for authentication for Gemini backend.
+// `project` is the project ID for Vertex AI backend.
+// `location` is the location for Vertex AI backend.
+//
+// For example, "gemini:base=https://generativelanguage.googleapis.com/&key=your_api_key".
 func New(ctx context.Context, uri string) (xai.Service, error) {
 	params, err := url.ParseQuery(strings.TrimPrefix(uri, Scheme+":"))
 	if err != nil {
 		return nil, err
 	}
 	var conf genai.ClientConfig
-	setEnvVarProvider(&conf)
+	setNilEnvVarProvider(&conf)
 	if base := params["base"]; len(base) > 0 {
 		conf.HTTPOptions.BaseURL = base[0]
+	}
+	if key := params["key"]; len(key) > 0 {
+		conf.APIKey = key[0]
 	}
 	if project := params["project"]; len(project) > 0 {
 		conf.Project = project[0]
 		conf.Backend = genai.BackendVertexAI
 	}
-	if key := params["key"]; len(key) > 0 {
-		conf.APIKey = key[0]
+	if location := params["location"]; len(location) > 0 {
+		conf.Location = location[0]
 	}
 	cli, err := genai.NewClient(ctx, &conf)
 	if err != nil {
@@ -98,23 +103,15 @@ func New(ctx context.Context, uri string) (xai.Service, error) {
 // Remove calls to genai.defaultEnvVarProvider because we don't suggest users
 // to set environment variables for API key and base URL. Instead, they should
 // provide these parameters directly in the URI.
-func setEnvVarProvider(conf *genai.ClientConfig) {
+func setNilEnvVarProvider(conf *genai.ClientConfig) {
 	v := reflect.ValueOf(conf).Elem().FieldByName("envVarProvider")
 	if v.IsValid() {
-		*(*func() map[string]string)(v.Addr().UnsafePointer()) = envVarProvider
+		*(*func() map[string]string)(v.Addr().UnsafePointer()) = nilEnvVarProvider
 	}
 }
 
-// envVarProvider only returns GOOGLE_CLOUD_LOCATION and GOOGLE_CLOUD_REGION.
-func envVarProvider() map[string]string {
-	vars := make(map[string]string)
-	if v, ok := os.LookupEnv("GOOGLE_CLOUD_LOCATION"); ok {
-		vars["GOOGLE_CLOUD_LOCATION"] = v
-	}
-	if v, ok := os.LookupEnv("GOOGLE_CLOUD_REGION"); ok {
-		vars["GOOGLE_CLOUD_REGION"] = v
-	}
-	return vars
+func nilEnvVarProvider() map[string]string {
+	return nil
 }
 
 func init() {

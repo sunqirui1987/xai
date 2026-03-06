@@ -35,12 +35,11 @@ const (
 	Video
 	GenVideoReferenceImage
 	GenVideoMask
+	SafetyAttributes
 
 	OutputImage     // Generated Image
 	OutputImageMask // Generated ImageMask
 	OutputVideo     // Generated Video
-
-	SafetyAttributes
 
 	List = 0x8000
 )

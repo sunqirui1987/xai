@@ -17,54 +17,9 @@
 package xai
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"io"
 )
-
-// -----------------------------------------------------------------------------
-
-// BlobData represents the raw data of a blob, which can be an image or a document.
-// It provides methods to retrieve the raw bytes or the base64-encoded string of the
-// data.
-type BlobData interface {
-	Raw() ([]byte, error)
-	Base64() string
-}
-
-type blobRaw struct {
-	raw []byte
-}
-
-func (b blobRaw) Raw() ([]byte, error) {
-	return b.raw, nil
-}
-
-func (b blobRaw) Base64() string {
-	return base64.StdEncoding.EncodeToString(b.raw)
-}
-
-// BlobFromRaw creates a BlobData from raw bytes.
-func BlobFromRaw(raw []byte) BlobData {
-	return blobRaw{raw: raw}
-}
-
-type blobBase64 struct {
-	base64 string
-}
-
-func (b blobBase64) Raw() ([]byte, error) {
-	return base64.StdEncoding.DecodeString(b.base64)
-}
-
-func (b blobBase64) Base64() string {
-	return b.base64
-}
-
-// BlobFromBase64 creates a BlobData from a base64-encoded string.
-func BlobFromBase64(base64 string) BlobData {
-	return blobBase64{base64: base64}
-}
 
 // -----------------------------------------------------------------------------
 

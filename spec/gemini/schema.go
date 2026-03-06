@@ -32,9 +32,41 @@ import (
 
 type image genai.Image
 
-func (p *image) MIME() xai.ImageType {
+func (p *image) Type() xai.ImageType {
 	return xai.ImageType(p.MIMEType)
 }
+
+func (p *image) Blob() xai.BlobData {
+	if len(p.ImageBytes) > 0 {
+		return xai.BlobFromRaw(p.ImageBytes)
+	}
+	return nil
+}
+
+func (p *image) StgUri() string {
+	return p.GCSURI
+}
+
+// -----------------------------------------------------------------------------
+
+type video genai.Video
+
+func (p *video) Type() xai.VideoType {
+	return xai.VideoType(p.MIMEType)
+}
+
+func (p *video) Blob() xai.BlobData {
+	if len(p.VideoBytes) > 0 {
+		return xai.BlobFromRaw(p.VideoBytes)
+	}
+	return nil
+}
+
+func (p *video) StgUri() string {
+	return p.URI
+}
+
+// -----------------------------------------------------------------------------
 
 func (p *Service) ImageFrom(mime xai.ImageType, src io.Reader) (xai.Image, error) {
 	data, err := io.ReadAll(src)
@@ -94,6 +126,7 @@ var rewriteFlds = map[string]string{
 	"HTTPOptions":     "",
 	"SDKHTTPResponse": "",
 	"Labels":          "",
+	"Prompt":          "",
 	"OutputGCSURI":    "OutputStgUri",
 }
 
@@ -215,15 +248,14 @@ func setBasic(fld, v reflect.Value, vkind reflect.Kind) {
 // -----------------------------------------------------------------------------
 
 type opResults struct {
-	v       reflect.Value
-	genName string
+	v reflect.Value
 }
 
-func newResults(results any, genName string) *opResults {
-	return &opResults{v: reflect.ValueOf(results).Elem(), genName: genName}
+func results(resp any) opResults {
+	return opResults{v: reflect.ValueOf(resp).Elem()}
 }
 
-func (p *opResults) Prop(name string) any {
+func (p *opResults) XGo_Attr(name string) any {
 	fld := p.v.FieldByName(name)
 	kind := fld.Kind()
 	if kind == reflect.Invalid {
@@ -244,15 +276,86 @@ func (p *opResults) Prop(name string) any {
 	return fld.Interface()
 }
 
-func (p *opResults) Len() int {
-	if p.genName == "" {
-		return 0
-	}
-	return p.v.FieldByName(p.genName).Len()
+// -----------------------------------------------------------------------------
+
+type outputVideos struct {
+	opResults
+	items []*genai.GeneratedVideo
 }
 
-func (p *opResults) At(i int) any {
-	return p.v.FieldByName(p.genName).Index(i).Interface()
+func (p *outputVideos) Len() int {
+	return len(p.items)
+}
+
+func (p *outputVideos) At(i int) xai.Generated {
+	item := p.items[i]
+	return &xai.OutputVideo{
+		Video: (*video)(item.Video),
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+type outputImages struct {
+	opResults
+	items []*genai.GeneratedImage
+}
+
+func (p *outputImages) Len() int {
+	return len(p.items)
+}
+
+func (p *outputImages) At(i int) xai.Generated {
+	item := p.items[i]
+	return &xai.OutputImage{
+		Image:             (*image)(item.Image),
+		RAIFilteredReason: item.RAIFilteredReason,
+		SafetyAttributes:  safetyAttributes(item.SafetyAttributes),
+		EnhancedPrompt:    item.EnhancedPrompt,
+	}
+}
+
+func safetyAttributes(v *genai.SafetyAttributes) *xai.SafetyAttributes {
+	if v == nil {
+		return nil
+	}
+	return &xai.SafetyAttributes{
+		Categories: v.Categories,
+		Scores:     v.Scores,
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+type outputImageMasks struct {
+	opResults
+	items []*genai.GeneratedImageMask
+}
+
+func (p *outputImageMasks) Len() int {
+	return len(p.items)
+}
+
+func (p *outputImageMasks) At(i int) xai.Generated {
+	item := p.items[i]
+	return &xai.OutputImageMask{
+		Mask:   (*image)(item.Mask),
+		Labels: entityLabels(item.Labels),
+	}
+}
+
+type entityLabels []*genai.EntityLabel
+
+func (v entityLabels) Len() int {
+	return len(v)
+}
+
+func (v entityLabels) At(i int) xai.EntityLabel {
+	item := v[i]
+	return xai.EntityLabel{
+		Label: item.Label,
+		Score: item.Score,
+	}
 }
 
 // -----------------------------------------------------------------------------

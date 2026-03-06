@@ -36,20 +36,26 @@ const (
 	UpscaleImage   Action = "upscale_image"
 )
 
+// Results represents the results of an `Operation`.
+type Results interface {
+	// XGo_Attr ($name) retrieves a property value from the results by name.
+	XGo_Attr(name string) any
+
+	// Len returns the number of generated images or videos.
+	Len() int
+
+	// At retrieves a generated image or video from the results by index.
+	// For GenVideo, returns *OutputVideo;
+	// For SegmentImage, returns *OutputImageMask;
+	// For GenImage, EditImage, RecontextImage, UpscaleImage, returns *OutputImage.
+	At(i int) Generated
+}
+
 // Params represents the parameters that can be set for an `Operation`.
 type Params interface {
 	// Set sets a parameter for the operation. You can call this method multiple
 	// times to set multiple parameters.
 	Set(name string, val any) Params
-}
-
-// Results represents the results of an `Operation`.
-type Results interface {
-	Len() int
-	At(i int) any
-
-	// Prop retrieves a property value from the results by name.
-	Prop(name string) any
 }
 
 // OperationResponse represents the response from an `Operation`. It provides methods
@@ -67,7 +73,7 @@ type OperationResponse interface {
 	// is done.
 	Retry(ctx context.Context, svc Service) (OperationResponse, error)
 
-	// Returns the value of a specific result from the operation.
+	// Results returns the result from the operation.
 	Results() Results
 }
 

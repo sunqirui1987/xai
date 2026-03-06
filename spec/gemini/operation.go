@@ -59,28 +59,35 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 
 // -----------------------------------------------------------------------------
 
-type genImageResp struct {
-	ret *opResults
+type simpleResp[T xai.Results] struct {
+	ret T
 }
 
-func (p genImageResp) Done() bool {
+func (p simpleResp[T]) Done() bool {
 	return true
 }
 
-func (p genImageResp) Sleep() {
+func (p simpleResp[T]) Sleep() {
 	panic("unreachable")
 }
 
-func (p genImageResp) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
+func (p simpleResp[T]) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
 	panic("unreachable")
 }
 
-func (p genImageResp) Results() xai.Results {
+func (p simpleResp[T]) Results() xai.Results {
 	return p.ret
 }
 
-func newGenImageResp(op any) genImageResp {
-	return genImageResp{ret: newResults(op, "GeneratedImages")}
+type genImageResp = simpleResp[*outputImages]
+type genImageMaskResp = simpleResp[*outputImageMasks]
+
+func newGenImageResp(ret any, items []*genai.GeneratedImage) genImageResp {
+	return genImageResp{ret: &outputImages{results(ret), items}}
+}
+
+func newGenImageMaskResp(ret any, items []*genai.GeneratedImageMask) genImageMaskResp {
+	return genImageMaskResp{ret: &outputImageMasks{results(ret), items}}
 }
 
 // -----------------------------------------------------------------------------
@@ -106,7 +113,8 @@ func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.Operation
 }
 
 func (p genVideoResp) Results() xai.Results {
-	return newResults(p.op.Response, "GeneratedVideos")
+	ret := p.op.Response
+	return &outputVideos{results(ret), ret.GeneratedVideos}
 }
 
 type genVideo struct {
@@ -159,7 +167,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, prompt string, opt
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op), nil
+	return newGenImageResp(op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -187,7 +195,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, prompt string, op
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op), nil
+	return newGenImageResp(op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -216,7 +224,7 @@ func (p *recontextImage) Call(ctx context.Context, svc xai.Service, prompt strin
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op), nil
+	return newGenImageResp(op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -245,7 +253,7 @@ func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, prompt string,
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op), nil
+	return newGenImageResp(op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -274,7 +282,7 @@ func (p *segmentImage) Call(ctx context.Context, svc xai.Service, prompt string,
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op), nil
+	return newGenImageMaskResp(op, op.GeneratedMasks), nil
 }
 
 // -----------------------------------------------------------------------------

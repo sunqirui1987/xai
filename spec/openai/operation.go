@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package gemini
+package openai
 
-import (
-	xai "github.com/goplus/xai/spec"
-	"google.golang.org/genai"
-)
+import xai "github.com/goplus/xai/spec"
 
 // -----------------------------------------------------------------------------
 
-type options struct {
-	opts genai.HTTPOptions
+func (p *Service) Actions(model xai.Model) []xai.Action {
+	panic("todo")
 }
 
-func (p *options) WithBaseURL(base string) xai.OptionBuilder {
-	p.opts.BaseURL = base
-	return p
-}
-
-func (p *Service) Options() xai.OptionBuilder {
-	return &options{}
-}
-
-func buildOptions(conf *genai.GenerateContentConfig, opts xai.OptionBuilder) {
-	if v, ok := opts.(*options); ok {
-		conf.HTTPOptions = &v.opts
-	}
+func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operation, err error) {
+	panic("todo")
 }
 
 // -----------------------------------------------------------------------------

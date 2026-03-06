@@ -23,6 +23,15 @@ import (
 	"strings"
 )
 
+var (
+	// ErrNotFound is returned when a requested resource is not found, such as a model
+	// or an action that does not exist.
+	ErrNotFound = errors.New("not found")
+
+	// ErrUnknownScheme is returned when an unknown scheme is encountered in a URL.
+	ErrUnknownScheme = errors.New("unknown scheme")
+)
+
 // -----------------------------------------------------------------------------
 
 type OptionBuilder interface {
@@ -174,20 +183,23 @@ type ParamBuilder interface {
 
 // -----------------------------------------------------------------------------
 
+// StopReason represents the reason why the model stopped generating tokens. This
+// can be used to determine whether the model stopped because it reached the end
+// of the response, or because it hit a maximum token limit, or for some other reason.
 type StopReason string
 
 const (
-	Unspecified                StopReason = "unspecified"
-	UnsupportedLanguage        StopReason = "unsupported_language"
 	EndTurn                    StopReason = "end_turn"
-	MaxTokens                  StopReason = "max_tokens"
-	StopSequence               StopReason = "stop_sequence"
 	StopCompaction             StopReason = "compaction"
+	StopMaxTokens              StopReason = "max_tokens"
+	StopSequence               StopReason = "stop_sequence"
 	MalformedToolUse           StopReason = "malformed_tool_use"
 	PauseTurn                  StopReason = "pause_turn"
 	Refusal                    StopReason = "refusal"
 	Recitation                 StopReason = "recitation"
 	ModelContextWindowExceeded StopReason = "model_context_window_exceeded"
+	UnsupportedLanguage        StopReason = "unsupported_language"
+	Unspecified                StopReason = "unspecified"
 )
 
 // Candidate represents a single candidate response from the model. A GenResponse
@@ -210,7 +222,117 @@ type GenResponse interface {
 
 // -----------------------------------------------------------------------------
 
+// Action represents a specific operation that can be performed with a model, such as
+// generating a video, editing an image, etc. The available actions may vary depending
+// on the model and service being used. You can use the `Actions` method of a `Service`
+// to get the list of supported actions for a given model, and then use the `Operation`
+// method to get an `Operation` instance for a specific action.
+type Action string
+
+const (
+	GenVideo       Action = "gen_video"
+	GenImage       Action = "gen_image"
+	EditImage      Action = "edit_image"
+	RecontextImage Action = "recontext_image"
+	SegmentImage   Action = "segment_image"
+	UpscaleImage   Action = "upscale_image"
+)
+
+// Params represents the parameters that can be set for an `Operation`.
+type Params interface {
+	// Set sets a parameter for the operation. You can call this method multiple
+	// times to set multiple parameters.
+	Set(name string, val any) Params
+}
+
+// Results represents the results of an `Operation`.
+type Results interface {
+	// Get retrieves a specific result from the operation by name.
+	Get(name string) any
+}
+
+// OperationResponse represents the response from an `Operation`. It provides methods
+// to check the status of the operation, retrieve results when it's done.
+type OperationResponse interface {
+	// Done returns true if the operation is completed.
+	Done() bool
+
+	// Sleep sleeps a suggested amount of time before the next retry.
+	Sleep()
+
+	// Retry retries the operation. It returns a new `OperationResponse` that can be
+	// used to check the status of the operation and retrieve results when it's done.
+	// You can call this method multiple times to keep retrying until the operation
+	// is done.
+	Retry(ctx context.Context, svc Service) (OperationResponse, error)
+
+	// Returns the value of a specific result from the operation.
+	Results() Results
+}
+
+// Wait is a helper function that waits for an `OperationResponse` to be done by
+// repeatedly calling `Retry` with appropriate sleeping in between. Once the operation
+// is done, it returns the results of the operation.
+func Wait(ctx context.Context, svc Service, resp OperationResponse) (ret Results, err error) {
+	for !resp.Done() {
+		resp.Sleep()
+		resp, err = resp.Retry(ctx, svc)
+		if err != nil {
+			return
+		}
+	}
+	return resp.Results(), nil
+}
+
+// Operation represents a long-running task that may take some time to complete, such as
+// generating a video or editing an image. You can use an `Operation` to set parameters
+// for the action and then call it with a prompt to start the operation.
+type Operation interface {
+	InputSchema() Schema
+
+	// Params returns a `Params` that can be used to set parameters for the operation.
+	Params() Params
+
+	// Call starts the operation with the given prompt. It returns an `OperationResponse`
+	// that can be used to check the status of the operation and retrieve results when
+	// it's done.
+	Call(ctx context.Context, svc Service, prompt string, opts OptionBuilder) (OperationResponse, error)
+}
+
+// Call is a helper function that calls an `Operation` with the given prompt and options,
+// and then waits for the operation to be done. It returns the results of the operation
+// once it's completed.
+func Call(ctx context.Context, svc Service, op Operation, prompt string, opts OptionBuilder) (ret Results, err error) {
+	resp, err := op.Call(ctx, svc, prompt, opts)
+	if err != nil {
+		return
+	}
+	return Wait(ctx, svc, resp)
+}
+
+// -----------------------------------------------------------------------------
+
+// Feature represents the capabilities of a Service. It is used to indicate which
+// features are supported by a particular Service implementation, such as whether
+// it supports the Gen API, GenStream API, or long-running operations.
+//
+// Services can support multiple features, which can be combined using bitwise OR.
+// For example, a Service that supports both the Gen API and long-running operations
+// would have a Feature value of `FeatureGen | FeatureOperation`.
+type Feature int
+
+const (
+	FeatureGen Feature = 1 << iota
+	FeatureGenStream
+	FeatureOperation
+)
+
 type Service interface {
+	// Features returns the capabilities of this Service, which indicates which
+	// features are supported by this Service implementation, such as whether it
+	// supports the Gen API, GenStream API, or long-running operations.
+	Features() Feature
+
 	// Options returns an `OptionBuilder` that can be used to set options for
 	// generation requests. This includes options like the base URL for the API
 	// endpoint, etc.
@@ -275,14 +397,19 @@ type Service interface {
 	//
 	// Note: If you choose to set a timeout for this request, we recommend 10 minutes.
 	GenStream(ctx context.Context, params ParamBuilder, opts OptionBuilder) iter.Seq2[GenResponse, error]
+
+	// Actions returns the list of supported actions for the given model.
+	Actions(model Model) []Action
+
+	// Operation returns an `Operation` that can be used to perform the specified action
+	// with the given model. An `Operation` represents a long-running task that may take some time to complete, such as generating a video or editing an image. You can
+	// use the returned `Operation` to set parameters for the action and then call it
+	// with a prompt to start the operation. The `OperationResponse` can then be used
+	// to check the status of the operation and retrieve results when it's done.
+	Operation(model Model, action Action) (Operation, error)
 }
 
 // -----------------------------------------------------------------------------
-
-var (
-	// ErrUnknownScheme is returned when an unknown scheme is encountered in a URL.
-	ErrUnknownScheme = errors.New("unknown scheme")
-)
 
 // NewFunc is the function type for creating a new Provider instance from a URI.
 type NewFunc = func(ctx context.Context, uri string) (Service, error)

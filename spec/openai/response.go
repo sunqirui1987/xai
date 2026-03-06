@@ -118,7 +118,7 @@ func (p response) StopReason() xai.StopReason {
 	case responses.ResponseStatusIncomplete:
 		switch p.msg.IncompleteDetails.Reason {
 		case "max_output_tokens":
-			return xai.MaxTokens
+			return xai.StopMaxTokens
 		case "content_filter":
 			return xai.Refusal
 		}

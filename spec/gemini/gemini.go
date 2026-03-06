@@ -31,11 +31,16 @@ import (
 
 type Service struct {
 	models genai.Models
+	ops    genai.Operations
 	tools  tools
 }
 
+func (p *Service) Features() xai.Feature {
+	return xai.FeatureGen | xai.FeatureGenStream | xai.FeatureOperation
+}
+
 func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
-	model, contents, config := buildParams(params)
+	model, contents, config := buildGenParams(params)
 	buildOptions(config, opts)
 	resp, err := p.models.GenerateContent(ctx, model, contents, config)
 	if err != nil {
@@ -45,7 +50,7 @@ func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.Opt
 }
 
 func (p *Service) GenStream(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) iter.Seq2[xai.GenResponse, error] {
-	model, contents, config := buildParams(params)
+	model, contents, config := buildGenParams(params)
 	buildOptions(config, opts)
 	iter := p.models.GenerateContentStream(ctx, model, contents, config)
 	return func(yield func(xai.GenResponse, error) bool) {
@@ -96,6 +101,7 @@ func New(ctx context.Context, uri string) (xai.Service, error) {
 	}
 	return &Service{
 		models: *cli.Models,
+		ops:    *cli.Operations,
 		tools:  make(tools),
 	}, nil
 }

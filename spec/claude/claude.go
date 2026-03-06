@@ -34,6 +34,10 @@ type Service struct {
 	tools    tools
 }
 
+func (p *Service) Features() xai.Feature {
+	return xai.FeatureGen | xai.FeatureGenStream
+}
+
 func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
 	resp, err := p.messages.New(ctx, buildParams(params), buildOptions(opts)...)
 	if err != nil {
@@ -45,6 +49,15 @@ func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.Opt
 func (p *Service) GenStream(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) iter.Seq2[xai.GenResponse, error] {
 	resp := p.messages.NewStreaming(ctx, buildParams(params), buildOptions(opts)...)
 	return buildRespIter(resp)
+}
+
+func (p *Service) Actions(model xai.Model) []xai.Action {
+	// claude doesn't support any actions for now.
+	return nil
+}
+
+func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operation, err error) {
+	return nil, xai.ErrNotFound
 }
 
 // -----------------------------------------------------------------------------

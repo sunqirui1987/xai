@@ -34,6 +34,10 @@ type Service struct {
 	tools     tools
 }
 
+func (p *Service) Features() xai.Feature {
+	return xai.FeatureGen | xai.FeatureGenStream | xai.FeatureOperation
+}
+
 func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
 	resp, err := p.responses.New(ctx, buildParams(params), buildOptions(opts)...)
 	if err != nil {

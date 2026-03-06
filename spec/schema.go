@@ -14,32 +14,11 @@
  * limitations under the License.
  */
 
-package gemini
-
-import (
-	xai "github.com/goplus/xai/spec"
-	"google.golang.org/genai"
-)
+package xai
 
 // -----------------------------------------------------------------------------
 
-type options struct {
-	opts genai.HTTPOptions
-}
-
-func (p *options) WithBaseURL(base string) xai.OptionBuilder {
-	p.opts.BaseURL = base
-	return p
-}
-
-func (p *Service) Options() xai.OptionBuilder {
-	return &options{}
-}
-
-func buildOptions(conf *genai.GenerateContentConfig, opts xai.OptionBuilder) {
-	if v, ok := opts.(*options); ok {
-		conf.HTTPOptions = &v.opts
-	}
+type Schema interface {
 }
 
 // -----------------------------------------------------------------------------

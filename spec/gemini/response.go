@@ -47,7 +47,7 @@ var stopReasons = map[genai.FinishReason]xai.StopReason{
 	// Token generation reached a natural stopping point or a configured stop sequence.
 	genai.FinishReasonStop: xai.EndTurn,
 	// Token generation reached the configured maximum output tokens.
-	genai.FinishReasonMaxTokens: xai.MaxTokens,
+	genai.FinishReasonMaxTokens: xai.StopMaxTokens,
 	// Token generation stopped because the content potentially contains safety violations.
 	// NOTE: When streaming, [content][] is empty if content filters blocks the output.
 	genai.FinishReasonSafety: xai.Refusal,

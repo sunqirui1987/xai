@@ -23,73 +23,73 @@ import (
 
 // -----------------------------------------------------------------------------
 
-type params struct {
+type genParams struct {
 	model    string
 	contents []*genai.Content
 	config   genai.GenerateContentConfig
 }
 
-func (p *params) System(v xai.TextBuilder) xai.ParamBuilder {
+func (p *genParams) System(v xai.TextBuilder) xai.ParamBuilder {
 	p.config.SystemInstruction = buildTexts(v)
 	return p
 }
 
-func (p *params) Messages(msgs ...xai.MsgBuilder) xai.ParamBuilder {
+func (p *genParams) Messages(msgs ...xai.MsgBuilder) xai.ParamBuilder {
 	p.contents = buildMessages(msgs)
 	return p
 }
 
-func (p *params) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
+func (p *genParams) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
 	p.config.Tools = buildTools(tools)
 	return p
 }
 
-func (p *params) Model(model xai.Model) xai.ParamBuilder {
+func (p *genParams) Model(model xai.Model) xai.ParamBuilder {
 	p.model = string(model) // TODO(xsw): validate model
 	return p
 }
 
-func (p *params) MaxOutputTokens(v int64) xai.ParamBuilder {
+func (p *genParams) MaxOutputTokens(v int64) xai.ParamBuilder {
 	p.config.MaxOutputTokens = int32(v)
 	return p
 }
 
-func (p *params) Compact(maxInputTokens int64) xai.ParamBuilder {
+func (p *genParams) Compact(maxInputTokens int64) xai.ParamBuilder {
 	// gemini does not support compaction, so we just ignore this parameter for now.
 	return p
 }
 
-func (p *params) Container(v string) xai.ParamBuilder {
+func (p *genParams) Container(v string) xai.ParamBuilder {
 	// TODO(xsw): validate container
 	return p
 }
 
-func (p *params) InferenceGeo(v string) xai.ParamBuilder {
+func (p *genParams) InferenceGeo(v string) xai.ParamBuilder {
 	// TODO(xsw): validate inference geo
 	return p
 }
 
-func (p *params) Temperature(v float64) xai.ParamBuilder {
+func (p *genParams) Temperature(v float64) xai.ParamBuilder {
 	p.config.Temperature = genai.Ptr(float32(v))
 	return p
 }
 
-func (p *params) TopK(v int64) xai.ParamBuilder {
+func (p *genParams) TopK(v int64) xai.ParamBuilder {
 	p.config.TopK = genai.Ptr(float32(v)) // TODO(xsw): validate top_k
 	return p
 }
 
-func (p *params) TopP(v float64) xai.ParamBuilder {
+func (p *genParams) TopP(v float64) xai.ParamBuilder {
 	p.config.TopP = genai.Ptr(float32(v)) // TODO(xsw): validate top_p
 	return p
 }
 
 func (p *Service) Params() xai.ParamBuilder {
-	return &params{}
+	return &genParams{}
 }
 
-func buildParams(in xai.ParamBuilder) (string, []*genai.Content, *genai.GenerateContentConfig) {
-	p := in.(*params)
+func buildGenParams(in xai.ParamBuilder) (string, []*genai.Content, *genai.GenerateContentConfig) {
+	p := in.(*genParams)
 	return p.model, p.contents, &p.config
 }
 

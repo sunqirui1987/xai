@@ -17,29 +17,37 @@
 package gemini
 
 import (
+	"reflect"
+
 	xai "github.com/goplus/xai/spec"
-	"google.golang.org/genai"
 )
 
 // -----------------------------------------------------------------------------
 
-type options struct {
-	opts genai.HTTPOptions
+type opParams struct {
+	v reflect.Value
 }
 
-func (p *options) WithBaseURL(base string) xai.OptionBuilder {
-	p.opts.BaseURL = base
-	return p
+func newParams(params any) *opParams {
+	return &opParams{v: reflect.ValueOf(params)}
 }
 
-func (p *Service) Options() xai.OptionBuilder {
-	return &options{}
+func (p *opParams) Set(name string, val any) xai.Params {
+	panic("todo")
 }
 
-func buildOptions(conf *genai.GenerateContentConfig, opts xai.OptionBuilder) {
-	if v, ok := opts.(*options); ok {
-		conf.HTTPOptions = &v.opts
-	}
+// -----------------------------------------------------------------------------
+
+type opResults struct {
+	v reflect.Value
+}
+
+func newResults(results any) *opResults {
+	return &opResults{v: reflect.ValueOf(results)}
+}
+
+func (p *opResults) Get(name string) any {
+	panic("todo")
 }
 
 // -----------------------------------------------------------------------------

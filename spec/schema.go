@@ -18,7 +18,29 @@ package xai
 
 // -----------------------------------------------------------------------------
 
-type Schema interface {
+type Kind uint
+
+const (
+	Invalid Kind = iota
+	Bool         // bool
+	Int          // int64
+	Float        // float64
+	String       // string
+	Image
+	ReferenceImage
+	GenVideoReferenceImage
+	GenVideoMask
+
+	List = 0x8000
+)
+
+type Field struct {
+	Name string
+	Kind Kind
+}
+
+type InputSchema interface {
+	Fields() []Field
 }
 
 // -----------------------------------------------------------------------------

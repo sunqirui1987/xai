@@ -116,8 +116,8 @@ type genVideo struct {
 	model string
 }
 
-func (p *genVideo) InputSchema() xai.Schema {
-	panic("todo")
+func (p *genVideo) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *genVideo) Params() xai.Params {
@@ -143,8 +143,8 @@ type genImage struct {
 	model string
 }
 
-func (p *genImage) InputSchema() xai.Schema {
-	panic("todo")
+func (p *genImage) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *genImage) Params() xai.Params {
@@ -171,8 +171,8 @@ type editImage struct {
 	model string
 }
 
-func (p *editImage) InputSchema() xai.Schema {
-	panic("todo")
+func (p *editImage) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *editImage) Params() xai.Params {
@@ -199,8 +199,8 @@ type recontextImage struct {
 	model string
 }
 
-func (p *recontextImage) InputSchema() xai.Schema {
-	panic("todo")
+func (p *recontextImage) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *recontextImage) Params() xai.Params {
@@ -229,8 +229,8 @@ type upscaleImage struct {
 	model string
 }
 
-func (p *upscaleImage) InputSchema() xai.Schema {
-	panic("todo")
+func (p *upscaleImage) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *upscaleImage) Params() xai.Params {
@@ -257,8 +257,8 @@ type segmentImage struct {
 	model string
 }
 
-func (p *segmentImage) InputSchema() xai.Schema {
-	panic("todo")
+func (p *segmentImage) InputSchema() xai.InputSchema {
+	return newInputSchema(p)
 }
 
 func (p *segmentImage) Params() xai.Params {

@@ -291,7 +291,7 @@ func Wait(ctx context.Context, svc Service, resp OperationResponse, progress fun
 // generating a video or editing an image. You can use an `Operation` to set parameters
 // for the action and then call it with a prompt to start the operation.
 type Operation interface {
-	InputSchema() Schema
+	InputSchema() InputSchema
 
 	// Params returns a `Params` that can be used to set parameters for the operation.
 	Params() Params
@@ -405,7 +405,8 @@ type Service interface {
 	Actions(model Model) []Action
 
 	// Operation returns an `Operation` that can be used to perform the specified action
-	// with the given model. An `Operation` represents a long-running task that may take some time to complete, such as generating a video or editing an image. You can
+	// with the given model. An `Operation` represents a long-running task that may take
+	// some time to complete, such as generating a video or editing an image. You can
 	// use the returned `Operation` to set parameters for the action and then call it
 	// with a prompt to start the operation. The `OperationResponse` can then be used
 	// to check the status of the operation and retrieve results when it's done.

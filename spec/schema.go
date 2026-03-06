@@ -26,10 +26,18 @@ const (
 	Int          // int64
 	Float        // float64
 	String       // string
+
 	Image
 	ReferenceImage
+	Video
 	GenVideoReferenceImage
 	GenVideoMask
+
+	OutputImage     // Generated Image
+	OutputImageMask // Generated ImageMask
+	OutputVideo     // Generated Video
+
+	SafetyAttributes
 
 	List = 0x8000
 )
@@ -41,6 +49,9 @@ type Field struct {
 
 type InputSchema interface {
 	Fields() []Field
+}
+
+type objectFactory interface {
 }
 
 // -----------------------------------------------------------------------------

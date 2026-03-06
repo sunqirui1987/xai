@@ -247,8 +247,11 @@ type Params interface {
 
 // Results represents the results of an `Operation`.
 type Results interface {
-	// Get retrieves a specific result from the operation by name.
-	Get(name string) any
+	Len() int
+	At(i int) any
+
+	// Prop retrieves a property value from the results by name.
+	Prop(name string) any
 }
 
 // OperationResponse represents the response from an `Operation`. It provides methods
@@ -291,6 +294,11 @@ func Wait(ctx context.Context, svc Service, resp OperationResponse, progress fun
 // generating a video or editing an image. You can use an `Operation` to set parameters
 // for the action and then call it with a prompt to start the operation.
 type Operation interface {
+	// InputSchema returns the schema for the input parameters of this operation. This
+	// schema defines the parameters that can be set for this operation, such as the
+	// type and name of each parameter. You can use this schema to understand what
+	// parameters are required or optional for this operation, and to set them correctly
+	// before calling the operation.
 	InputSchema() InputSchema
 
 	// Params returns a `Params` that can be used to set parameters for the operation.
@@ -331,6 +339,9 @@ const (
 )
 
 type Service interface {
+	// objectFactory creates a new instance of objects defined in the schema.
+	objectFactory
+
 	// Features returns the capabilities of this Service, which indicates which
 	// features are supported by this Service implementation, such as whether it
 	// supports the Gen API, GenStream API, or long-running operations.

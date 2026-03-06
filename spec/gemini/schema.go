@@ -37,9 +37,10 @@ func (p *opInputSchema) Fields() []xai.Field {
 }
 
 var rewriteFlds = map[string]string{
-	"HTTPOptions":  "",
-	"Labels":       "",
-	"OutputGCSURI": "OutputStgUri",
+	"HTTPOptions":     "",
+	"SDKHTTPResponse": "",
+	"Labels":          "",
+	"OutputGCSURI":    "OutputStgUri",
 }
 
 func getFields(fields []xai.Field, t reflect.Type, n int) []xai.Field {
@@ -72,6 +73,10 @@ var allowTypes = map[string]xai.Kind{
 	"ReferenceImage":                xai.ReferenceImage,
 	"VideoGenerationReferenceImage": xai.GenVideoReferenceImage,
 	"VideoGenerationMask":           xai.GenVideoMask,
+	"GeneratedVideo":                xai.OutputVideo,
+	"GeneratedImage":                xai.OutputImage,
+	"GeneratedImageMask":            xai.OutputImageMask,
+	"SafetyAttributes":              xai.SafetyAttributes,
 }
 
 func kindOf(t reflect.Type) xai.Kind {
@@ -114,25 +119,86 @@ type opParams struct {
 }
 
 func newParams(params any) *opParams {
-	return &opParams{v: reflect.ValueOf(params)}
+	return &opParams{v: reflect.ValueOf(params).Elem()}
 }
 
 func (p *opParams) Set(name string, val any) xai.Params {
-	panic("todo")
+	fld := p.v.FieldByName(name)
+	if fld.CanSet() {
+		v := reflect.ValueOf(val)
+		vkind := v.Kind()
+		if vkind >= reflect.Bool && vkind <= reflect.Float64 {
+			if fld.Kind() == reflect.Pointer {
+				pv := reflect.New(fld.Type().Elem())
+				setBasic(pv.Elem(), v, vkind)
+				fld.Set(pv)
+			} else {
+				setBasic(fld, v, vkind)
+			}
+		} else {
+			fld.Set(v)
+		}
+	} else {
+		log.Println("cannot set field:", name)
+	}
+	return p
+}
+
+func setBasic(fld, v reflect.Value, vkind reflect.Kind) {
+	if vkind >= reflect.Int && vkind <= reflect.Int64 {
+		if kind := fld.Kind(); kind >= reflect.Int && kind <= reflect.Int64 {
+			fld.SetInt(v.Int())
+		} else {
+			fld.SetFloat(float64(v.Int()))
+		}
+	} else if vkind >= reflect.Float32 && vkind <= reflect.Float64 {
+		fld.SetFloat(v.Float())
+	} else {
+		fld.Set(v)
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 type opResults struct {
-	v reflect.Value
+	v       reflect.Value
+	genName string
 }
 
-func newResults(results any) *opResults {
-	return &opResults{v: reflect.ValueOf(results)}
+func newResults(results any, genName string) *opResults {
+	return &opResults{v: reflect.ValueOf(results).Elem(), genName: genName}
 }
 
-func (p *opResults) Get(name string) any {
-	panic("todo")
+func (p *opResults) Prop(name string) any {
+	fld := p.v.FieldByName(name)
+	kind := fld.Kind()
+	if kind == reflect.Invalid {
+		return nil
+	}
+	if kind == reflect.Pointer {
+		if fld.IsNil() {
+			return nil
+		}
+		fld := fld.Elem()
+		kind = fld.Kind()
+	}
+	if kind >= reflect.Int && kind <= reflect.Int64 {
+		return fld.Int()
+	} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
+		return fld.Float()
+	}
+	return fld.Interface()
+}
+
+func (p *opResults) Len() int {
+	if p.genName == "" {
+		return 0
+	}
+	return p.v.FieldByName(p.genName).Len()
+}
+
+func (p *opResults) At(i int) any {
+	return p.v.FieldByName(p.genName).Index(i).Interface()
 }
 
 // -----------------------------------------------------------------------------

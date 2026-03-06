@@ -59,28 +59,28 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 
 // -----------------------------------------------------------------------------
 
-type simpleOpResp struct {
-	op any
+type genImageResp struct {
+	ret *opResults
 }
 
-func (p *simpleOpResp) Done() bool {
+func (p genImageResp) Done() bool {
 	return true
 }
 
-func (p *simpleOpResp) Sleep() {
+func (p genImageResp) Sleep() {
 	panic("unreachable")
 }
 
-func (p *simpleOpResp) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
+func (p genImageResp) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
 	panic("unreachable")
 }
 
-func (p *simpleOpResp) Results() xai.Results {
-	return newResults(p.op)
+func (p genImageResp) Results() xai.Results {
+	return p.ret
 }
 
-func newSimpleOpResp(op any) *simpleOpResp {
-	return &simpleOpResp{op: op}
+func newGenImageResp(op any) genImageResp {
+	return genImageResp{ret: newResults(op, "GeneratedImages")}
 }
 
 // -----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.Operation
 }
 
 func (p genVideoResp) Results() xai.Results {
-	return newResults(p.op.Response)
+	return newResults(p.op.Response, "GeneratedVideos")
 }
 
 type genVideo struct {
@@ -159,7 +159,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, prompt string, opt
 	if err != nil {
 		return
 	}
-	return newSimpleOpResp(op), nil
+	return newGenImageResp(op), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, prompt string, op
 	if err != nil {
 		return
 	}
-	return newSimpleOpResp(op), nil
+	return newGenImageResp(op), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -216,7 +216,7 @@ func (p *recontextImage) Call(ctx context.Context, svc xai.Service, prompt strin
 	if err != nil {
 		return
 	}
-	return newSimpleOpResp(op), nil
+	return newGenImageResp(op), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -245,7 +245,7 @@ func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, prompt string,
 	if err != nil {
 		return
 	}
-	return newSimpleOpResp(op), nil
+	return newGenImageResp(op), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -274,7 +274,7 @@ func (p *segmentImage) Call(ctx context.Context, svc xai.Service, prompt string,
 	if err != nil {
 		return
 	}
-	return newSimpleOpResp(op), nil
+	return newGenImageResp(op), nil
 }
 
 // -----------------------------------------------------------------------------

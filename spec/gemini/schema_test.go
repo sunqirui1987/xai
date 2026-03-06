@@ -26,15 +26,6 @@ import (
 
 // -----------------------------------------------------------------------------
 
-const (
-	genVideoSchema       = "[{NumberOfVideos 2} {OutputStgUri 4} {FPS 2} {DurationSeconds 2} {Seed 2} {AspectRatio 4} {Resolution 4} {PersonGeneration 4} {PubsubTopic 4} {NegativePrompt 4} {EnhancePrompt 1} {GenerateAudio 1} {LastFrame 5} {ReferenceImages 32775} {Mask 8} {CompressionQuality 4} {Image 5}]"
-	genImageSchema       = "[{OutputStgUri 4} {NegativePrompt 4} {NumberOfImages 2} {AspectRatio 4} {GuidanceScale 3} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeSafetyAttributes 1} {IncludeRAIReason 1} {Language 4} {OutputMIMEType 4} {OutputCompressionQuality 2} {AddWatermark 1} {ImageSize 4} {EnhancePrompt 1}]"
-	editImageSchema      = "[{OutputStgUri 4} {NegativePrompt 4} {NumberOfImages 2} {AspectRatio 4} {GuidanceScale 3} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeSafetyAttributes 1} {IncludeRAIReason 1} {Language 4} {OutputMIMEType 4} {OutputCompressionQuality 2} {AddWatermark 1} {EditMode 4} {BaseSteps 2} {References 32774}]"
-	recontextImageSchema = "[{NumberOfImages 2} {BaseSteps 2} {OutputStgUri 4} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {AddWatermark 1} {OutputMIMEType 4} {OutputCompressionQuality 2} {EnhancePrompt 1} {Prompt 4} {PersonImage 5} {ProductImages 32773}]"
-	segmentImageSchema   = "[{Mode 4} {MaxPredictions 2} {ConfidenceThreshold 3} {MaskDilation 3} {BinaryColorThreshold 3} {Prompt 4} {Image 5} {ScribbleImage 5}]"
-	upscaleImageSchema   = "[{OutputStgUri 4} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeRAIReason 1} {OutputMIMEType 4} {OutputCompressionQuality 2} {EnhanceInputImage 1} {ImagePreservationFactor 3} {Image 5} {Factor 4}]"
-)
-
 func TestSizeofImage(t *testing.T) {
 	if unsafe.Sizeof(genai.ProductImage{}) != unsafe.Sizeof((*genai.Image)(nil)) {
 		t.Fatal("size of genai.ProductImage is not equal to size of *genai.Image")
@@ -44,12 +35,24 @@ func TestSizeofImage(t *testing.T) {
 	}
 }
 
+// -----------------------------------------------------------------------------
+
+const (
+	genVideoSchema       = "[{NumberOfVideos 2} {OutputStgUri 4} {FPS 2} {DurationSeconds 2} {Seed 2} {AspectRatio 4} {Resolution 4} {PersonGeneration 4} {PubsubTopic 4} {NegativePrompt 4} {EnhancePrompt 1} {GenerateAudio 1} {LastFrame 5} {ReferenceImages 32775} {Mask 8} {CompressionQuality 4} {Image 5}]"
+	genImageSchema       = "[{OutputStgUri 4} {NegativePrompt 4} {NumberOfImages 2} {AspectRatio 4} {GuidanceScale 3} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeSafetyAttributes 1} {IncludeRAIReason 1} {Language 4} {OutputMIMEType 4} {OutputCompressionQuality 2} {AddWatermark 1} {ImageSize 4} {EnhancePrompt 1}]"
+	editImageSchema      = "[{OutputStgUri 4} {NegativePrompt 4} {NumberOfImages 2} {AspectRatio 4} {GuidanceScale 3} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeSafetyAttributes 1} {IncludeRAIReason 1} {Language 4} {OutputMIMEType 4} {OutputCompressionQuality 2} {AddWatermark 1} {EditMode 4} {BaseSteps 2} {References 32774}]"
+	recontextImageSchema = "[{NumberOfImages 2} {BaseSteps 2} {OutputStgUri 4} {Seed 2} {SafetyFilterLevel 4} {PersonGeneration 4} {AddWatermark 1} {OutputMIMEType 4} {OutputCompressionQuality 2} {EnhancePrompt 1} {Prompt 4} {PersonImage 5} {ProductImages 32773}]"
+	segmentImageSchema   = "[{Mode 4} {MaxPredictions 2} {ConfidenceThreshold 3} {MaskDilation 3} {BinaryColorThreshold 3} {Prompt 4} {Image 5} {ScribbleImage 5}]"
+	upscaleImageSchema   = "[{OutputStgUri 4} {SafetyFilterLevel 4} {PersonGeneration 4} {IncludeRAIReason 1} {OutputMIMEType 4} {OutputCompressionQuality 2} {EnhanceInputImage 1} {ImagePreservationFactor 3} {Image 5} {Factor 4}]"
+)
+
+type schemaTestCase struct {
+	v    any
+	want string
+}
+
 func TestInputSchema(t *testing.T) {
-	type testCase struct {
-		v    any
-		want string
-	}
-	cases := []testCase{
+	cases := []schemaTestCase{
 		{new(genVideo), genVideoSchema},
 		{new(genImage), genImageSchema},
 		{new(editImage), editImageSchema},
@@ -61,6 +64,32 @@ func TestInputSchema(t *testing.T) {
 		flds := fmt.Sprint(newInputSchema(c.v).Fields())
 		if flds != c.want {
 			t.Fatalf("TestInputSchema failed: %T - %v\n", c.v, flds)
+		}
+	}
+}
+
+const (
+	genVideoRespSchema       = "[{GeneratedVideos 32780} {RAIMediaFilteredCount 2} {RAIMediaFilteredReasons 32772}]"
+	genImageRespSchema       = "[{GeneratedImages 32778} {PositivePromptSafetyAttributes 13}]"
+	editImageRespSchema      = "[{GeneratedImages 32778}]"
+	recontextImageRespSchema = "[{GeneratedImages 32778}]"
+	segmentImageRespSchema   = "[{GeneratedMasks 32779}]"
+	upscaleImageRespSchema   = "[{GeneratedImages 32778}]"
+)
+
+func TestOutputSchema(t *testing.T) {
+	cases := []schemaTestCase{
+		{new(genai.GenerateVideosResponse), genVideoRespSchema},
+		{new(genai.GenerateImagesResponse), genImageRespSchema},
+		{new(genai.EditImageResponse), editImageRespSchema},
+		{new(genai.RecontextImageResponse), recontextImageRespSchema},
+		{new(genai.SegmentImageResponse), segmentImageRespSchema},
+		{new(genai.UpscaleImageResponse), upscaleImageRespSchema},
+	}
+	for _, c := range cases {
+		flds := fmt.Sprint(newInputSchema(c.v).Fields())
+		if flds != c.want {
+			t.Fatalf("TestOutputSchema failed: %T - %v\n", c.v, flds)
 		}
 	}
 }

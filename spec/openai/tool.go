@@ -56,14 +56,6 @@ func (p *Service) ToolDef(name string) xai.Tool {
 	return ret
 }
 
-func buildTools(tools []xai.ToolBase) []responses.ToolUnionParam {
-	ret := make([]responses.ToolUnionParam, len(tools))
-	for i, v := range tools {
-		v.UnderlyingAssignTo(&ret[i])
-	}
-	return ret
-}
-
 // -----------------------------------------------------------------------------
 
 type webSearchTool struct {

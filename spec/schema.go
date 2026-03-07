@@ -18,6 +18,8 @@ package xai
 
 import (
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"io"
 
 	"github.com/goplus/xai/types"
@@ -60,6 +62,19 @@ type StringEnum struct {
 
 func (*StringEnum) valueLimit() {}
 
+// Contains returns true if value is in the allowed Values.
+func (s *StringEnum) Contains(value string) bool {
+	if s == nil {
+		return false
+	}
+	for _, v := range s.Values {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
 // -----------------------------------------------------------------------------
 
 type Field struct {
@@ -80,6 +95,25 @@ type Restriction struct {
 
 	// Exclude defines the  parameters that should not exist together with the parameter.
 	Exclude []string
+}
+
+// ErrValueNotAllowed is returned when a param value is not in the allowed enum.
+var ErrValueNotAllowed = errors.New("xai: param value not in allowed values")
+
+// ValidateString checks if value is allowed when Limit is *StringEnum.
+// Returns nil if Limit is nil or not *StringEnum, or if value is in Values.
+func (r *Restriction) ValidateString(name, value string) error {
+	if r == nil || r.Limit == nil || value == "" {
+		return nil
+	}
+	enum, ok := r.Limit.(*StringEnum)
+	if !ok {
+		return nil
+	}
+	if enum.Contains(value) {
+		return nil
+	}
+	return fmt.Errorf("%w: param %q value %q not in %v", ErrValueNotAllowed, name, value, enum.Values)
 }
 
 // InputSchema represents the schema of `Params`.

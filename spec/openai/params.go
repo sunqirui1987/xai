@@ -44,7 +44,10 @@ func (p *params) Messages(msgs ...xai.MsgBuilder) xai.ParamBuilder {
 }
 
 func (p *params) Tools(tools ...xai.ToolBase) xai.ParamBuilder {
-	p.params.Tools = buildTools(tools)
+	p.params.Tools = make([]responses.ToolUnionParam, len(tools))
+	for i, v := range tools {
+		v.UnderlyingAssignTo(&p.params.Tools[i])
+	}
 	return p
 }
 

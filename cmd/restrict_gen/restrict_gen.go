@@ -98,12 +98,10 @@ func gen(ret *pkgRestriction) {
 	scope := out.Types.Scope()
 	for _, r := range ret.types {
 		typName := r.typ.Obj().Name()
-		log("==> restriction", typName)
 		name := "restriction_" + typName
 		out.NewVarDefs(scope).NewAndInit(func(cb *gogen.CodeBuilder) int {
 			flds := r.fields
 			for _, fld := range flds {
-				log("  ", fld.name, fld.stringEnum)
 				cb.Val(fld.name)
 				cb.Val(iLimit)
 				if vals := fld.stringEnum; len(vals) > 0 {

@@ -179,7 +179,7 @@ func newConf[T any](conf *T) config[T] {
 }
 
 func (p config[T]) Schema() xai.InputSchema {
-	return newInputSchema(p.conf)
+	return newInputSchema(p.conf, nil)
 }
 
 func (p config[T]) Params() xai.Params {
@@ -314,11 +314,7 @@ func kindOf(t reflect.Type) types.Kind {
 	}
 }
 
-func newInputSchema(params any) xai.InputSchema {
-	return &inputSchema{t: reflect.TypeOf(params).Elem()}
-}
-
-func newInputSchemaEx(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
+func newInputSchema(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
 	return &inputSchema{t: reflect.TypeOf(params).Elem(), restriction: restriction}
 }
 

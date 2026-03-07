@@ -125,7 +125,7 @@ type genVideo struct {
 }
 
 func (p *genVideo) InputSchema() xai.InputSchema {
-	return newInputSchemaEx(p, nil) // TODO(xsw): add restrictions
+	return newInputSchema(p, restriction_genVideo)
 }
 
 func (p *genVideo) Params() xai.Params {
@@ -153,7 +153,7 @@ type genImage struct {
 }
 
 func (p *genImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchema(p, restriction_genImage)
 }
 
 func (p *genImage) Params() xai.Params {
@@ -182,7 +182,7 @@ type editImage struct {
 }
 
 func (p *editImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchema(p, restriction_editImage)
 }
 
 func (p *editImage) Params() xai.Params {
@@ -210,7 +210,7 @@ type recontextImage struct {
 }
 
 func (p *recontextImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchema(p, restriction_recontextImage)
 }
 
 func (p *recontextImage) Params() xai.Params {
@@ -239,7 +239,7 @@ type upscaleImage struct {
 }
 
 func (p *upscaleImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchema(p, restriction_upscaleImage)
 }
 
 func (p *upscaleImage) Params() xai.Params {
@@ -267,7 +267,7 @@ type segmentImage struct {
 }
 
 func (p *segmentImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchema(p, restriction_segmentImage)
 }
 
 func (p *segmentImage) Params() xai.Params {

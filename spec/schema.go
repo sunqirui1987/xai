@@ -138,6 +138,8 @@ type Video interface {
 
 // -----------------------------------------------------------------------------
 
+// ReferenceImageType represents the type of a reference image, which defines how the
+// reference image will be used.
 type ReferenceImageType int
 
 const (
@@ -174,6 +176,8 @@ type GenVideoReferenceImage struct {
 }
 
 type GenVideoReferenceImages any
+
+// GenVideoMask is a reference image with a mask mode for video generation.
 type GenVideoMask any
 
 // -----------------------------------------------------------------------------

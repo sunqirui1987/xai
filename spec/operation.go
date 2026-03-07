@@ -101,17 +101,17 @@ type Operation interface {
 	// Params returns a `Params` that can be used to set parameters for the operation.
 	Params() Params
 
-	// Call starts the operation with the given prompt. It returns an `OperationResponse`
+	// Call starts the operation with the given options. It returns an `OperationResponse`
 	// that can be used to check the status of the operation and retrieve results when
 	// it's done.
-	Call(ctx context.Context, svc Service, prompt string, opts OptionBuilder) (OperationResponse, error)
+	Call(ctx context.Context, svc Service, opts OptionBuilder) (OperationResponse, error)
 }
 
-// Call is a helper function that calls an `Operation` with the given prompt and options,
-// and then waits for the operation to be done. It returns the results of the operation
-// once it's completed.
-func Call(ctx context.Context, svc Service, op Operation, prompt string, opts OptionBuilder, progress func(OperationResponse)) (ret Results, err error) {
-	resp, err := op.Call(ctx, svc, prompt, opts)
+// Call is a helper function that calls an `Operation` with the given options, and then
+// waits for the operation to be done. It returns the results of the operation once it's
+// completed.
+func Call(ctx context.Context, svc Service, op Operation, opts OptionBuilder, progress func(OperationResponse)) (ret Results, err error) {
+	resp, err := op.Call(ctx, svc, opts)
 	if err != nil {
 		return
 	}

@@ -132,11 +132,10 @@ func (p *genVideo) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *genVideo) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	p.Prompt = prompt
 	op, err := svc.(*Service).models.GenerateVideosFromSource(ctx, p.model, &p.GenerateVideosSource, &p.GenerateVideosConfig)
 	if err != nil {
 		return
@@ -147,6 +146,7 @@ func (p *genVideo) Call(ctx context.Context, svc xai.Service, prompt string, opt
 // -----------------------------------------------------------------------------
 
 type genImage struct {
+	Prompt string
 	genai.GenerateImagesConfig
 
 	model string
@@ -160,11 +160,11 @@ func (p *genImage) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *genImage) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.GenerateImages(ctx, p.model, prompt, &p.GenerateImagesConfig)
+	op, err := svc.(*Service).models.GenerateImages(ctx, p.model, p.Prompt, &p.GenerateImagesConfig)
 	if err != nil {
 		return
 	}
@@ -174,6 +174,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, prompt string, opt
 // -----------------------------------------------------------------------------
 
 type editImage struct {
+	Prompt     string
 	References []genai.ReferenceImage
 	genai.EditImageConfig
 
@@ -188,11 +189,11 @@ func (p *editImage) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *editImage) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.EditImage(ctx, p.model, prompt, p.References, &p.EditImageConfig)
+	op, err := svc.(*Service).models.EditImage(ctx, p.model, p.Prompt, p.References, &p.EditImageConfig)
 	if err != nil {
 		return
 	}
@@ -216,11 +217,10 @@ func (p *recontextImage) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *recontextImage) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *recontextImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	p.Prompt = prompt
 	op, err := svc.(*Service).models.RecontextImage(ctx, p.model, &p.RecontextImageSource, &p.RecontextImageConfig)
 	if err != nil {
 		return
@@ -246,7 +246,7 @@ func (p *upscaleImage) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
@@ -274,11 +274,10 @@ func (p *segmentImage) Params() xai.Params {
 	return newParams(p)
 }
 
-func (p *segmentImage) Call(ctx context.Context, svc xai.Service, prompt string, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
+func (p *segmentImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	p.Prompt = prompt
 	op, err := svc.(*Service).models.SegmentImage(ctx, p.model, &p.SegmentImageSource, &p.SegmentImageConfig)
 	if err != nil {
 		return

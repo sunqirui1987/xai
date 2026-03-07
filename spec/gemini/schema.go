@@ -240,7 +240,6 @@ var rewriteFlds = map[string]string{
 	"HTTPOptions":     "",
 	"SDKHTTPResponse": "",
 	"Labels":          "",
-	"Prompt":          "",
 	"OutputGCSURI":    "OutputStgUri",
 }
 

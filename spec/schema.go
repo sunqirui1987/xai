@@ -50,14 +50,46 @@ const (
 
 // -----------------------------------------------------------------------------
 
+type ValueLimit interface {
+	valueLimit()
+}
+
+type StringEnum struct {
+	Values []string
+}
+
+func (*StringEnum) valueLimit() {}
+
+// -----------------------------------------------------------------------------
+
 type Field struct {
 	Name string
 	Kind types.Kind
 }
 
+// Restriction represents the restrictions on a parameter. It defines the limit of the
+// parameter value, as well as the parameters that should or should not exist together
+// with the parameter.
+type Restriction struct {
+	// Limit defines the limit of the parameter value. It can be nil if there is
+	// no limit for the parameter.
+	Limit ValueLimit
+
+	// Include defines the parameters that should exist together with the parameter.
+	Include []string
+
+	// Exclude defines the  parameters that should not exist together with the parameter.
+	Exclude []string
+}
+
 // InputSchema represents the schema of `Params`.
 type InputSchema interface {
+	// Fields returns the list of fields defined in the schema.
 	Fields() []Field
+
+	// Restrict returns the `Restriction` for the parameter with the given name. It
+	// returns nil if there is no restriction for the parameter.
+	Restrict(name string) *Restriction
 }
 
 // Params represents the parameters that can be set.
@@ -182,6 +214,13 @@ type GenVideoMask any
 
 // -----------------------------------------------------------------------------
 
+// Generated represents a generated image or video. It can be one of the following
+// types:
+//   - OutputVideo: represents a generated video, which is returned by GenVideo action.
+//   - OutputImage: represents a generated image, which is returned by GenImage, EditImage,
+//     RecontextImage, UpscaleImage actions.
+//   - OutputImageMask: represents a generated image mask with detected entity labels,
+//     which is returned by SegmentImage action.
 type Generated interface {
 	generated()
 }
@@ -211,6 +250,8 @@ type OutputImage struct {
 	EnhancedPrompt string
 }
 
+func (*OutputImage) generated() {}
+
 // An entity representing the segmented area.
 type EntityLabel struct {
 	// Optional. The label of the segmented entity.
@@ -235,14 +276,14 @@ type OutputImageMask struct {
 	Labels EntityLabels
 }
 
+func (*OutputImageMask) generated() {}
+
 type OutputVideo struct {
 	// The output video data.
 	Video
 }
 
-func (*OutputImage) generated()     {}
-func (*OutputImageMask) generated() {}
-func (*OutputVideo) generated()     {}
+func (*OutputVideo) generated() {}
 
 // -----------------------------------------------------------------------------
 

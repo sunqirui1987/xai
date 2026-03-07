@@ -125,7 +125,7 @@ type genVideo struct {
 }
 
 func (p *genVideo) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return newInputSchemaEx(p, nil) // TODO(xsw): add restrictions
 }
 
 func (p *genVideo) Params() xai.Params {

@@ -225,11 +225,16 @@ func (p *Service) GenVideoReferenceImages(imgs ...xai.GenVideoReferenceImage) xa
 
 // -----------------------------------------------------------------------------
 
-type opInputSchema struct {
-	t reflect.Type
+type inputSchema struct {
+	t           reflect.Type
+	restriction map[string]*xai.Restriction
 }
 
-func (p *opInputSchema) Fields() []xai.Field {
+func (p *inputSchema) Restrict(name string) *xai.Restriction {
+	return p.restriction[name]
+}
+
+func (p *inputSchema) Fields() []xai.Field {
 	t := p.t
 	n := t.NumField()
 	fields := make([]xai.Field, 0, n)
@@ -310,7 +315,11 @@ func kindOf(t reflect.Type) types.Kind {
 }
 
 func newInputSchema(params any) xai.InputSchema {
-	return &opInputSchema{t: reflect.TypeOf(params).Elem()}
+	return &inputSchema{t: reflect.TypeOf(params).Elem()}
+}
+
+func newInputSchemaEx(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
+	return &inputSchema{t: reflect.TypeOf(params).Elem(), restriction: restriction}
 }
 
 // -----------------------------------------------------------------------------

@@ -189,6 +189,12 @@ type objectFactory interface {
 	ImageFromBase64(mime ImageType, base64 string) (Image, error)
 	ImageFromBytes(mime ImageType, data []byte) Image
 	ImageFromStgUri(mime ImageType, stgUri string) Image
+
+	VideoFrom(mime VideoType, src io.Reader) (Video, error)
+	VideoFromLocal(mime VideoType, fileName string) (Video, error)
+	VideoFromBase64(mime VideoType, base64 string) (Video, error)
+	VideoFromBytes(mime VideoType, data []byte) Video
+	VideoFromStgUri(mime VideoType, stgUri string) Video
 }
 
 // -----------------------------------------------------------------------------

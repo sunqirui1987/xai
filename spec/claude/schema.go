@@ -45,3 +45,25 @@ func (p *Service) ImageFromBase64(mime xai.ImageType, data string) (xai.Image, e
 }
 
 // -----------------------------------------------------------------------------
+
+func (p *Service) VideoFrom(mime xai.VideoType, src io.Reader) (xai.Video, error) {
+	panic("unsupported")
+}
+
+func (p *Service) VideoFromLocal(mime xai.VideoType, fileName string) (xai.Video, error) {
+	panic("unsupported")
+}
+
+func (p *Service) VideoFromStgUri(mime xai.VideoType, stgUri string) xai.Video {
+	panic("unsupported")
+}
+
+func (p *Service) VideoFromBytes(mime xai.VideoType, data []byte) xai.Video {
+	panic("unsupported")
+}
+
+func (p *Service) VideoFromBase64(mime xai.VideoType, data string) (xai.Video, error) {
+	panic("unsupported")
+}
+
+// -----------------------------------------------------------------------------

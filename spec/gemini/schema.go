@@ -111,6 +111,49 @@ func (p *Service) ImageFromBase64(mime xai.ImageType, data string) (xai.Image, e
 
 // -----------------------------------------------------------------------------
 
+func (p *Service) VideoFrom(mime xai.VideoType, src io.Reader) (xai.Video, error) {
+	data, err := io.ReadAll(src)
+	if err != nil {
+		return nil, err
+	}
+	return p.VideoFromBytes(mime, data), nil
+}
+
+func (p *Service) VideoFromLocal(mime xai.VideoType, fileName string) (xai.Video, error) {
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	return p.VideoFromBytes(mime, data), nil
+}
+
+func (p *Service) VideoFromStgUri(mime xai.VideoType, stgUri string) xai.Video {
+	return &video{
+		URI:      stgUri,
+		MIMEType: string(mime),
+	}
+}
+
+func (p *Service) VideoFromBytes(mime xai.VideoType, data []byte) xai.Video {
+	return &video{
+		VideoBytes: data,
+		MIMEType:   string(mime),
+	}
+}
+
+func (p *Service) VideoFromBase64(mime xai.VideoType, data string) (xai.Video, error) {
+	b, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	return &video{
+		VideoBytes: b,
+		MIMEType:   string(mime),
+	}, nil
+}
+
+// -----------------------------------------------------------------------------
+
 type opInputSchema struct {
 	t reflect.Type
 }

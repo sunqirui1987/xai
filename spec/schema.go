@@ -80,6 +80,15 @@ type Restriction struct {
 
 	// Exclude defines the  parameters that should not exist together with the parameter.
 	Exclude []string
+
+	// If OptionalIf is not nil, it indicates that the parameter is optional only if the
+	// parameters in OptionalIf exist together. If OptionalIf is nil, the parameter is
+	// either required or optional based on the Required field.
+	OptionalIf []string
+
+	// Required indicates whether the parameter is required.
+	// If a parameter is required, it must be provided by the user.
+	Required bool
 }
 
 // InputSchema represents the schema of `Params`.

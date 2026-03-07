@@ -18,27 +18,16 @@ package main
 
 import (
 	"fmt"
+	"go/ast"
 	"go/constant"
 	"go/token"
 	"go/types"
 	"os"
+	"strconv"
 
 	"github.com/goplus/gogen"
 	"golang.org/x/tools/go/packages"
 )
-
-// -----------------------------------------------------------------------------
-
-var geminiRewriteFlds = map[string]string{
-	"HTTPOptions":     "",
-	"SDKHTTPResponse": "",
-	"Labels":          "",
-	"OutputGCSURI":    "OutputStgUri",
-}
-
-var pkgRewriteFlds = map[string]map[string]string{
-	"github.com/goplus/xai/spec/gemini": geminiRewriteFlds,
-}
 
 // -----------------------------------------------------------------------------
 
@@ -170,9 +159,50 @@ func genStringEnum(ctx *genCtx, cb *gogen.CodeBuilder, fld *fieldRestriction) {
 
 // -----------------------------------------------------------------------------
 
+func decl(pkg *packages.Package, pos token.Pos) ast.Decl {
+	for _, file := range pkg.Syntax {
+		if file.Pos() <= pos && pos < file.End() {
+			for _, decl := range file.Decls {
+				if decl.Pos() <= pos && pos < decl.End() {
+					return decl
+				}
+			}
+		}
+	}
+	panic("decl not found")
+}
+
+func stringLit(v ast.Expr) string {
+	if lit, ok := v.(*ast.BasicLit); ok {
+		if lit.Kind == token.STRING {
+			if val, err := strconv.Unquote(lit.Value); err == nil {
+				return val
+			}
+		}
+	}
+	panic("stringLit failed")
+}
+
+func getRewriteFlds(pkg *packages.Package) map[string]string {
+	scope := pkg.Types.Scope()
+	if o := scope.Lookup("rewriteFlds"); o != nil {
+		def := decl(pkg, o.Pos()).(*ast.GenDecl).Specs[0].(*ast.ValueSpec)
+		val := def.Values[0].(*ast.CompositeLit)
+		flds := make(map[string]string, len(val.Elts))
+		for _, elt := range val.Elts {
+			kv := elt.(*ast.KeyValueExpr)
+			key := stringLit(kv.Key)
+			value := stringLit(kv.Value)
+			flds[key] = value
+		}
+		return flds
+	}
+	return nil
+}
+
 func collect(pkg *packages.Package) *pkgRestriction {
 	pkgPath := pkg.PkgPath
-	rewriteFlds := pkgRewriteFlds[pkgPath]
+	rewriteFlds := getRewriteFlds(pkg)
 	log("package", pkgPath, rewriteFlds)
 	scope := pkg.Types.Scope()
 	names := scope.Names()
@@ -217,7 +247,7 @@ func collectFields(ret *typeRestriction, t types.Type, rewriteFlds map[string]st
 					name = newName
 				}
 				typ := field.Type()
-				if skipType(typ) {
+				if false && skipType(typ) {
 					continue
 				}
 				field := &fieldRestriction{name: name, typ: typ}

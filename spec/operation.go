@@ -51,13 +51,6 @@ type Results interface {
 	At(i int) Generated
 }
 
-// Params represents the parameters that can be set for an `Operation`.
-type Params interface {
-	// Set sets a parameter for the operation. You can call this method multiple
-	// times to set multiple parameters.
-	Set(name string, val any) Params
-}
-
 // OperationResponse represents the response from an `Operation`. It provides methods
 // to check the status of the operation, retrieve results when it's done.
 type OperationResponse interface {

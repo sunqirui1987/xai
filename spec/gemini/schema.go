@@ -47,6 +47,10 @@ func (p *image) StgUri() string {
 	return p.GCSURI
 }
 
+func imageOf(v xai.Image) *genai.Image {
+	return (*genai.Image)(v.(*image))
+}
+
 // -----------------------------------------------------------------------------
 
 type video genai.Video
@@ -150,6 +154,48 @@ func (p *Service) VideoFromBase64(mime xai.VideoType, data string) (xai.Video, e
 		VideoBytes: b,
 		MIMEType:   string(mime),
 	}, nil
+}
+
+// -----------------------------------------------------------------------------
+
+type config[T any] struct {
+	conf *T
+}
+
+func newConf[T any](conf *T) config[T] {
+	return config[T]{conf: conf}
+}
+
+func (p config[T]) Schema() xai.InputSchema {
+	return newInputSchema(p.conf)
+}
+
+func (p config[T]) Params() xai.Params {
+	return newParams(p.conf)
+}
+
+func (p *Service) ReferenceImage(img xai.Image, id int32, typ xai.ReferenceImageType) (xai.ReferenceImage, xai.Configurable) {
+	in := imageOf(img)
+	switch typ {
+	case xai.RawReferenceImage:
+		return genai.NewRawReferenceImage(in, id), nil
+	case xai.MaskReferenceImage:
+		conf := new(genai.MaskReferenceConfig)
+		return genai.NewMaskReferenceImage(in, id, conf), newConf(conf)
+	case xai.ControlReferenceImage:
+		conf := new(genai.ControlReferenceConfig)
+		return genai.NewControlReferenceImage(in, id, conf), newConf(conf)
+	case xai.StyleReferenceImage:
+		conf := new(genai.StyleReferenceConfig)
+		return genai.NewStyleReferenceImage(in, id, conf), newConf(conf)
+	case xai.SubjectReferenceImage:
+		conf := new(genai.SubjectReferenceConfig)
+		return genai.NewSubjectReferenceImage(in, id, conf), newConf(conf)
+	case xai.ContentReferenceImage:
+		return genai.NewContentReferenceImage(in, id), nil
+	default:
+		panic("unknown reference image type")
+	}
 }
 
 // -----------------------------------------------------------------------------

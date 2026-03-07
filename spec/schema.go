@@ -55,8 +55,27 @@ type Field struct {
 	Kind types.Kind
 }
 
+// InputSchema represents the schema of `Params`.
 type InputSchema interface {
 	Fields() []Field
+}
+
+// Params represents the parameters that can be set.
+type Params interface {
+	// Set sets a parameter for the operation. You can call this method multiple
+	// times to set multiple parameters.
+	Set(name string, val any) Params
+}
+
+// Configurable represents an object that can be configured with parameters defined in
+// an InputSchema.
+type Configurable interface {
+	// Schema returns the schema of the configurable object, which defines the
+	// parameters that can be set for the object.
+	Schema() InputSchema
+
+	// Params returns a `Params` that can be used to set parameters for the object.
+	Params() Params
 }
 
 // -----------------------------------------------------------------------------
@@ -116,6 +135,22 @@ type Video interface {
 	Blob() BlobData  // may return nil if the video is represented by a storage URI
 	StgUri() string  // may return empty string if the video is represented by raw data
 }
+
+// -----------------------------------------------------------------------------
+
+type ReferenceImageType int
+
+const (
+	RawReferenceImage ReferenceImageType = iota
+	MaskReferenceImage
+	ControlReferenceImage
+	StyleReferenceImage
+	SubjectReferenceImage
+	ContentReferenceImage
+)
+
+// ReferenceImage is an interface that represents a generic reference image.
+type ReferenceImage any
 
 // -----------------------------------------------------------------------------
 
@@ -195,6 +230,8 @@ type objectFactory interface {
 	VideoFromBase64(mime VideoType, base64 string) (Video, error)
 	VideoFromBytes(mime VideoType, data []byte) Video
 	VideoFromStgUri(mime VideoType, stgUri string) Video
+
+	ReferenceImage(img Image, id int32, typ ReferenceImageType) (ReferenceImage, Configurable)
 }
 
 // -----------------------------------------------------------------------------

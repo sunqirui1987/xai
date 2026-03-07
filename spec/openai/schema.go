@@ -67,3 +67,9 @@ func (p *Service) VideoFromBase64(mime xai.VideoType, data string) (xai.Video, e
 }
 
 // -----------------------------------------------------------------------------
+
+func (p *Service) ReferenceImage(img xai.Image, id int32, typ xai.ReferenceImageType) (xai.ReferenceImage, xai.Configurable) {
+	panic("unsupported")
+}
+
+// -----------------------------------------------------------------------------

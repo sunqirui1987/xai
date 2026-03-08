@@ -68,9 +68,18 @@ func parseStreamMode(v string) bool {
 	return false
 }
 
+// DebugOptions ensures OpenAI examples always print equivalent curl commands.
+func DebugOptions(svc *openai.Service, opts xai.OptionBuilder) xai.OptionBuilder {
+	if opts == nil {
+		opts = svc.Options()
+	}
+	return openai.WithDebugCurl(opts, true)
+}
+
 // GenOrStream runs svc.Gen (non-stream) or svc.GenStream based on StreamMode().
 // For stream mode, prints each delta to stdout. For non-stream, returns full response.
 func GenOrStream(ctx context.Context, svc *openai.Service, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
+	opts = DebugOptions(svc, opts)
 	if StreamMode() {
 		return nil, runStream(ctx, svc, params, opts)
 	}

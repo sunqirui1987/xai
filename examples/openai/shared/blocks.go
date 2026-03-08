@@ -93,6 +93,15 @@ func printPart(prefix string, idx int, part xai.Part) {
 		fmt.Printf("%s  type: %q\n", prefix, "blob")
 		fmt.Printf("%s  display_name: %q\n", prefix, blob.DisplayName)
 		fmt.Printf("%s  mime: %q\n", prefix, blob.MIME)
+		if blob.BlobData != nil {
+			if b64 := blob.BlobData.Base64(); b64 != "" {
+				preview := b64
+				if len(preview) > 64 {
+					preview = preview[:64] + "..."
+				}
+				fmt.Printf("%s  data_base64: %q\n", prefix, preview)
+			}
+		}
 		fmt.Printf("%s}\n", prefix)
 		return
 	}

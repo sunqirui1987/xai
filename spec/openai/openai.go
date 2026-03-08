@@ -100,6 +100,28 @@ func NewV1(ctx context.Context, uri string) (xai.Service, error) {
 	}, nil
 }
 
+// NewV1WithQiniu creates a Service with Qiniu-specific extensions (e.g. images in
+// chat completion responses). Use this for Qiniu API (api.qnaigc.com) when the
+// model can return images (e.g. gemini-2.5-flash-image).
+func NewV1WithQiniu(ctx context.Context, uri string) (xai.Service, error) {
+	query, opts, err := parseURI(uri, SchemeV1)
+	if err != nil {
+		return nil, err
+	}
+	base := ""
+	if b := query["base"]; len(b) > 0 {
+		base = b[0]
+	}
+	key := ""
+	if k := query["key"]; len(k) > 0 {
+		key = k[0]
+	}
+	return &Service{
+		provider: newQiniuV1Provider(opts, base, key),
+		tools:    make(tools),
+	}, nil
+}
+
 func parseURI(uri, scheme string) (url.Values, []option.RequestOption, error) {
 	query, err := url.ParseQuery(strings.TrimPrefix(uri, scheme+":"))
 	if err != nil {

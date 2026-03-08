@@ -59,7 +59,7 @@ func NewService(token string, opts ...ClientOption) *openai.Service {
 		opt(cfg)
 	}
 	uri := openai.SchemeV1 + ":base=" + cfg.baseURL + "&key=" + url.QueryEscape(token)
-	svc, err := openai.NewV1(context.Background(), uri)
+	svc, err := openai.NewV1WithQiniu(context.Background(), uri)
 	if err != nil {
 		panic("qiniu: " + err.Error())
 	}

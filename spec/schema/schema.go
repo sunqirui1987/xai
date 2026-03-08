@@ -101,3 +101,38 @@ func (PointerAsOpt) SetBasicOpt(fld, v reflect.Value, vkind reflect.Kind) (ok bo
 }
 
 // -----------------------------------------------------------------------------
+
+type resultsAdapter interface {
+	FromUnderlying(val any, kind reflect.Kind) any
+}
+
+type Results[T resultsAdapter] struct {
+	v reflect.Value
+}
+
+func NewResults[T resultsAdapter](ret any) *Results[T] {
+	return &Results[T]{v: reflect.ValueOf(ret).Elem()}
+}
+
+func (p *Results[T]) XGo_Attr(name string) any {
+	fld := p.v.FieldByName(name)
+	kind := fld.Kind()
+	if kind >= reflect.Int && kind <= reflect.Int64 {
+		return fld.Int()
+	}
+	switch kind {
+	case reflect.String:
+		return fld.String()
+	case reflect.Bool:
+		return fld.Bool()
+	case reflect.Float32, reflect.Float64:
+		return fld.Float()
+	case reflect.Invalid:
+		return nil
+	}
+	// convert a underlying-layer object to spec-layer
+	var adapter T
+	return adapter.FromUnderlying(fld.Interface(), kind)
+}
+
+// -----------------------------------------------------------------------------

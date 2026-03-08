@@ -321,11 +321,11 @@ func newInputSchema(params any, restriction map[string]*xai.Restriction) xai.Inp
 
 // -----------------------------------------------------------------------------
 
-type paramsAdapter struct {
+type adapter struct {
 	schema.PointerAsOpt
 }
 
-func (paramsAdapter) ToUnderlying(val any) any {
+func (adapter) ToUnderlying(val any) any {
 	switch v := val.(type) {
 	case *image:
 		return (*genai.Image)(v)
@@ -337,37 +337,7 @@ func (paramsAdapter) ToUnderlying(val any) any {
 	return val
 }
 
-func newParams(params any) *schema.Params[paramsAdapter] {
-	return schema.NewParams[paramsAdapter](params)
-}
-
-// -----------------------------------------------------------------------------
-
-type opResults struct {
-	v reflect.Value
-}
-
-func results(resp any) opResults {
-	return opResults{v: reflect.ValueOf(resp).Elem()}
-}
-
-func (p *opResults) XGo_Attr(name string) any {
-	fld := p.v.FieldByName(name)
-	kind := fld.Kind()
-	if kind >= reflect.Int && kind <= reflect.Int64 {
-		return fld.Int()
-	}
-	switch kind {
-	case reflect.String:
-		return fld.String()
-	case reflect.Bool:
-		return fld.Bool()
-	case reflect.Float32, reflect.Float64:
-		return fld.Float()
-	case reflect.Invalid:
-		return nil
-	}
-	v := fld.Interface()
+func (adapter) FromUnderlying(v any, kind reflect.Kind) any {
 	if kind == reflect.Pointer {
 		switch v := v.(type) {
 		case *genai.SafetyAttributes:
@@ -375,6 +345,16 @@ func (p *opResults) XGo_Attr(name string) any {
 		}
 	}
 	return v
+}
+
+func newParams(params any) *schema.Params[adapter] {
+	return schema.NewParams[adapter](params)
+}
+
+type opResults = schema.Results[adapter]
+
+func results(resp any) opResults {
+	return *schema.NewResults[adapter](resp)
 }
 
 // -----------------------------------------------------------------------------

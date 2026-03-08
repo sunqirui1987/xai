@@ -179,11 +179,11 @@ func newConf[T any](conf *T) config[T] {
 }
 
 func (p config[T]) Schema() xai.InputSchema {
-	return newInputSchema(p.conf)
+	return NewInputSchema(p.conf)
 }
 
 func (p config[T]) Params() xai.Params {
-	return newParams(p.conf)
+	return NewParams(p.conf)
 }
 
 func (p *Service) ReferenceImage(img xai.Image, id int32, typ xai.ReferenceImageType) (xai.ReferenceImage, xai.Configurable) {
@@ -292,7 +292,7 @@ func kindOf(t reflect.Type) types.Kind {
 		kind = t.Kind()
 	}
 	switch kind {
-	case reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return types.Int
 	case reflect.Float32, reflect.Float64:
 		return types.Float
@@ -314,11 +314,14 @@ func kindOf(t reflect.Type) types.Kind {
 	}
 }
 
-func newInputSchema(params any) xai.InputSchema {
+// NewInputSchema creates an InputSchema by reflecting on the struct fields of params.
+// params must be a pointer to a struct.
+func NewInputSchema(params any) xai.InputSchema {
 	return &inputSchema{t: reflect.TypeOf(params).Elem()}
 }
 
-func newInputSchemaEx(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
+// NewInputSchemaEx creates an InputSchema with field restrictions.
+func NewInputSchemaEx(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
 	return &inputSchema{t: reflect.TypeOf(params).Elem(), restriction: restriction}
 }
 
@@ -328,7 +331,8 @@ type opParams struct {
 	v reflect.Value
 }
 
-func newParams(params any) *opParams {
+// NewParams creates a reflection-based Params setter for the given struct pointer.
+func NewParams(params any) xai.Params {
 	return &opParams{v: reflect.ValueOf(params).Elem()}
 }
 

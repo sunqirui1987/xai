@@ -27,30 +27,38 @@ import (
 // -----------------------------------------------------------------------------
 
 func (p *Service) Actions(model xai.Model) []xai.Action {
-	return []xai.Action{
-		xai.GenVideo,
-		xai.GenImage,
-		xai.EditImage,
-		xai.RecontextImage,
-		xai.SegmentImage,
-		xai.UpscaleImage,
+	if p.backend == nil {
+		return nil
 	}
+	return p.backend.Actions(model)
+}
+
+func (p *Service) supportsAction(model xai.Model, action xai.Action) bool {
+	for _, item := range p.Actions(model) {
+		if item == action {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operation, err error) {
+	if !p.supportsAction(model, action) {
+		return nil, xai.ErrNotFound
+	}
 	switch action {
 	case xai.GenVideo:
-		op = &genVideo{}
+		op = &genVideo{model: string(model)}
 	case xai.GenImage:
-		op = &genImage{}
+		op = &genImage{model: string(model)}
 	case xai.EditImage:
-		op = &editImage{}
+		op = &editImage{model: string(model)}
 	case xai.RecontextImage:
-		op = &recontextImage{}
+		op = &recontextImage{model: string(model)}
 	case xai.SegmentImage:
-		op = &segmentImage{}
+		op = &segmentImage{model: string(model)}
 	case xai.UpscaleImage:
-		op = &upscaleImage{}
+		op = &upscaleImage{model: string(model)}
 	default:
 		err = xai.ErrNotFound
 	}
@@ -59,39 +67,30 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 
 // -----------------------------------------------------------------------------
 
-type simpleResp[T xai.Results] struct {
-	ret T
+// syncResponse is a synchronous (already-done) OperationResponse.
+type syncResponse struct {
+	r xai.Results
 }
 
-func (p simpleResp[T]) Done() bool {
-	return true
+func (p syncResponse) Done() bool { return true }
+func (p syncResponse) Sleep()     {}
+func (p syncResponse) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
+	return p, nil
+}
+func (p syncResponse) Results() xai.Results { return p.r }
+func (p syncResponse) TaskID() string       { return "" }
+
+// NewSyncResponse wraps results into a synchronous OperationResponse (Done() == true).
+func NewSyncResponse(ret xai.Results) xai.OperationResponse {
+	return syncResponse{ret}
 }
 
-func (p simpleResp[T]) Sleep() {
-	panic("unreachable")
+func newGenImageResp(ret any, items []*genai.GeneratedImage) xai.OperationResponse {
+	return NewSyncResponse(&outputImages{results(ret), items})
 }
 
-func (p simpleResp[T]) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
-	panic("unreachable")
-}
-
-func (p simpleResp[T]) Results() xai.Results {
-	return p.ret
-}
-
-func (p simpleResp[T]) TaskID() string {
-	return ""
-}
-
-type genImageResp = simpleResp[*outputImages]
-type genImageMaskResp = simpleResp[*outputImageMasks]
-
-func newGenImageResp(ret any, items []*genai.GeneratedImage) genImageResp {
-	return genImageResp{ret: &outputImages{results(ret), items}}
-}
-
-func newGenImageMaskResp(ret any, items []*genai.GeneratedImageMask) genImageMaskResp {
-	return genImageMaskResp{ret: &outputImageMasks{results(ret), items}}
+func newGenImageMaskResp(ret any, items []*genai.GeneratedImageMask) xai.OperationResponse {
+	return NewSyncResponse(&outputImageMasks{results(ret), items})
 }
 
 // -----------------------------------------------------------------------------
@@ -109,7 +108,7 @@ func (p genVideoResp) Sleep() {
 }
 
 func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
-	op, err := svc.(*Service).ops.GetVideosOperation(ctx, p.op, nil)
+	op, err := svc.(*Service).backend.GetVideosOperation(ctx, p.op, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -136,18 +135,18 @@ type genVideo struct {
 }
 
 func (p *genVideo) InputSchema() xai.InputSchema {
-	return newInputSchemaEx(p, nil) // TODO(xsw): add restrictions
+	return NewInputSchemaEx(p, nil) // TODO(xsw): add restrictions
 }
 
 func (p *genVideo) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.GenerateVideosFromSource(ctx, p.model, &p.GenerateVideosSource, &p.GenerateVideosConfig)
+	op, err := svc.(*Service).backend.GenerateVideosFromSource(ctx, p.model, &p.GenerateVideosSource, &p.GenerateVideosConfig)
 	if err != nil {
 		return
 	}
@@ -164,18 +163,18 @@ type genImage struct {
 }
 
 func (p *genImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return NewInputSchema(p)
 }
 
 func (p *genImage) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.GenerateImages(ctx, p.model, p.Prompt, &p.GenerateImagesConfig)
+	op, err := svc.(*Service).backend.GenerateImages(ctx, p.model, p.Prompt, &p.GenerateImagesConfig)
 	if err != nil {
 		return
 	}
@@ -193,18 +192,18 @@ type editImage struct {
 }
 
 func (p *editImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return NewInputSchema(p)
 }
 
 func (p *editImage) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.EditImage(ctx, p.model, p.Prompt, p.References, &p.EditImageConfig)
+	op, err := svc.(*Service).backend.EditImage(ctx, p.model, p.Prompt, p.References, &p.EditImageConfig)
 	if err != nil {
 		return
 	}
@@ -221,18 +220,18 @@ type recontextImage struct {
 }
 
 func (p *recontextImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return NewInputSchema(p)
 }
 
 func (p *recontextImage) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *recontextImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.RecontextImage(ctx, p.model, &p.RecontextImageSource, &p.RecontextImageConfig)
+	op, err := svc.(*Service).backend.RecontextImage(ctx, p.model, &p.RecontextImageSource, &p.RecontextImageConfig)
 	if err != nil {
 		return
 	}
@@ -250,18 +249,18 @@ type upscaleImage struct {
 }
 
 func (p *upscaleImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return NewInputSchema(p)
 }
 
 func (p *upscaleImage) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.UpscaleImage(ctx, p.model, p.Image, p.Factor, &p.UpscaleImageConfig)
+	op, err := svc.(*Service).backend.UpscaleImage(ctx, p.model, p.Image, p.Factor, &p.UpscaleImageConfig)
 	if err != nil {
 		return
 	}
@@ -278,18 +277,18 @@ type segmentImage struct {
 }
 
 func (p *segmentImage) InputSchema() xai.InputSchema {
-	return newInputSchema(p)
+	return NewInputSchema(p)
 }
 
 func (p *segmentImage) Params() xai.Params {
-	return newParams(p)
+	return NewParams(p)
 }
 
 func (p *segmentImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (resp xai.OperationResponse, err error) {
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).models.SegmentImage(ctx, p.model, &p.SegmentImageSource, &p.SegmentImageConfig)
+	op, err := svc.(*Service).backend.SegmentImage(ctx, p.model, &p.SegmentImageSource, &p.SegmentImageConfig)
 	if err != nil {
 		return
 	}

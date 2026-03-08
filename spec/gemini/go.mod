@@ -27,3 +27,5 @@ require (
 )
 
 replace github.com/goplus/xai => ../../
+
+replace github.com/goplus/xai/spec/openai => ../openai

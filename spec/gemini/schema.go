@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	xai "github.com/goplus/xai/spec"
+	"github.com/goplus/xai/spec/schema"
 	"github.com/goplus/xai/types"
 	"google.golang.org/genai"
 )
@@ -320,62 +321,24 @@ func newInputSchema(params any, restriction map[string]*xai.Restriction) xai.Inp
 
 // -----------------------------------------------------------------------------
 
-type opParams struct {
-	v reflect.Value
+type paramsAdapter struct {
+	schema.PointerAsOpt
 }
 
-func newParams(params any) *opParams {
-	return &opParams{v: reflect.ValueOf(params).Elem()}
-}
-
-func (p *opParams) Set(name string, val any) xai.Params {
-	fld := p.v.FieldByName(name)
-	if fld.CanSet() {
-		if val == nil {
-			fld.SetZero()
-			return p
-		}
-		switch v := val.(type) {
-		case *image:
-			val = (*genai.Image)(v)
-		case *video:
-			val = (*genai.Video)(v)
-		case *xai.SafetyAttributes:
-			val = safetyAttributesOf(v)
-		}
-		v := reflect.ValueOf(val)
-		vkind := v.Kind()
-		if vkind >= reflect.Bool && vkind <= reflect.Float64 {
-			if fld.Kind() == reflect.Pointer {
-				pv := reflect.New(fld.Type().Elem())
-				setBasic(pv.Elem(), v, vkind)
-				fld.Set(pv)
-			} else {
-				setBasic(fld, v, vkind)
-			}
-		} else {
-			fld.Set(v)
-		}
-	} else {
-		log.Println("cannot set field:", name)
+func (paramsAdapter) ToUnderlying(val any) any {
+	switch v := val.(type) {
+	case *image:
+		return (*genai.Image)(v)
+	case *video:
+		return (*genai.Video)(v)
+	case *xai.SafetyAttributes:
+		return safetyAttributesOf(v)
 	}
-	return p
+	return val
 }
 
-func setBasic(fld, v reflect.Value, vkind reflect.Kind) {
-	if vkind >= reflect.Int && vkind <= reflect.Int64 {
-		if kind := fld.Kind(); kind >= reflect.Int && kind <= reflect.Int64 {
-			fld.SetInt(v.Int())
-		} else {
-			fld.SetFloat(float64(v.Int()))
-		}
-	} else if vkind >= reflect.Float32 && vkind <= reflect.Float64 {
-		fld.SetFloat(v.Float())
-	} else if vkind == reflect.Bool {
-		fld.SetBool(v.Bool())
-	} else {
-		fld.Set(v)
-	}
+func newParams(params any) *schema.Params[paramsAdapter] {
+	return schema.NewParams[paramsAdapter](params)
 }
 
 // -----------------------------------------------------------------------------
@@ -391,15 +354,18 @@ func results(resp any) opResults {
 func (p *opResults) XGo_Attr(name string) any {
 	fld := p.v.FieldByName(name)
 	kind := fld.Kind()
-	if kind == reflect.Invalid {
-		return nil
-	}
 	if kind >= reflect.Int && kind <= reflect.Int64 {
 		return fld.Int()
-	} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
-		return fld.Float()
-	} else if kind == reflect.Bool {
+	}
+	switch kind {
+	case reflect.String:
+		return fld.String()
+	case reflect.Bool:
 		return fld.Bool()
+	case reflect.Float32, reflect.Float64:
+		return fld.Float()
+	case reflect.Invalid:
+		return nil
 	}
 	v := fld.Interface()
 	if kind == reflect.Pointer {

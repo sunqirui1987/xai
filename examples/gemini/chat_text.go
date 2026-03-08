@@ -26,14 +26,14 @@ import (
 )
 
 func runChatText() {
-	svc := oshared.NewService("")
+	service := oshared.NewService("")
 	ctx := context.Background()
 
-	params := svc.Params().
+	params := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
-		Messages(svc.UserMsg().Text("画一只可爱的橘猫，坐在窗台上看着夕阳"))
+		Messages(service.UserMsg().Text("画一只可爱的橘猫，坐在窗台上看着夕阳"))
 
-	resp, err := oshared.GenOrStream(ctx, svc, params, nil)
+	resp, err := oshared.GenOrStream(ctx, service, params, nil)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

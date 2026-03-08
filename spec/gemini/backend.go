@@ -24,6 +24,12 @@ import (
 	"google.golang.org/genai"
 )
 
+// BackendService is implemented by services that have a gemini Backend.
+type BackendService interface {
+	xai.Service
+	Backend() Backend
+}
+
 // Backend defines the transport/backend capabilities needed by spec/gemini.
 // Implementations can be based on google.golang.org/genai, OpenAI-compatible
 // gateways, or any vendor-specific protocol.

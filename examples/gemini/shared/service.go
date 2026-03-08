@@ -24,7 +24,6 @@ import (
 	"sync/atomic"
 
 	xai "github.com/goplus/xai/spec"
-	"github.com/goplus/xai/spec/gemini"
 	"github.com/goplus/xai/spec/gemini/provider/qiniu"
 )
 
@@ -41,8 +40,11 @@ func init() {
 	streamMode.Store(parseStreamMode(os.Getenv("STREAM")))
 }
 
-// NewService creates a gemini.Service backed by qiniu provider.
-func NewService(token string) *gemini.Service {
+// NewService creates a Gemini-capable xai.Service backed by Qiniu provider.
+//
+// The returned value is intentionally typed as xai.Service so callers depend on
+// the portable service contract instead of a concrete provider type.
+func NewService(token string) xai.Service {
 	if token == "" {
 		token = os.Getenv("QINIU_API_KEY")
 	}
@@ -67,17 +69,18 @@ func parseStreamMode(v string) bool {
 	return false
 }
 
-// GenOrStream runs svc.Gen (non-stream) or svc.GenStream based on StreamMode().
+// GenOrStream runs service.Gen (non-stream) or service.GenStream based on
+// StreamMode().
 // For stream mode, prints each delta to stdout. For non-stream, returns full response.
-func GenOrStream(ctx context.Context, svc *gemini.Service, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
+func GenOrStream(ctx context.Context, service xai.Service, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
 	if StreamMode() {
-		return nil, runStream(ctx, svc, params, opts)
+		return nil, runStream(ctx, service, params, opts)
 	}
-	return svc.Gen(ctx, params, opts)
+	return service.Gen(ctx, params, opts)
 }
 
-func runStream(ctx context.Context, svc *gemini.Service, params xai.ParamBuilder, opts xai.OptionBuilder) error {
-	iter := svc.GenStream(ctx, params, opts)
+func runStream(ctx context.Context, service xai.Service, params xai.ParamBuilder, opts xai.OptionBuilder) error {
+	iter := service.GenStream(ctx, params, opts)
 	chunk := 0
 	for resp, err := range iter {
 		if err != nil {

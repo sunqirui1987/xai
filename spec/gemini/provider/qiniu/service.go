@@ -18,39 +18,28 @@ package qiniu
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/gemini"
 )
 
 const (
-	// Scheme is the xai URI scheme used by this provider.
-	Scheme = "gemini-qiniu"
-
-	// DefaultBaseURL is the default Qiniu API base URL (domestic).
-	DefaultBaseURL = "https://api.qnaigc.com/v1/"
-	// OverseasBaseURL is the overseas API base URL.
+	Scheme          = "gemini-qiniu"
+	DefaultBaseURL  = "https://api.qnaigc.com/v1/"
 	OverseasBaseURL = "https://openai.sufy.com/v1/"
 )
 
-// ClientOption configures the Qiniu Gemini provider.
 type ClientOption func(*clientConfig)
 
 type clientConfig struct {
-	baseURL        string
-	httpClient     HTTPDoer
-	maxRetries     int
-	baseRetryDelay time.Duration
-	debugLog       bool
-	logger         *log.Logger
+	baseURL       string
+	httpClient    HTTPDoer
+	clientOptions *clientOptions
 }
 
-// WithBaseURL sets the base URL for API requests.
 func WithBaseURL(baseURL string) ClientOption {
 	return func(c *clientConfig) {
 		c.baseURL = normalizeBaseURL(baseURL)
@@ -65,63 +54,33 @@ func normalizeBaseURL(baseURL string) string {
 	return strings.TrimSuffix(baseURL, "/") + "/"
 }
 
-// WithHTTPClient sets a custom HTTP client for provider HTTP calls.
 func WithHTTPClient(cli HTTPDoer) ClientOption {
 	return func(c *clientConfig) {
 		c.httpClient = cli
 	}
 }
 
-// WithRetry enables retry with exponential backoff for retryable errors.
-// maxRetries is the maximum number of retry attempts (0 means no retry).
-// baseDelay is the initial delay between retries (doubles with each attempt).
-func WithRetry(maxRetries int, baseDelay time.Duration) ClientOption {
-	return func(c *clientConfig) {
-		c.maxRetries = maxRetries
-		c.baseRetryDelay = baseDelay
-	}
+// Service provides Gemini capabilities over Qiniu's OpenAI-compatible endpoints.
+// It embeds gemini.Service to reuse all Gemini capabilities (Gen, GenStream, Operations,
+// ImageFrom*, VideoFrom*, ReferenceImage, etc.) with a Qiniu-specific backend.
+type Service struct {
+	*gemini.Service
 }
 
-// WithDebugLog enables debug logging for HTTP requests and responses.
-func WithDebugLog(enabled bool) ClientOption {
-	return func(c *clientConfig) {
-		c.debugLog = enabled
-	}
-}
-
-// WithLogger sets a custom logger for debug output.
-func WithLogger(logger *log.Logger) ClientOption {
-	return func(c *clientConfig) {
-		c.logger = logger
-	}
-}
-
-// NewBackend creates a Qiniu backend implementation for spec/gemini.
-func NewBackend(token string, opts ...ClientOption) gemini.Backend {
+// NewService creates a Qiniu Gemini service.
+func NewService(token string, opts ...ClientOption) *Service {
 	if token == "" {
 		token = os.Getenv("QINIU_API_KEY")
 	}
-	cfg := &clientConfig{
-		baseURL:        DefaultBaseURL,
-		debugLog:       true,
-		logger:         log.Default(),
-		baseRetryDelay: DefaultBaseRetryDelay,
-	}
+	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
-	clientOpts := &clientOptions{
-		maxRetries:     cfg.maxRetries,
-		baseRetryDelay: cfg.baseRetryDelay,
-		debugLog:       cfg.debugLog,
-		logger:         cfg.logger,
+	cli := newClient(token, cfg.baseURL, cfg.httpClient, cfg.clientOptions)
+	backend := newBackend(cli)
+	return &Service{
+		Service: gemini.NewWithBackend(backend),
 	}
-	return newBackend(newClient(token, cfg.baseURL, cfg.httpClient, clientOpts))
-}
-
-// NewService creates a spec/gemini Service using Qiniu backend.
-func NewService(token string, opts ...ClientOption) *gemini.Service {
-	return gemini.NewWithBackend(NewBackend(token, opts...))
 }
 
 func parseURIQuery(uri string) (url.Values, error) {
@@ -135,20 +94,8 @@ func parseURIQuery(uri string) (url.Values, error) {
 }
 
 // Register registers the Qiniu-backed Gemini service with xai under scheme "gemini-qiniu".
-//
-// After calling Register(token), xai.New(ctx, "gemini-qiniu:") returns the provider service.
-// URI overrides are supported:
-//   - gemini-qiniu:key=xxx
-//   - gemini-qiniu:base=https://openai.sufy.com/v1/&key=xxx
-//
-// Token can be empty to use QINIU_API_KEY from environment.
 func Register(token string, opts ...ClientOption) {
-	cfg := &clientConfig{
-		baseURL:        DefaultBaseURL,
-		debugLog:       true,
-		logger:         log.Default(),
-		baseRetryDelay: DefaultBaseRetryDelay,
-	}
+	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -179,13 +126,6 @@ func Register(token string, opts ...ClientOption) {
 		if cfg.httpClient != nil {
 			providerOpts = append(providerOpts, WithHTTPClient(cfg.httpClient))
 		}
-		if cfg.maxRetries > 0 {
-			providerOpts = append(providerOpts, WithRetry(cfg.maxRetries, cfg.baseRetryDelay))
-		}
-		if cfg.logger != nil {
-			providerOpts = append(providerOpts, WithLogger(cfg.logger))
-		}
-		providerOpts = append(providerOpts, WithDebugLog(cfg.debugLog))
 		return NewService(tok, providerOpts...), nil
 	})
 }

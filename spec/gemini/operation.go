@@ -108,7 +108,7 @@ func (p genVideoResp) Sleep() {
 }
 
 func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
-	op, err := svc.(*Service).backend.GetVideosOperation(ctx, p.op, nil)
+	op, err := svc.(BackendService).Backend().GetVideosOperation(ctx, p.op, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.GenerateVideosFromSource(ctx, p.model, &p.GenerateVideosSource, &p.GenerateVideosConfig)
+	op, err := svc.(BackendService).Backend().GenerateVideosFromSource(ctx, p.model, &p.GenerateVideosSource, &p.GenerateVideosConfig)
 	if err != nil {
 		return
 	}
@@ -174,7 +174,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.GenerateImages(ctx, p.model, p.Prompt, &p.GenerateImagesConfig)
+	op, err := svc.(BackendService).Backend().GenerateImages(ctx, p.model, p.Prompt, &p.GenerateImagesConfig)
 	if err != nil {
 		return
 	}
@@ -203,7 +203,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBu
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.EditImage(ctx, p.model, p.Prompt, p.References, &p.EditImageConfig)
+	op, err := svc.(BackendService).Backend().EditImage(ctx, p.model, p.Prompt, p.References, &p.EditImageConfig)
 	if err != nil {
 		return
 	}
@@ -231,7 +231,7 @@ func (p *recontextImage) Call(ctx context.Context, svc xai.Service, opts xai.Opt
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.RecontextImage(ctx, p.model, &p.RecontextImageSource, &p.RecontextImageConfig)
+	op, err := svc.(BackendService).Backend().RecontextImage(ctx, p.model, &p.RecontextImageSource, &p.RecontextImageConfig)
 	if err != nil {
 		return
 	}
@@ -260,7 +260,7 @@ func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.UpscaleImage(ctx, p.model, p.Image, p.Factor, &p.UpscaleImageConfig)
+	op, err := svc.(BackendService).Backend().UpscaleImage(ctx, p.model, p.Image, p.Factor, &p.UpscaleImageConfig)
 	if err != nil {
 		return
 	}
@@ -288,7 +288,7 @@ func (p *segmentImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if v, ok := opts.(*options); ok {
 		p.HTTPOptions = &v.opts
 	}
-	op, err := svc.(*Service).backend.SegmentImage(ctx, p.model, &p.SegmentImageSource, &p.SegmentImageConfig)
+	op, err := svc.(BackendService).Backend().SegmentImage(ctx, p.model, &p.SegmentImageSource, &p.SegmentImageConfig)
 	if err != nil {
 		return
 	}

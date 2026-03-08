@@ -26,10 +26,11 @@ import (
 )
 
 func runImageGenerate() {
-	svc := shared.NewService("")
+	// shared.NewService returns xai.Service; examples only rely on interface APIs.
+	service := shared.NewService("")
 	ctx := context.Background()
 
-	op, err := svc.Operation(xai.Model(shared.ModelFlashImage), xai.GenImage)
+	op, err := service.Operation(xai.Model(shared.ModelFlashImage), xai.GenImage)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -38,7 +39,7 @@ func runImageGenerate() {
 		Set("Prompt", "梦幻森林中的精灵小屋，魔法光芒环绕").
 		Set("AspectRatio", "16:9")
 
-	resp, err := op.Call(ctx, svc, nil)
+	resp, err := op.Call(ctx, service, nil)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

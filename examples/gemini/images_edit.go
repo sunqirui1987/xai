@@ -27,26 +27,27 @@ import (
 )
 
 func runImageEdit() {
-	svc := shared.NewService("")
+	// shared.NewService returns xai.Service; examples only rely on interface APIs.
+	service := shared.NewService("")
 	ctx := context.Background()
 
-	op, err := svc.Operation(xai.Model(shared.ModelFlashImage), xai.EditImage)
+	op, err := service.Operation(xai.Model(shared.ModelFlashImage), xai.EditImage)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	img1 := svc.ImageFromStgUri(xai.ImageJPEG, DemoURLs.RunningMan)
-	img2 := svc.ImageFromStgUri(xai.ImageJPEG, DemoURLs.Lawn)
-	ref1, _ := svc.ReferenceImage(img1, 0, xai.RawReferenceImage)
-	ref2, _ := svc.ReferenceImage(img2, 1, xai.StyleReferenceImage)
+	img1 := service.ImageFromStgUri(xai.ImageJPEG, DemoURLs.RunningMan)
+	img2 := service.ImageFromStgUri(xai.ImageJPEG, DemoURLs.Lawn)
+	ref1, _ := service.ReferenceImage(img1, 0, xai.RawReferenceImage)
+	ref2, _ := service.ReferenceImage(img2, 1, xai.StyleReferenceImage)
 
 	op.Params().
 		Set("Prompt", "结合这两张图片的风格，生成一张新的艺术作品").
 		Set("References", []genai.ReferenceImage{ref1.(genai.ReferenceImage), ref2.(genai.ReferenceImage)}).
 		Set("AspectRatio", "16:9")
 
-	resp, err := op.Call(ctx, svc, nil)
+	resp, err := op.Call(ctx, service, nil)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

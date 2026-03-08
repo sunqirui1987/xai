@@ -26,17 +26,17 @@ import (
 )
 
 func runChatImage() {
-	svc := oshared.NewService("")
+	service := oshared.NewService("")
 	ctx := context.Background()
 
-	params := svc.Params().
+	params := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
-		Messages(svc.UserMsg().
+		Messages(service.UserMsg().
 			Text("将这张图片转换为水彩画风格，保持主体清晰").
 			ImageURL(xai.ImageJPEG, DemoURLs.ImageToImage),
 		)
 
-	resp, err := oshared.GenOrStream(ctx, svc, params, nil)
+	resp, err := oshared.GenOrStream(ctx, service, params, nil)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

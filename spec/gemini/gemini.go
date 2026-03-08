@@ -50,6 +50,11 @@ func (p *Service) Features() xai.Feature {
 	return xai.FeatureGen | xai.FeatureGenStream | xai.FeatureOperation
 }
 
+// Backend returns the underlying Backend implementation.
+func (p *Service) Backend() Backend {
+	return p.backend
+}
+
 func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {
 	model, contents, config := buildGenParams(params)
 	buildOptions(config, opts)

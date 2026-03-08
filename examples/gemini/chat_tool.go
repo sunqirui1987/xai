@@ -26,16 +26,16 @@ import (
 )
 
 func runChatTool() {
-	svc := oshared.NewService("")
+	service := oshared.NewService("")
 	ctx := context.Background()
 
-	weatherTool := svc.ToolDef("get_weather").Description("Get weather by city")
-	firstParams := svc.Params().
+	weatherTool := service.ToolDef("get_weather").Description("Get weather by city")
+	firstParams := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
 		Tools(weatherTool).
-		Messages(svc.UserMsg().Text("上海今天天气如何？如果能查天气请调用工具"))
+		Messages(service.UserMsg().Text("上海今天天气如何？如果能查天气请调用工具"))
 
-	firstResp, err := svc.Gen(ctx, firstParams, oshared.DebugOptions(svc, nil))
+	firstResp, err := service.Gen(ctx, firstParams, oshared.DebugOptions(service, nil))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -57,20 +57,20 @@ func runChatTool() {
 		"condition":   "Sunny",
 	}
 
-	finalParams := svc.Params().
+	finalParams := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
 		Tools(weatherTool).
 		Messages(
-			svc.UserMsg().Text("上海今天天气如何？如果能查天气请调用工具"),
+			service.UserMsg().Text("上海今天天气如何？如果能查天气请调用工具"),
 			firstResp.At(0).ToMsg(),
-			svc.UserMsg().ToolResult(xai.ToolResult{
+			service.UserMsg().ToolResult(xai.ToolResult{
 				ID:     toolUse.ID,
 				Name:   toolUse.Name,
 				Result: toolResult,
 			}),
 		)
 
-	finalResp, err := svc.Gen(ctx, finalParams, oshared.DebugOptions(svc, nil))
+	finalResp, err := service.Gen(ctx, finalParams, oshared.DebugOptions(service, nil))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

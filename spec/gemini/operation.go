@@ -21,6 +21,7 @@ import (
 	"time"
 
 	xai "github.com/goplus/xai/spec"
+	"github.com/goplus/xai/spec/util"
 	"google.golang.org/genai"
 )
 
@@ -59,39 +60,6 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 
 // -----------------------------------------------------------------------------
 
-type simpleResp[T xai.Results] struct {
-	ret T
-}
-
-func (p simpleResp[T]) Done() bool {
-	return true
-}
-
-func (p simpleResp[T]) Sleep() {
-	panic("unreachable")
-}
-
-func (p simpleResp[T]) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
-	panic("unreachable")
-}
-
-func (p simpleResp[T]) Results() xai.Results {
-	return p.ret
-}
-
-type genImageResp = simpleResp[*outputImages]
-type genImageMaskResp = simpleResp[*outputImageMasks]
-
-func newGenImageResp(ret any, items []*genai.GeneratedImage) genImageResp {
-	return genImageResp{ret: &outputImages{results(ret), items}}
-}
-
-func newGenImageMaskResp(ret any, items []*genai.GeneratedImageMask) genImageMaskResp {
-	return genImageMaskResp{ret: &outputImageMasks{results(ret), items}}
-}
-
-// -----------------------------------------------------------------------------
-
 type genVideoResp struct {
 	op *genai.GenerateVideosOperation
 }
@@ -114,7 +82,7 @@ func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.Operation
 
 func (p genVideoResp) Results() xai.Results {
 	ret := p.op.Response
-	return &outputVideos{results(ret), ret.GeneratedVideos}
+	return util.NewVideoResults[*genai.GeneratedVideo, adapter](ret, ret.GeneratedVideos)
 }
 
 type genVideo struct {
@@ -168,7 +136,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -197,7 +165,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBu
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -225,7 +193,7 @@ func (p *recontextImage) Call(ctx context.Context, svc xai.Service, opts xai.Opt
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -254,7 +222,7 @@ func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -282,7 +250,7 @@ func (p *segmentImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if err != nil {
 		return
 	}
-	return newGenImageMaskResp(op, op.GeneratedMasks), nil
+	return util.NewImageMaskResultsResp[*genai.GeneratedImageMask, adapter](op, op.GeneratedMasks), nil
 }
 
 // -----------------------------------------------------------------------------

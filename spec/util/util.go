@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package schema
+package util
 
 import (
+	"context"
 	"log"
 	"reflect"
 
@@ -133,6 +134,128 @@ func (p *Results[T]) XGo_Attr(name string) any {
 	// convert a underlying-layer object to spec-layer
 	var adapter T
 	return adapter.FromUnderlying(fld.Interface(), kind)
+}
+
+// -----------------------------------------------------------------------------
+
+type imageResultsAdpt[U any] interface {
+	resultsAdapter
+	OutputImageFrom(image U) *xai.OutputImage
+}
+
+type ImageResults[U any, T imageResultsAdpt[U]] struct {
+	Results[T]
+	items []U
+}
+
+func NewImageResults[U any, T imageResultsAdpt[U]](ret any, items []U) *ImageResults[U, T] {
+	return &ImageResults[U, T]{
+		Results: Results[T]{v: reflect.ValueOf(ret).Elem()},
+		items:   items,
+	}
+}
+
+func (p *ImageResults[U, T]) Len() int {
+	return len(p.items)
+}
+
+func (p *ImageResults[U, T]) At(i int) xai.Generated {
+	var adapter T
+	return adapter.OutputImageFrom(p.items[i])
+}
+
+// -----------------------------------------------------------------------------
+
+type imageMaskResultsAdpt[U any] interface {
+	resultsAdapter
+	OutputImageMaskFrom(image U) *xai.OutputImageMask
+}
+
+func NewImageMaskResults[U any, T imageMaskResultsAdpt[U]](ret any, items []U) *ImageMaskResults[U, T] {
+	return &ImageMaskResults[U, T]{
+		Results: Results[T]{v: reflect.ValueOf(ret).Elem()},
+		items:   items,
+	}
+}
+
+type ImageMaskResults[U any, T imageMaskResultsAdpt[U]] struct {
+	Results[T]
+	items []U
+}
+
+func (p *ImageMaskResults[U, T]) Len() int {
+	return len(p.items)
+}
+
+func (p *ImageMaskResults[U, T]) At(i int) xai.Generated {
+	var adapter T
+	return adapter.OutputImageMaskFrom(p.items[i])
+}
+
+// -----------------------------------------------------------------------------
+
+type videoResultsAdpt[U any] interface {
+	resultsAdapter
+	OutputVideoFrom(video U) *xai.OutputVideo
+}
+
+type VideoResults[U any, T videoResultsAdpt[U]] struct {
+	Results[T]
+	items []U
+}
+
+func NewVideoResults[U any, T videoResultsAdpt[U]](ret any, items []U) *VideoResults[U, T] {
+	return &VideoResults[U, T]{
+		Results: Results[T]{v: reflect.ValueOf(ret).Elem()},
+		items:   items,
+	}
+}
+
+func (p *VideoResults[U, T]) Len() int {
+	return len(p.items)
+}
+
+func (p *VideoResults[U, T]) At(i int) xai.Generated {
+	var adapter T
+	return adapter.OutputVideoFrom(p.items[i])
+}
+
+// -----------------------------------------------------------------------------
+
+type SimpleResp[T xai.Results] struct {
+	ret T
+}
+
+func NewSimpleResp[T xai.Results](v T) SimpleResp[T] {
+	return SimpleResp[T]{v}
+}
+
+func NewImageResultsResp[U any, T imageResultsAdpt[U]](ret any, items []U) SimpleResp[*ImageResults[U, T]] {
+	return NewSimpleResp(NewImageResults[U, T](ret, items))
+}
+
+func NewImageMaskResultsResp[U any, T imageMaskResultsAdpt[U]](ret any, items []U) SimpleResp[*ImageMaskResults[U, T]] {
+	return NewSimpleResp(NewImageMaskResults[U, T](ret, items))
+}
+
+func NewVideoResultsResp[U any, T videoResultsAdpt[U]](ret any, items []U) SimpleResp[*VideoResults[U, T]] {
+	return NewSimpleResp(NewVideoResults[U, T](ret, items))
+}
+
+func (p SimpleResp[T]) Done() bool {
+	return true
+}
+
+func (p SimpleResp[T]) Sleep() {
+	panic("unreachable")
+}
+
+func (p SimpleResp[T]) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
+	panic("unreachable")
+}
+
+func (p SimpleResp[T]) Results() xai.Results {
+	return p.ret
 }
 
 // -----------------------------------------------------------------------------

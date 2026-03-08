@@ -24,7 +24,7 @@ import (
 	"reflect"
 
 	xai "github.com/goplus/xai/spec"
-	"github.com/goplus/xai/spec/schema"
+	"github.com/goplus/xai/spec/util"
 	"github.com/goplus/xai/types"
 	"google.golang.org/genai"
 )
@@ -322,7 +322,7 @@ func newInputSchema(params any, restriction map[string]*xai.Restriction) xai.Inp
 // -----------------------------------------------------------------------------
 
 type adapter struct {
-	schema.PointerAsOpt
+	util.PointerAsOpt
 }
 
 func (adapter) ToUnderlying(val any) any {
@@ -347,47 +347,7 @@ func (adapter) FromUnderlying(v any, kind reflect.Kind) any {
 	return v
 }
 
-func newParams(params any) *schema.Params[adapter] {
-	return schema.NewParams[adapter](params)
-}
-
-type opResults = schema.Results[adapter]
-
-func results(resp any) opResults {
-	return *schema.NewResults[adapter](resp)
-}
-
-// -----------------------------------------------------------------------------
-
-type outputVideos struct {
-	opResults
-	items []*genai.GeneratedVideo
-}
-
-func (p *outputVideos) Len() int {
-	return len(p.items)
-}
-
-func (p *outputVideos) At(i int) xai.Generated {
-	item := p.items[i]
-	return &xai.OutputVideo{
-		Video: (*video)(item.Video),
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type outputImages struct {
-	opResults
-	items []*genai.GeneratedImage
-}
-
-func (p *outputImages) Len() int {
-	return len(p.items)
-}
-
-func (p *outputImages) At(i int) xai.Generated {
-	item := p.items[i]
+func (adapter) OutputImageFrom(item *genai.GeneratedImage) *xai.OutputImage {
 	return &xai.OutputImage{
 		Image:             (*image)(item.Image),
 		RAIFilteredReason: item.RAIFilteredReason,
@@ -395,6 +355,25 @@ func (p *outputImages) At(i int) xai.Generated {
 		EnhancedPrompt:    item.EnhancedPrompt,
 	}
 }
+
+func (adapter) OutputImageMaskFrom(item *genai.GeneratedImageMask) *xai.OutputImageMask {
+	return &xai.OutputImageMask{
+		Mask:   (*image)(item.Mask),
+		Labels: entityLabels(item.Labels),
+	}
+}
+
+func (adapter) OutputVideoFrom(item *genai.GeneratedVideo) *xai.OutputVideo {
+	return &xai.OutputVideo{
+		Video: (*video)(item.Video),
+	}
+}
+
+func newParams(params any) *util.Params[adapter] {
+	return util.NewParams[adapter](params)
+}
+
+// -----------------------------------------------------------------------------
 
 func safetyAttributes(v *genai.SafetyAttributes) *xai.SafetyAttributes {
 	if v == nil {
@@ -413,25 +392,6 @@ func safetyAttributesOf(v *xai.SafetyAttributes) *genai.SafetyAttributes {
 	return &genai.SafetyAttributes{
 		Categories: v.Categories,
 		Scores:     v.Scores,
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type outputImageMasks struct {
-	opResults
-	items []*genai.GeneratedImageMask
-}
-
-func (p *outputImageMasks) Len() int {
-	return len(p.items)
-}
-
-func (p *outputImageMasks) At(i int) xai.Generated {
-	item := p.items[i]
-	return &xai.OutputImageMask{
-		Mask:   (*image)(item.Mask),
-		Labels: entityLabels(item.Labels),
 	}
 }
 

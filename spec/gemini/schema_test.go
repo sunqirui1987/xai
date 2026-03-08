@@ -61,7 +61,7 @@ func TestInputSchema(t *testing.T) {
 		{new(upscaleImage), upscaleImageSchema},
 	}
 	for _, c := range cases {
-		flds := fmt.Sprint(NewInputSchema(c.v).Fields())
+		flds := fmt.Sprint(newInputSchema(c.v, nil).Fields())
 		if flds != c.want {
 			t.Fatalf("TestInputSchema failed: %T - %v\n", c.v, flds)
 		}
@@ -87,7 +87,7 @@ func TestOutputSchema(t *testing.T) {
 		{new(genai.UpscaleImageResponse), upscaleImageRespSchema},
 	}
 	for _, c := range cases {
-		flds := fmt.Sprint(NewInputSchema(c.v).Fields())
+		flds := fmt.Sprint(newInputSchema(c.v, nil).Fields())
 		if flds != c.want {
 			t.Fatalf("TestOutputSchema failed: %T - %v\n", c.v, flds)
 		}
@@ -111,7 +111,7 @@ func TestConfSchema(t *testing.T) {
 		{new(genai.SubjectReferenceConfig), subjectSchema},
 	}
 	for _, c := range cases {
-		flds := fmt.Sprint(NewInputSchema(c.v).Fields())
+		flds := fmt.Sprint(newInputSchema(c.v, nil).Fields())
 		if flds != c.want {
 			t.Fatalf("TestConfSchema failed: %T - %v\n", c.v, flds)
 		}

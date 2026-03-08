@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	xai "github.com/goplus/xai/spec"
+	"github.com/goplus/xai/spec/util"
 	"github.com/goplus/xai/types"
 	"google.golang.org/genai"
 )
@@ -179,11 +180,11 @@ func newConf[T any](conf *T) config[T] {
 }
 
 func (p config[T]) Schema() xai.InputSchema {
-	return NewInputSchema(p.conf)
+	return newInputSchema(p.conf, nil)
 }
 
 func (p config[T]) Params() xai.Params {
-	return NewParams(p.conf)
+	return newParams(p.conf)
 }
 
 func (p *Service) ReferenceImage(img xai.Image, id int32, typ xai.ReferenceImageType) (xai.ReferenceImage, xai.Configurable) {
@@ -314,102 +315,40 @@ func kindOf(t reflect.Type) types.Kind {
 	}
 }
 
+func newInputSchema(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
+	return &inputSchema{t: reflect.TypeOf(params).Elem(), restriction: restriction}
+}
+
 // NewInputSchema creates an InputSchema by reflecting on the struct fields of params.
 // params must be a pointer to a struct.
 func NewInputSchema(params any) xai.InputSchema {
-	return &inputSchema{t: reflect.TypeOf(params).Elem()}
+	return newInputSchema(params, nil)
 }
 
 // NewInputSchemaEx creates an InputSchema with field restrictions.
 func NewInputSchemaEx(params any, restriction map[string]*xai.Restriction) xai.InputSchema {
-	return &inputSchema{t: reflect.TypeOf(params).Elem(), restriction: restriction}
+	return newInputSchema(params, restriction)
 }
 
 // -----------------------------------------------------------------------------
 
-type opParams struct {
-	v reflect.Value
+type adapter struct {
+	util.PointerAsOpt
 }
 
-// NewParams creates a reflection-based Params setter for the given struct pointer.
-func NewParams(params any) xai.Params {
-	return &opParams{v: reflect.ValueOf(params).Elem()}
-}
-
-func (p *opParams) Set(name string, val any) xai.Params {
-	fld := p.v.FieldByName(name)
-	if fld.CanSet() {
-		if val == nil {
-			fld.SetZero()
-			return p
-		}
-		switch v := val.(type) {
-		case *image:
-			val = (*genai.Image)(v)
-		case *video:
-			val = (*genai.Video)(v)
-		case *xai.SafetyAttributes:
-			val = safetyAttributesOf(v)
-		}
-		v := reflect.ValueOf(val)
-		vkind := v.Kind()
-		if vkind >= reflect.Bool && vkind <= reflect.Float64 {
-			if fld.Kind() == reflect.Pointer {
-				pv := reflect.New(fld.Type().Elem())
-				setBasic(pv.Elem(), v, vkind)
-				fld.Set(pv)
-			} else {
-				setBasic(fld, v, vkind)
-			}
-		} else {
-			fld.Set(v)
-		}
-	} else {
-		log.Println("cannot set field:", name)
+func (adapter) ToUnderlying(val any) any {
+	switch v := val.(type) {
+	case *image:
+		return (*genai.Image)(v)
+	case *video:
+		return (*genai.Video)(v)
+	case *xai.SafetyAttributes:
+		return safetyAttributesOf(v)
 	}
-	return p
+	return val
 }
 
-func setBasic(fld, v reflect.Value, vkind reflect.Kind) {
-	if vkind >= reflect.Int && vkind <= reflect.Int64 {
-		if kind := fld.Kind(); kind >= reflect.Int && kind <= reflect.Int64 {
-			fld.SetInt(v.Int())
-		} else {
-			fld.SetFloat(float64(v.Int()))
-		}
-	} else if vkind >= reflect.Float32 && vkind <= reflect.Float64 {
-		fld.SetFloat(v.Float())
-	} else if vkind == reflect.Bool {
-		fld.SetBool(v.Bool())
-	} else {
-		fld.Set(v)
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type opResults struct {
-	v reflect.Value
-}
-
-func results(resp any) opResults {
-	return opResults{v: reflect.ValueOf(resp).Elem()}
-}
-
-func (p *opResults) XGo_Attr(name string) any {
-	fld := p.v.FieldByName(name)
-	kind := fld.Kind()
-	if kind == reflect.Invalid {
-		return nil
-	}
-	if kind >= reflect.Int && kind <= reflect.Int64 {
-		return fld.Int()
-	} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
-		return fld.Float()
-	} else if kind == reflect.Bool {
-		return fld.Bool()
-	}
-	v := fld.Interface()
+func (adapter) FromUnderlying(v any, kind reflect.Kind) any {
 	if kind == reflect.Pointer {
 		switch v := v.(type) {
 		case *genai.SafetyAttributes:
@@ -419,37 +358,7 @@ func (p *opResults) XGo_Attr(name string) any {
 	return v
 }
 
-// -----------------------------------------------------------------------------
-
-type outputVideos struct {
-	opResults
-	items []*genai.GeneratedVideo
-}
-
-func (p *outputVideos) Len() int {
-	return len(p.items)
-}
-
-func (p *outputVideos) At(i int) xai.Generated {
-	item := p.items[i]
-	return &xai.OutputVideo{
-		Video: (*video)(item.Video),
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type outputImages struct {
-	opResults
-	items []*genai.GeneratedImage
-}
-
-func (p *outputImages) Len() int {
-	return len(p.items)
-}
-
-func (p *outputImages) At(i int) xai.Generated {
-	item := p.items[i]
+func (adapter) OutputImageFrom(item *genai.GeneratedImage) *xai.OutputImage {
 	return &xai.OutputImage{
 		Image:             (*image)(item.Image),
 		RAIFilteredReason: item.RAIFilteredReason,
@@ -457,6 +366,30 @@ func (p *outputImages) At(i int) xai.Generated {
 		EnhancedPrompt:    item.EnhancedPrompt,
 	}
 }
+
+func (adapter) OutputImageMaskFrom(item *genai.GeneratedImageMask) *xai.OutputImageMask {
+	return &xai.OutputImageMask{
+		Mask:   (*image)(item.Mask),
+		Labels: entityLabels(item.Labels),
+	}
+}
+
+func (adapter) OutputVideoFrom(item *genai.GeneratedVideo) *xai.OutputVideo {
+	return &xai.OutputVideo{
+		Video: (*video)(item.Video),
+	}
+}
+
+func newParams(params any) *util.Params[adapter] {
+	return util.NewParams[adapter](params)
+}
+
+// NewParams creates a reflection-based Params setter for the given struct pointer.
+func NewParams(params any) xai.Params {
+	return newParams(params)
+}
+
+// -----------------------------------------------------------------------------
 
 func safetyAttributes(v *genai.SafetyAttributes) *xai.SafetyAttributes {
 	if v == nil {
@@ -475,25 +408,6 @@ func safetyAttributesOf(v *xai.SafetyAttributes) *genai.SafetyAttributes {
 	return &genai.SafetyAttributes{
 		Categories: v.Categories,
 		Scores:     v.Scores,
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type outputImageMasks struct {
-	opResults
-	items []*genai.GeneratedImageMask
-}
-
-func (p *outputImageMasks) Len() int {
-	return len(p.items)
-}
-
-func (p *outputImageMasks) At(i int) xai.Generated {
-	item := p.items[i]
-	return &xai.OutputImageMask{
-		Mask:   (*image)(item.Mask),
-		Labels: entityLabels(item.Labels),
 	}
 }
 

@@ -23,35 +23,61 @@ import (
 	"os"
 )
 
-var modelOrder = []string{"call-sync", "kling-v1", "kling-v1-5", "kling-v2", "kling-v2-new", "kling-v2-1", "kling-image-o1"}
+var demos = map[string]func(){
+	"call-sync":      RunCallSyncExample,
+	"kling-v1":       RunKlingV1,
+	"kling-v1-5":     RunKlingV15,
+	"kling-v2":       RunKlingV2,
+	"kling-v2-new":   RunKlingV2New,
+	"kling-v2-1":     RunKlingV21,
+	"kling-image-o1": RunKlingImageO1,
+}
+
+var demoOrder = []string{
+	"call-sync", "kling-v1", "kling-v1-5", "kling-v2", "kling-v2-new", "kling-v2-1", "kling-image-o1",
+}
 
 func main() {
-	models := map[string]func(){
-		"call-sync":      RunCallSyncExample,
-		"kling-v1":       RunKlingV1,
-		"kling-v1-5":     RunKlingV15,
-		"kling-v2":       RunKlingV2,
-		"kling-v2-new":   RunKlingV2New,
-		"kling-v2-1":     RunKlingV21,
-		"kling-image-o1": RunKlingImageO1,
-	}
-
 	args := os.Args[1:]
 	if len(args) == 0 {
 		fmt.Println("Kling image examples (by model):")
-		for _, name := range modelOrder {
-			fmt.Println("\n---", name, "---")
-			models[name]()
+		fmt.Println("  Set QINIU_API_KEY for real API calls")
+		fmt.Println()
+		for _, name := range demoOrder {
+			fmt.Printf("  %-15s %s\n", name, demoDesc(name))
 		}
+		fmt.Println()
+		fmt.Println("Usage: go run ./examples/kling/images [demo]")
 		return
 	}
 
 	for _, arg := range args {
-		if fn, ok := models[arg]; ok {
+		if fn, ok := demos[arg]; ok {
 			fmt.Println("---", arg, "---")
 			fn()
 		} else {
-			fmt.Printf("Unknown model: %s\nAvailable: %v\n", arg, modelOrder)
+			fmt.Printf("Unknown demo: %s\nAvailable: %v\n", arg, demoOrder)
 		}
+	}
+}
+
+func demoDesc(name string) string {
+	switch name {
+	case "call-sync":
+		return "Call sync API"
+	case "kling-v1":
+		return "Kling v1 model"
+	case "kling-v1-5":
+		return "Kling v1.5 model"
+	case "kling-v2":
+		return "Kling v2 model"
+	case "kling-v2-new":
+		return "Kling v2 new model"
+	case "kling-v2-1":
+		return "Kling v2.1 model"
+	case "kling-image-o1":
+		return "Kling image o1 model"
+	default:
+		return ""
 	}
 }

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	xai "github.com/goplus/xai/spec"
+	"github.com/goplus/xai/spec/util"
 	"google.golang.org/genai"
 )
 
@@ -67,30 +68,9 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 
 // -----------------------------------------------------------------------------
 
-// syncResponse is a synchronous (already-done) OperationResponse.
-type syncResponse struct {
-	r xai.Results
-}
-
-func (p syncResponse) Done() bool { return true }
-func (p syncResponse) Sleep()     {}
-func (p syncResponse) Retry(ctx context.Context, svc xai.Service) (xai.OperationResponse, error) {
-	return p, nil
-}
-func (p syncResponse) Results() xai.Results { return p.r }
-func (p syncResponse) TaskID() string       { return "" }
-
 // NewSyncResponse wraps results into a synchronous OperationResponse (Done() == true).
 func NewSyncResponse(ret xai.Results) xai.OperationResponse {
-	return syncResponse{ret}
-}
-
-func newGenImageResp(ret any, items []*genai.GeneratedImage) xai.OperationResponse {
-	return NewSyncResponse(&outputImages{results(ret), items})
-}
-
-func newGenImageMaskResp(ret any, items []*genai.GeneratedImageMask) xai.OperationResponse {
-	return NewSyncResponse(&outputImageMasks{results(ret), items})
+	return util.NewSimpleResp(ret)
 }
 
 // -----------------------------------------------------------------------------
@@ -117,7 +97,7 @@ func (p genVideoResp) Retry(ctx context.Context, svc xai.Service) (xai.Operation
 
 func (p genVideoResp) Results() xai.Results {
 	ret := p.op.Response
-	return &outputVideos{results(ret), ret.GeneratedVideos}
+	return util.NewVideoResults[*genai.GeneratedVideo, adapter](ret, ret.GeneratedVideos)
 }
 
 func (p genVideoResp) TaskID() string {
@@ -135,7 +115,7 @@ type genVideo struct {
 }
 
 func (p *genVideo) InputSchema() xai.InputSchema {
-	return NewInputSchemaEx(p, nil) // TODO(xsw): add restrictions
+	return newInputSchema(p, restriction_genVideo)
 }
 
 func (p *genVideo) Params() xai.Params {
@@ -163,7 +143,7 @@ type genImage struct {
 }
 
 func (p *genImage) InputSchema() xai.InputSchema {
-	return NewInputSchema(p)
+	return newInputSchema(p, restriction_genImage)
 }
 
 func (p *genImage) Params() xai.Params {
@@ -178,7 +158,7 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -192,7 +172,7 @@ type editImage struct {
 }
 
 func (p *editImage) InputSchema() xai.InputSchema {
-	return NewInputSchema(p)
+	return newInputSchema(p, restriction_editImage)
 }
 
 func (p *editImage) Params() xai.Params {
@@ -207,7 +187,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBu
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -220,7 +200,7 @@ type recontextImage struct {
 }
 
 func (p *recontextImage) InputSchema() xai.InputSchema {
-	return NewInputSchema(p)
+	return newInputSchema(p, restriction_recontextImage)
 }
 
 func (p *recontextImage) Params() xai.Params {
@@ -235,7 +215,7 @@ func (p *recontextImage) Call(ctx context.Context, svc xai.Service, opts xai.Opt
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -249,7 +229,7 @@ type upscaleImage struct {
 }
 
 func (p *upscaleImage) InputSchema() xai.InputSchema {
-	return NewInputSchema(p)
+	return newInputSchema(p, restriction_upscaleImage)
 }
 
 func (p *upscaleImage) Params() xai.Params {
@@ -264,7 +244,7 @@ func (p *upscaleImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if err != nil {
 		return
 	}
-	return newGenImageResp(op, op.GeneratedImages), nil
+	return util.NewImageResultsResp[*genai.GeneratedImage, adapter](op, op.GeneratedImages), nil
 }
 
 // -----------------------------------------------------------------------------
@@ -277,7 +257,7 @@ type segmentImage struct {
 }
 
 func (p *segmentImage) InputSchema() xai.InputSchema {
-	return NewInputSchema(p)
+	return newInputSchema(p, restriction_segmentImage)
 }
 
 func (p *segmentImage) Params() xai.Params {
@@ -292,7 +272,7 @@ func (p *segmentImage) Call(ctx context.Context, svc xai.Service, opts xai.Optio
 	if err != nil {
 		return
 	}
-	return newGenImageMaskResp(op, op.GeneratedMasks), nil
+	return util.NewImageMaskResultsResp[*genai.GeneratedImageMask, adapter](op, op.GeneratedMasks), nil
 }
 
 // -----------------------------------------------------------------------------

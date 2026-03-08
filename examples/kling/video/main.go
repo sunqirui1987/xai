@@ -23,34 +23,58 @@ import (
 	"os"
 )
 
-var modelOrder = []string{"kling-v2-1", "kling-v2-5-turbo", "kling-v2-6", "kling-video-o1", "kling-v3", "kling-v3-omni"}
+var demos = map[string]func(){
+	"kling-v2-1":       RunKlingV21,
+	"kling-v2-5-turbo": RunKlingV25Turbo,
+	"kling-v2-6":       RunKlingV26,
+	"kling-video-o1":   RunKlingVideoO1,
+	"kling-v3":         RunKlingV3,
+	"kling-v3-omni":    RunKlingV3Omni,
+}
+
+var demoOrder = []string{
+	"kling-v2-1", "kling-v2-5-turbo", "kling-v2-6", "kling-video-o1", "kling-v3", "kling-v3-omni",
+}
 
 func main() {
-	models := map[string]func(){
-		"kling-v2-1":       RunKlingV21,
-		"kling-v2-5-turbo": RunKlingV25Turbo,
-		"kling-v2-6":       RunKlingV26,
-		"kling-video-o1":   RunKlingVideoO1,
-		"kling-v3":         RunKlingV3,
-		"kling-v3-omni":    RunKlingV3Omni,
-	}
-
 	args := os.Args[1:]
 	if len(args) == 0 {
 		fmt.Println("Kling video examples (by model):")
-		for _, name := range modelOrder {
-			fmt.Println("\n---", name, "---")
-			models[name]()
+		fmt.Println("  Set QINIU_API_KEY for real API calls")
+		fmt.Println()
+		for _, name := range demoOrder {
+			fmt.Printf("  %-15s %s\n", name, demoDesc(name))
 		}
+		fmt.Println()
+		fmt.Println("Usage: go run ./examples/kling/video [demo]")
 		return
 	}
 
 	for _, arg := range args {
-		if fn, ok := models[arg]; ok {
+		if fn, ok := demos[arg]; ok {
 			fmt.Println("---", arg, "---")
 			fn()
 		} else {
-			fmt.Printf("Unknown model: %s\nAvailable: %v\n", arg, modelOrder)
+			fmt.Printf("Unknown demo: %s\nAvailable: %v\n", arg, demoOrder)
 		}
+	}
+}
+
+func demoDesc(name string) string {
+	switch name {
+	case "kling-v2-1":
+		return "Kling v2.1 model"
+	case "kling-v2-5-turbo":
+		return "Kling v2.5 turbo model"
+	case "kling-v2-6":
+		return "Kling v2.6 model"
+	case "kling-video-o1":
+		return "Kling video o1 model"
+	case "kling-v3":
+		return "Kling v3 model"
+	case "kling-v3-omni":
+		return "Kling v3 omni model"
+	default:
+		return ""
 	}
 }

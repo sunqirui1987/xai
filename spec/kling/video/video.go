@@ -26,11 +26,12 @@ import (
 )
 
 var (
-	limitMode      = &xai.StringEnum{Values: []string{internal.ModeStd, internal.ModePro}}
-	limitSeconds   = &xai.StringEnum{Values: []string{internal.Seconds5, internal.Seconds10}}
-	limitSecondsV3 = &xai.StringEnum{Values: []string{"3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"}}
-	limitSize      = &xai.StringEnum{Values: []string{internal.Size1920x1080, internal.Size1080x1920, internal.Size1280x720, internal.Size720x1280, internal.Size1080x1080, internal.Size720x720}}
-	limitSound     = &xai.StringEnum{Values: []string{internal.SoundOn, internal.SoundOff}}
+	limitMode              = &xai.StringEnum{Values: []string{internal.ModeStd, internal.ModePro}}
+	limitSeconds           = &xai.StringEnum{Values: []string{internal.Seconds5, internal.Seconds10}}
+	limitSecondsV3         = &xai.StringEnum{Values: []string{"3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"}}
+	limitSize              = &xai.StringEnum{Values: []string{internal.Size1920x1080, internal.Size1080x1920, internal.Size1280x720, internal.Size720x1280, internal.Size1080x1080, internal.Size720x720}}
+	limitSound             = &xai.StringEnum{Values: []string{internal.SoundOn, internal.SoundOff}}
+	limitKeepOriginalSound = &xai.StringEnum{Values: []string{string(KeepOriginalSoundYes), string(KeepOriginalSoundNo)}}
 )
 
 // ErrInputReferenceRequired is returned when kling-v2-1 is used without input_reference.
@@ -86,6 +87,10 @@ func Restrict(model, name string) *xai.Restriction {
 	case internal.ParamSound:
 		if isKlingV26OrNewer(model) || isKlingV3OrOmni(model) {
 			return &xai.Restriction{Limit: limitSound}
+		}
+	case internal.ParamKeepOriginalSound:
+		if model == internal.ModelKlingVideoO1 || isKlingV26OrNewer(model) || model == internal.ModelKlingV3Omni {
+			return &xai.Restriction{Limit: limitKeepOriginalSound}
 		}
 	}
 	return nil
@@ -148,7 +153,6 @@ func defaultVideoSchema() []xai.Field {
 		{Name: internal.ParamSize, Kind: types.String},
 		{Name: internal.ParamImageList, Kind: types.List},
 		{Name: internal.ParamVideoList, Kind: types.List},
-		{Name: internal.ParamVideoMode, Kind: types.String},
 		{Name: internal.ParamSound, Kind: types.String},
 	}
 }

@@ -31,7 +31,6 @@ func RunKlingV21() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	ctx := context.Background()
 
@@ -44,9 +43,8 @@ func RunKlingV21() {
 	results, err := xai.Call(ctx, svc, op, svc.Options(), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
-	printImageResults("kling-v2-1", "text2image", results, op.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-1", "text2image", results)
 
 	// 2. image2image (reference_images 风格参考)
 	fmt.Println("--- image2image (reference_images) ---")
@@ -58,9 +56,8 @@ func RunKlingV21() {
 	results2, err := xai.Call(ctx, svc, op2, svc.Options(), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
-	printImageResults("kling-v2-1", "image2image_reference_images", results2, op2.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-1", "image2image_reference_images", results2)
 
 	// 3. multi_image (subject_image_list + scene_image + style_image)
 	fmt.Println("--- multi_image ---")
@@ -76,7 +73,6 @@ func RunKlingV21() {
 	results3, err := xai.Call(ctx, svc, op3, svc.Options(), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
-	printImageResults("kling-v2-1", "multi_image", results3, op3.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-1", "multi_image", results3)
 }

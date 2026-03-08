@@ -32,13 +32,11 @@ func RunCallSyncExample() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	model := xai.Model(kling.ModelKlingV1)
 	op, err := svc.Operation(model, xai.GenImage)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	op.Params().Set(kling.ParamPrompt, "一只可爱的橘猫坐在窗台上看着夕阳,照片风格,高清画质")
 	op.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
@@ -49,7 +47,6 @@ func RunCallSyncExample() {
 	resp, err := xai.CallSync(ctx, svc, op, svc.Options())
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 
 	// Get taskID for persistence (empty for sync responses; non-empty for async)
@@ -61,7 +58,6 @@ func RunCallSyncExample() {
 		resp2, err := xai.GetTask(ctx, svc, model, xai.GenImage, taskID)
 		if err != nil {
 			fmt.Println("Error:", err)
-			return
 		}
 		results, err = xai.Wait(ctx, svc, resp2, nil)
 	} else {
@@ -71,7 +67,6 @@ func RunCallSyncExample() {
 	}
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
-	printImageResults(string(model), "text2image", results, op.Params().(*kling.Params).Export())
+	printImageResults(string(model), "text2image", results)
 }

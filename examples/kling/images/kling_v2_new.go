@@ -31,7 +31,6 @@ func RunKlingV2New() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	ctx := context.Background()
 
@@ -42,7 +41,7 @@ func RunKlingV2New() {
 	op.Params().Set(kling.ParamPrompt, "将这张图片转换为赛博朋克风格")
 	op.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
-	printImageResults("kling-v2-new", "image2image_赛博朋克", results, op.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-new", "image2image_赛博朋克", results)
 
 	// 2. 水墨画风格
 	fmt.Println("--- image2image: 水墨画 ---")
@@ -51,7 +50,7 @@ func RunKlingV2New() {
 	op2.Params().Set(kling.ParamPrompt, "将这张图片转换为中国水墨画风格")
 	op2.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results2, _ := xai.Call(ctx, svc, op2, svc.Options(), nil)
-	printImageResults("kling-v2-new", "image2image_水墨画", results2, op2.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-new", "image2image_水墨画", results2)
 
 	// 3. 油画风格
 	fmt.Println("--- image2image: 油画 ---")
@@ -60,5 +59,5 @@ func RunKlingV2New() {
 	op3.Params().Set(kling.ParamPrompt, "将这张图片转换为梵高星空油画风格")
 	op3.Params().Set(kling.ParamAspectRatio, kling.Aspect1x1)
 	results3, _ := xai.Call(ctx, svc, op3, svc.Options(), nil)
-	printImageResults("kling-v2-new", "image2image_油画", results3, op3.Params().(*kling.Params).Export())
+	printImageResults("kling-v2-new", "image2image_油画", results3)
 }

@@ -18,17 +18,42 @@ package video
 
 import "github.com/goplus/xai/spec/kling/internal"
 
+// ImageRefType for image_list: 普通参考图 | 首帧 | 尾帧
+type ImageRefType string
+
+const (
+	ImageTypeRef        ImageRefType = ""             // 普通参考图（主体、场景、风格等）
+	ImageTypeFirstFrame ImageRefType = "first_frame"  // 首帧
+	ImageTypeEndFrame   ImageRefType = "end_frame"    // 尾帧
+)
+
+// VideoReferType 参考视频类型
+type VideoReferType string
+
+const (
+	VideoReferTypeFeature VideoReferType = "feature" // 特征参考视频
+	VideoReferTypeBase    VideoReferType = "base"    // 待编辑视频
+)
+
+// KeepOriginalSound 是否保留视频原声
+type KeepOriginalSound string
+
+const (
+	KeepOriginalSoundYes KeepOriginalSound = "yes" // 保留
+	KeepOriginalSoundNo  KeepOriginalSound = "no"  // 不保留
+)
+
 // ImageInput is a single image reference for multi-ref video (O1).
 type ImageInput struct {
-	Image string `json:"image"`
-	Type  string `json:"type,omitempty"` // first_frame | end_frame
+	Image string       `json:"image"`
+	Type  ImageRefType `json:"type,omitempty"`
 }
 
 // VideoRef is a video reference for multi-ref video (O1).
 type VideoRef struct {
-	VideoURL          string `json:"video_url"`
-	ReferType         string `json:"refer_type"` // feature | base
-	KeepOriginalSound string `json:"keep_original_sound,omitempty"`
+	VideoURL          string            `json:"video_url"`
+	ReferType         VideoReferType    `json:"refer_type,omitempty"`
+	KeepOriginalSound KeepOriginalSound `json:"keep_original_sound,omitempty"`
 }
 
 // VideoParams is the unified interface for all video model parameters.
@@ -41,23 +66,11 @@ type videoParamsMarker struct{}
 
 func (videoParamsMarker) videoParams() {}
 
-// V21VideoParams for kling-v2-1 (img2video only).
-type V21VideoParams struct {
+// BaseVideoParams for kling-v2-1 and kling-v2-5-turbo.
+// V2-1 is img2video only; V2-5-turbo supports text2video + img2video.
+type BaseVideoParams struct {
 	videoParamsMarker
-	Prompt         string `json:"prompt"`
-	InputReference string `json:"input_reference"`
-	ImageTail      string `json:"image_tail,omitempty"`
-	NegativePrompt string `json:"negative_prompt,omitempty"`
-	Mode           string `json:"mode,omitempty"`
-	Seconds        string `json:"seconds,omitempty"`
-	Size           string `json:"size,omitempty"`
-}
-
-func (p *V21VideoParams) Model() string { return internal.ModelKlingV21Video }
-
-// V25VideoParams for kling-v2-5-turbo (text2video + img2video).
-type V25VideoParams struct {
-	videoParamsMarker
+	ModelName      string `json:"model"`
 	Prompt         string `json:"prompt"`
 	InputReference string `json:"input_reference,omitempty"`
 	ImageTail      string `json:"image_tail,omitempty"`
@@ -67,7 +80,13 @@ type V25VideoParams struct {
 	Size           string `json:"size,omitempty"`
 }
 
-func (p *V25VideoParams) Model() string { return internal.ModelKlingV25Turbo }
+func (p *BaseVideoParams) Model() string { return p.ModelName }
+
+// V21VideoParams is an alias for backward compatibility.
+type V21VideoParams = BaseVideoParams
+
+// V25VideoParams is an alias for backward compatibility.
+type V25VideoParams = BaseVideoParams
 
 // O1VideoParams for kling-video-o1 (multi-ref).
 // Uses image_list and video_list as primary; input_reference/image_tail are converted to image_list in build.
@@ -88,19 +107,19 @@ func (p *O1VideoParams) Model() string { return internal.ModelKlingVideoO1 }
 // V26VideoParams for kling-v2-6 through v2-9.
 type V26VideoParams struct {
 	videoParamsMarker
-	ModelName             string       `json:"model"` // kling-v2-6, kling-v2-7, etc.
-	Prompt                string       `json:"prompt"`
-	InputReference        string       `json:"input_reference,omitempty"`
-	ImageTail             string       `json:"image_tail,omitempty"`
-	NegativePrompt        string       `json:"negative_prompt,omitempty"`
-	Mode                  string       `json:"mode,omitempty"`
-	Seconds               string       `json:"seconds,omitempty"`
-	Size                  string       `json:"size,omitempty"`
-	Sound                 string       `json:"sound,omitempty"`
-	ImageURL              string       `json:"image_url,omitempty"`
-	VideoURL              string       `json:"video_url,omitempty"`
-	CharacterOrientation  string       `json:"character_orientation,omitempty"`
-	KeepOriginalSound     string       `json:"keep_original_sound,omitempty"`
+	ModelName             string            `json:"model"` // kling-v2-6, kling-v2-7, etc.
+	Prompt                string            `json:"prompt"`
+	InputReference        string            `json:"input_reference,omitempty"`
+	ImageTail             string            `json:"image_tail,omitempty"`
+	NegativePrompt        string            `json:"negative_prompt,omitempty"`
+	Mode                  string            `json:"mode,omitempty"`
+	Seconds               string            `json:"seconds,omitempty"`
+	Size                  string            `json:"size,omitempty"`
+	Sound                 string            `json:"sound,omitempty"`
+	ImageURL              string            `json:"image_url,omitempty"`
+	VideoURL              string            `json:"video_url,omitempty"`
+	CharacterOrientation  string            `json:"character_orientation,omitempty"`
+	KeepOriginalSound     KeepOriginalSound `json:"keep_original_sound,omitempty"`
 }
 
 func (p *V26VideoParams) Model() string { return p.ModelName }

@@ -14,6 +14,21 @@
  */
 
 // Run: go run ./examples/kling/video kling-v3
+//
+// kling-v3 是可灵 V3 视频生成模型，支持以下功能：
+//
+// 1. text2video    - 纯文本生成视频
+// 2. img2video     - 图片参考生成视频（使用 input_reference）
+// 3. sound_video   - 有声视频生成（sound="on"）
+//
+// 参数说明：
+//   - input_reference: 参考图片 URL（用于 img2video）
+//   - sound: "on" 启用音频生成，"off" 关闭
+//   - mode: "std"（标准 720P）或 "pro"（专家 1080P）
+//   - seconds: "5" 或 "10"
+//   - size: 视频尺寸（1920x1080, 1080x1920, 1280x720 等）
+//
+// 注意：V3 不支持 image_list/video_list，使用 input_reference 传递单张参考图
 package main
 
 import (
@@ -26,42 +41,105 @@ import (
 	"github.com/goplus/xai/examples/shared"
 )
 
-// RunKlingV3 runs all kling-v3 demos (text2video, img2video, sound_video).
+// RunKlingV3 runs all kling-v3 demos.
 func RunKlingV3() {
-	svc, err := shared.NewService()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+	svc, _ := shared.NewService()
 	ctx := context.Background()
 
-	// 1. text2video
-	fmt.Println("--- text2video ---")
-	op, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
-	op.Params().Set(kling.ParamPrompt, "一只可爱的小猫在阳光下玩耍")
-	op.Params().Set(kling.ParamMode, kling.ModeStd)
-	op.Params().Set(kling.ParamSeconds, kling.Seconds5)
-	op.Params().Set(kling.ParamSize, kling.Size1280x720)
-	results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
-	printVideoResults("kling-v3", "text2video", results)
+	// =========================================================================
+	// 1. text2video - 纯文本生成视频（标准模式）
+	// =========================================================================
+	fmt.Println("--- text2video (std) ---")
+	op1, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
+	op1.Params().
+		Set(kling.ParamPrompt, "一只可爱的小猫在阳光下玩耍").
+		Set(kling.ParamMode, kling.ModeStd).          // 标准模式 720P
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1280x720)      // 720P 横屏
+	results1, _ := xai.Call(ctx, svc, op1, svc.Options(), nil)
+	printVideoResults("kling-v3", "text2video-std", results1)
 
-	// 2. img2video
-	fmt.Println("--- img2video ---")
+	// =========================================================================
+	// 2. text2video - 纯文本生成视频（专家模式）
+	// =========================================================================
+	fmt.Println("--- text2video (pro) ---")
 	op2, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
-	op2.Params().Set(kling.ParamPrompt, "让图片中的角色动起来")
-	op2.Params().Set(kling.ParamInputReference, DemoVideoURLs.FirstFrame)
-	op2.Params().Set(kling.ParamMode, kling.ModePro)
-	op2.Params().Set(kling.ParamSeconds, kling.Seconds5)
+	op2.Params().
+		Set(kling.ParamPrompt, "城市夜景，霓虹灯闪烁，电影质感").
+		Set(kling.ParamMode, kling.ModePro).          // 专家模式 1080P
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1920x1080)     // 1080P 横屏
 	results2, _ := xai.Call(ctx, svc, op2, svc.Options(), nil)
-	printVideoResults("kling-v3", "img2video", results2)
+	printVideoResults("kling-v3", "text2video-pro", results2)
 
-	// 3. sound_video (有声视频)
-	fmt.Println("--- sound_video ---")
+	// =========================================================================
+	// 3. text2video - 竖屏视频（适合短视频平台）
+	// =========================================================================
+	fmt.Println("--- text2video (竖屏) ---")
 	op3, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
-	op3.Params().Set(kling.ParamPrompt, "一个人在演讲")
-	op3.Params().Set(kling.ParamMode, kling.ModePro)
-	op3.Params().Set(kling.ParamSound, kling.SoundOn)
-	op3.Params().Set(kling.ParamSeconds, kling.Seconds5)
+	op3.Params().
+		Set(kling.ParamPrompt, "一个人在跳舞，动感十足").
+		Set(kling.ParamMode, kling.ModePro).
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1080x1920)     // 竖屏 9:16
 	results3, _ := xai.Call(ctx, svc, op3, svc.Options(), nil)
-	printVideoResults("kling-v3", "sound_video", results3)
+	printVideoResults("kling-v3", "text2video-vertical", results3)
+
+	// =========================================================================
+	// 4. img2video - 图片参考生成视频
+	// =========================================================================
+	// 使用 input_reference 传递参考图
+	fmt.Println("--- img2video ---")
+	op4, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
+	op4.Params().
+		Set(kling.ParamPrompt, "让图片中的角色动起来").
+		Set(kling.ParamInputReference, DemoVideoURLs.FirstFrame).
+		Set(kling.ParamMode, kling.ModePro).
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1920x1080)
+	results4, _ := xai.Call(ctx, svc, op4, svc.Options(), nil)
+	printVideoResults("kling-v3", "img2video", results4)
+
+	// =========================================================================
+	// 5. sound_video - 有声视频生成
+	// =========================================================================
+	// sound="on" 启用音频生成
+	fmt.Println("--- sound_video ---")
+	op5, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
+	op5.Params().
+		Set(kling.ParamPrompt, "一个人在演讲，声音洪亮").
+		Set(kling.ParamMode, kling.ModePro).
+		Set(kling.ParamSound, kling.SoundOn).         // 启用音频
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1920x1080)
+	results5, _ := xai.Call(ctx, svc, op5, svc.Options(), nil)
+	printVideoResults("kling-v3", "sound_video", results5)
+
+	// =========================================================================
+	// 6. img2video + sound - 图片参考 + 有声视频
+	// =========================================================================
+	fmt.Println("--- img2video + sound ---")
+	op6, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
+	op6.Params().
+		Set(kling.ParamPrompt, "人物开始说话，表情生动").
+		Set(kling.ParamInputReference, DemoVideoURLs.RunningMan).
+		Set(kling.ParamMode, kling.ModePro).
+		Set(kling.ParamSound, kling.SoundOn).
+		Set(kling.ParamSeconds, kling.Seconds5).
+		Set(kling.ParamSize, kling.Size1920x1080)
+	results6, _ := xai.Call(ctx, svc, op6, svc.Options(), nil)
+	printVideoResults("kling-v3", "img2video-sound", results6)
+
+	// =========================================================================
+	// 7. 长视频 - 10秒视频
+	// =========================================================================
+	fmt.Println("--- long video (10s) ---")
+	op7, _ := svc.Operation(xai.Model(kling.ModelKlingV3), xai.GenVideo)
+	op7.Params().
+		Set(kling.ParamPrompt, "日出到日落的延时摄影，壮观的云层变化").
+		Set(kling.ParamMode, kling.ModePro).
+		Set(kling.ParamSeconds, kling.Seconds10).     // 10秒视频
+		Set(kling.ParamSize, kling.Size1920x1080)
+	results7, _ := xai.Call(ctx, svc, op7, svc.Options(), nil)
+	printVideoResults("kling-v3", "long-video", results7)
 }

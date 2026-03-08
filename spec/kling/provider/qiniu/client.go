@@ -20,10 +20,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -165,9 +167,16 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body an
 		}
 	}
 
-	if c.debugLog {
-		curlCmd := c.buildCurlCommand(method, url, reqBodyBytes)
-		c.logDebug("curl command:\n%s", curlCmd)
+	curlCmd := c.buildCurlCommand(method, url, reqBodyBytes)
+	if c.logger != nil {
+		c.logger.Printf("[qiniu] curl command:\n%s", curlCmd)
+	} else {
+		fmt.Println(curlCmd)
+	}
+
+	if os.Getenv("QINIU_MOCK_CURL") != "" {
+		c.logDebug("Mock mode enabled, returning mock response")
+		return nil, errors.New("mock mode enabled")
 	}
 
 	var lastErr error

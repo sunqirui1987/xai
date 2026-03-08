@@ -37,10 +37,8 @@ type VideoRequest struct {
 // BuildVideoRequest builds a VideoRequest from typed VideoParams.
 func BuildVideoRequest(model string, params kling.VideoParams) (*VideoRequest, error) {
 	switch p := params.(type) {
-	case *video.V21VideoParams:
-		return buildV21VideoRequest(p), nil
-	case *video.V25VideoParams:
-		return buildV25VideoRequest(p), nil
+	case *video.BaseVideoParams:
+		return buildBaseVideoRequest(p), nil
 	case *video.O1VideoParams:
 		return buildO1VideoRequest(p), nil
 	case *video.V26VideoParams:
@@ -54,22 +52,7 @@ func BuildVideoRequest(model string, params kling.VideoParams) (*VideoRequest, e
 	}
 }
 
-func buildV21VideoRequest(p *video.V21VideoParams) *VideoRequest {
-	body := map[string]any{
-		"model":  p.Model(),
-		"prompt": p.Prompt,
-	}
-	setOptionalString(body, "input_reference", p.InputReference)
-	setOptionalString(body, "image_tail", p.ImageTail)
-	setOptionalString(body, "negative_prompt", p.NegativePrompt)
-	setOptionalString(body, "mode", p.Mode)
-	setOptionalString(body, "seconds", p.Seconds)
-	setOptionalString(body, "size", p.Size)
-
-	return &VideoRequest{Body: body}
-}
-
-func buildV25VideoRequest(p *video.V25VideoParams) *VideoRequest {
+func buildBaseVideoRequest(p *video.BaseVideoParams) *VideoRequest {
 	body := map[string]any{
 		"model":  p.Model(),
 		"prompt": p.Prompt,
@@ -138,7 +121,7 @@ func buildV26VideoRequest(p *video.V26VideoParams) *VideoRequest {
 	setOptionalString(body, "image_url", p.ImageURL)
 	setOptionalString(body, "video_url", p.VideoURL)
 	setOptionalString(body, "character_orientation", p.CharacterOrientation)
-	setOptionalString(body, "keep_original_sound", p.KeepOriginalSound)
+	setOptionalString(body, "keep_original_sound", string(p.KeepOriginalSound))
 
 	return &VideoRequest{Body: body}
 }

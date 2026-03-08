@@ -24,6 +24,79 @@ import (
 	"github.com/goplus/xai/spec/kling/video"
 )
 
+// -----------------------------------------------------------------------------
+// Strongly-typed param types (re-exported from video package)
+// Use these types with ParamImageList, ParamVideoList, ParamMultiPrompt for
+// compile-time type checking.
+// -----------------------------------------------------------------------------
+
+// ImageRefType defines the role of an image in image_list.
+// Use with ImageInput.Type field.
+type ImageRefType = video.ImageRefType
+
+// Image reference type constants for ImageInput.Type.
+const (
+	ImageTypeRef        = video.ImageTypeRef        // 普通参考图（主体、场景、风格等）
+	ImageTypeFirstFrame = video.ImageTypeFirstFrame // 首帧
+	ImageTypeEndFrame   = video.ImageTypeEndFrame   // 尾帧
+)
+
+// ImageInput is a single image reference for img2video and keyframe modes.
+// Use with ParamImageList.
+//
+// Fields:
+//   - Image: 图片 URL 或 Base64 编码（必填）
+//   - Type:  图片类型（可选）：
+//   - ImageTypeRef (""): 普通参考图（主体、场景、风格等）
+//   - ImageTypeFirstFrame ("first_frame"): 首帧
+//   - ImageTypeEndFrame ("end_frame"): 尾帧
+//
+// Example:
+//
+//	op.Params().Set(kling.ParamImageList, []kling.ImageInput{
+//	    {Image: refURL},                                    // 普通参考图
+//	    {Image: firstURL, Type: kling.ImageTypeFirstFrame}, // 首帧
+//	    {Image: endURL, Type: kling.ImageTypeEndFrame},     // 尾帧
+//	})
+type ImageInput = video.ImageInput
+
+// VideoRef is a video reference for video2video mode.
+// Use with ParamVideoList.
+//
+// Example:
+//
+//	op.Params().Set(kling.ParamVideoList, []kling.VideoRef{
+//	    {VideoURL: videoURL, ReferType: kling.VideoReferTypeFeature},
+//	})
+type VideoRef = video.VideoRef
+
+// VideoReferType 参考视频类型
+type VideoReferType = video.VideoReferType
+
+const (
+	VideoReferTypeFeature = video.VideoReferTypeFeature // 特征参考视频
+	VideoReferTypeBase    = video.VideoReferTypeBase    // 待编辑视频
+)
+
+// KeepOriginalSound 是否保留视频原声
+type KeepOriginalSound = video.KeepOriginalSound
+
+const (
+	KeepOriginalSoundYes = video.KeepOriginalSoundYes // 保留
+	KeepOriginalSoundNo  = video.KeepOriginalSoundNo  // 不保留
+)
+
+// MultiPromptItem is a prompt item for multi-shot video generation.
+// Use with ParamMultiPrompt.
+//
+// Example:
+//
+//	op.Params().Set(kling.ParamMultiPrompt, []kling.MultiPromptItem{
+//	    {Index: 0, Prompt: "first scene", Duration: "3"},
+//	    {Index: 1, Prompt: "second scene", Duration: "2"},
+//	})
+type MultiPromptItem = video.MultiPromptItem
+
 // Re-export video validation errors for backward compatibility.
 var (
 	ErrInputReferenceRequired  = video.ErrInputReferenceRequired
@@ -36,24 +109,24 @@ var (
 // -----------------------------------------------------------------------------
 
 const (
-	ParamPrompt               = internal.ParamPrompt
-	ParamAspectRatio          = internal.ParamAspectRatio
-	ParamReferenceImages      = internal.ParamReferenceImages
-	ParamImage                = internal.ParamImage
-	ParamImageReference       = internal.ParamImageReference
-	ParamNegativePrompt       = internal.ParamNegativePrompt
-	ParamImageFidelity        = internal.ParamImageFidelity
-	ParamHumanFidelity        = internal.ParamHumanFidelity
-	ParamN                    = internal.ParamN
-	ParamResolution           = internal.ParamResolution
-	ParamInputReference       = internal.ParamInputReference
-	ParamImageTail            = internal.ParamImageTail
-	ParamMode                 = internal.ParamMode
-	ParamSeconds              = internal.ParamSeconds
-	ParamSize                 = internal.ParamSize
-	ParamImageList            = internal.ParamImageList
-	ParamVideoList            = internal.ParamVideoList
-	ParamVideoMode            = internal.ParamVideoMode
+	ParamPrompt          = internal.ParamPrompt
+	ParamAspectRatio     = internal.ParamAspectRatio
+	ParamReferenceImages = internal.ParamReferenceImages
+	ParamImage           = internal.ParamImage
+	ParamImageReference  = internal.ParamImageReference
+	ParamNegativePrompt  = internal.ParamNegativePrompt
+	ParamImageFidelity   = internal.ParamImageFidelity
+	ParamHumanFidelity   = internal.ParamHumanFidelity
+	ParamN               = internal.ParamN
+	ParamResolution      = internal.ParamResolution
+	ParamInputReference  = internal.ParamInputReference
+	ParamImageTail       = internal.ParamImageTail
+	ParamMode            = internal.ParamMode
+	ParamSeconds         = internal.ParamSeconds
+	ParamSize            = internal.ParamSize
+	ParamImageList       = internal.ParamImageList
+	ParamVideoList       = internal.ParamVideoList
+
 	ParamSound                = internal.ParamSound
 	ParamSubjectImageList     = internal.ParamSubjectImageList
 	ParamSubjectImage         = internal.ParamSubjectImage
@@ -108,20 +181,24 @@ const (
 const (
 	Resolution1K = internal.Resolution1K
 	Resolution2K = internal.Resolution2K
+	Resolution4K = internal.Resolution4K
 )
 
 // AspectRatio options (kling-image-o1 default auto; other models vary)
 const (
-	AspectAuto  = internal.AspectAuto
-	Aspect16x9  = internal.Aspect16x9
-	Aspect9x16  = internal.Aspect9x16
-	Aspect1x1   = internal.Aspect1x1
-	Aspect4x3   = internal.Aspect4x3
-	Aspect3x4   = internal.Aspect3x4
-	Aspect3x2   = internal.Aspect3x2
-	Aspect2x3   = internal.Aspect2x3
-	Aspect21x9  = internal.Aspect21x9
-	// Image reference (kling-v1-5)
+	AspectAuto = internal.AspectAuto
+	Aspect16x9 = internal.Aspect16x9
+	Aspect9x16 = internal.Aspect9x16
+	Aspect1x1  = internal.Aspect1x1
+	Aspect4x3  = internal.Aspect4x3
+	Aspect3x4  = internal.Aspect3x4
+	Aspect3x2  = internal.Aspect3x2
+	Aspect2x3  = internal.Aspect2x3
+	Aspect21x9 = internal.Aspect21x9
+)
+
+// Image reference type options (kling-v1-5)
+const (
 	ImageRefSubject = internal.ImageRefSubject
 	ImageRefFace    = internal.ImageRefFace
 )

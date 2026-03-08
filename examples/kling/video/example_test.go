@@ -183,8 +183,8 @@ func Example_klingV3Omni() {
 
 	op, _ := svc.Operation(xai.Model(kling.ModelKlingV3Omni), xai.GenVideo)
 	op.Params().Set(kling.ParamPrompt, "这个人在跑马拉松")
-	op.Params().Set(kling.ParamImageList, []map[string]interface{}{
-		{"image": DemoVideoURLs.FirstFrame},
+	op.Params().Set(kling.ParamImageList, []kling.ImageInput{
+		{Image: DemoVideoURLs.FirstFrame},
 	})
 	op.Params().Set(kling.ParamMode, kling.ModePro)
 	op.Params().Set(kling.ParamSeconds, kling.Seconds5)

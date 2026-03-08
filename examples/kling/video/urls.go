@@ -46,7 +46,12 @@ var DemoVideoURLs = struct {
 	VideoFeature: "https://aitoken-public.qnaigc.com/example/generate-video/the-little-dog-is-running-on-the-lawn.mp4",
 }
 
+// printVideoResults prints and saves video URLs for verification.
 func printVideoResults(model, demo string, results xai.Results) {
+	if results == nil {
+		fmt.Println("  No results")
+		return
+	}
 	urls := make([]string, 0, results.Len())
 	for i := 0; i < results.Len(); i++ {
 		out := results.At(i).(*xai.OutputVideo)

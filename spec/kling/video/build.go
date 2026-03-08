@@ -17,7 +17,6 @@
 package video
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -26,20 +25,12 @@ import (
 
 // BuildVideoParams builds typed VideoParams from ParamsReader for the given model.
 func BuildVideoParams(model string, p internal.ParamsReader) (VideoParams, error) {
-	if p == nil {
-		return nil, errors.New("kling: params is nil")
-	}
 	m := strings.ToLower(model)
 	prompt := p.GetString(internal.ParamPrompt)
-	if strings.TrimSpace(prompt) == "" {
-		return nil, internal.ErrPromptRequired
-	}
 
 	switch {
-	case m == internal.ModelKlingV21Video:
-		return buildV21VideoParams(model, prompt, p), nil
-	case m == internal.ModelKlingV25Turbo:
-		return buildV25VideoParams(model, prompt, p), nil
+	case m == internal.ModelKlingV21Video || m == internal.ModelKlingV25Turbo:
+		return buildBaseVideoParams(model, prompt, p), nil
 	case m == internal.ModelKlingVideoO1:
 		return buildO1VideoParams(model, prompt, p), nil
 	case m == internal.ModelKlingV26 || m == internal.ModelKlingV27 ||
@@ -54,20 +45,9 @@ func BuildVideoParams(model string, p internal.ParamsReader) (VideoParams, error
 	}
 }
 
-func buildV21VideoParams(model, prompt string, p internal.ParamsReader) *V21VideoParams {
-	return &V21VideoParams{
-		Prompt:         prompt,
-		InputReference: p.GetString(internal.ParamInputReference),
-		ImageTail:      p.GetString(internal.ParamImageTail),
-		NegativePrompt: p.GetString(internal.ParamNegativePrompt),
-		Mode:           p.GetString(internal.ParamMode),
-		Seconds:        p.GetString(internal.ParamSeconds),
-		Size:           p.GetString(internal.ParamSize),
-	}
-}
-
-func buildV25VideoParams(model, prompt string, p internal.ParamsReader) *V25VideoParams {
-	return &V25VideoParams{
+func buildBaseVideoParams(model, prompt string, p internal.ParamsReader) *BaseVideoParams {
+	return &BaseVideoParams{
+		ModelName:      model,
 		Prompt:         prompt,
 		InputReference: p.GetString(internal.ParamInputReference),
 		ImageTail:      p.GetString(internal.ParamImageTail),
@@ -79,26 +59,14 @@ func buildV25VideoParams(model, prompt string, p internal.ParamsReader) *V25Vide
 }
 
 func buildO1VideoParams(model, prompt string, p internal.ParamsReader) *O1VideoParams {
-	imgList := getImageList(p)
-	if len(imgList) == 0 {
-		inputRef := p.GetString(internal.ParamInputReference)
-		if inputRef != "" {
-			imgList = append(imgList, ImageInput{Image: inputRef, Type: "first_frame"})
-			imgTail := p.GetString(internal.ParamImageTail)
-			if imgTail != "" {
-				imgList = append(imgList, ImageInput{Image: imgTail, Type: "end_frame"})
-			}
-		}
-	}
 	return &O1VideoParams{
 		Prompt:         prompt,
-		ImageList:      imgList,
+		ImageList:      getImageList(p),
 		VideoList:      getVideoList(p),
 		NegativePrompt: p.GetString(internal.ParamNegativePrompt),
 		Mode:           p.GetString(internal.ParamMode),
 		Seconds:        p.GetString(internal.ParamSeconds),
 		Size:           p.GetString(internal.ParamSize),
-		VideoMode:      p.GetString(internal.ParamVideoMode),
 	}
 }
 
@@ -135,31 +103,55 @@ func getMultiPrompt(p internal.ParamsReader) []MultiPromptItem {
 	if !ok {
 		return nil
 	}
-	slice, ok := v.([]interface{})
-	if !ok {
-		return nil
+	// Support strongly-typed []MultiPromptItem (recommended)
+	if typed, ok := v.([]MultiPromptItem); ok {
+		return typed
 	}
+	// Support []interface{} for backward compatibility
+	if slice, ok := v.([]interface{}); ok {
+		return parseMultiPromptFromSlice(slice)
+	}
+	// Support []map[string]interface{} for backward compatibility
+	if maps, ok := v.([]map[string]interface{}); ok {
+		return parseMultiPromptFromMaps(maps)
+	}
+	return nil
+}
+
+func parseMultiPromptFromSlice(slice []interface{}) []MultiPromptItem {
 	var out []MultiPromptItem
 	for _, item := range slice {
 		m, ok := item.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		mp := MultiPromptItem{}
-		if i, ok := m["index"].(int); ok {
-			mp.Index = i
-		} else if f, ok := m["index"].(float64); ok {
-			mp.Index = int(f)
-		}
-		if s, ok := m["prompt"].(string); ok {
-			mp.Prompt = s
-		}
-		if s, ok := m["duration"].(string); ok {
-			mp.Duration = s
-		}
-		out = append(out, mp)
+		out = append(out, parseMultiPromptItemFromMap(m))
 	}
 	return out
+}
+
+func parseMultiPromptFromMaps(maps []map[string]interface{}) []MultiPromptItem {
+	var out []MultiPromptItem
+	for _, m := range maps {
+		out = append(out, parseMultiPromptItemFromMap(m))
+	}
+	return out
+}
+
+func parseMultiPromptItemFromMap(m map[string]interface{}) MultiPromptItem {
+	mp := MultiPromptItem{}
+	if i, ok := m["index"].(int); ok {
+		mp.Index = i
+	} else if f, ok := m["index"].(float64); ok {
+		mp.Index = int(f)
+	}
+	if s, ok := m["prompt"].(string); ok {
+		mp.Prompt = s
+	}
+	if s, ok := m["duration"].(string); ok {
+		mp.Duration = s
+	}
+	return mp
 }
 
 func buildV26VideoParams(model, prompt string, p internal.ParamsReader) *V26VideoParams {
@@ -176,7 +168,7 @@ func buildV26VideoParams(model, prompt string, p internal.ParamsReader) *V26Vide
 		ImageURL:             p.GetString(internal.ParamImageUrl),
 		VideoURL:             p.GetString(internal.ParamVideoUrl),
 		CharacterOrientation: p.GetString(internal.ParamCharacterOrientation),
-		KeepOriginalSound:    p.GetString(internal.ParamKeepOriginalSound),
+		KeepOriginalSound:    KeepOriginalSound(p.GetString(internal.ParamKeepOriginalSound)),
 	}
 }
 
@@ -185,23 +177,29 @@ func getImageList(p internal.ParamsReader) []ImageInput {
 	if !ok {
 		return nil
 	}
-	slice, ok := v.([]interface{})
-	if !ok {
-		return nil
+	// Support strongly-typed []ImageInput (recommended)
+	if typed, ok := v.([]ImageInput); ok {
+		return typed
 	}
+	// Support []interface{} for backward compatibility
+	if slice, ok := v.([]interface{}); ok {
+		return parseImageListFromSlice(slice)
+	}
+	// Support []map[string]interface{} for backward compatibility
+	if maps, ok := v.([]map[string]interface{}); ok {
+		return parseImageListFromMaps(maps)
+	}
+	return nil
+}
+
+func parseImageListFromSlice(slice []interface{}) []ImageInput {
 	var out []ImageInput
 	for _, item := range slice {
 		m, ok := item.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		img := ImageInput{}
-		if s, ok := m["image"].(string); ok {
-			img.Image = s
-		}
-		if s, ok := m["type"].(string); ok {
-			img.Type = s
-		}
+		img := parseImageInputFromMap(m)
 		if img.Image != "" {
 			out = append(out, img)
 		}
@@ -209,34 +207,84 @@ func getImageList(p internal.ParamsReader) []ImageInput {
 	return out
 }
 
+func parseImageListFromMaps(maps []map[string]interface{}) []ImageInput {
+	var out []ImageInput
+	for _, m := range maps {
+		img := parseImageInputFromMap(m)
+		if img.Image != "" {
+			out = append(out, img)
+		}
+	}
+	return out
+}
+
+func parseImageInputFromMap(m map[string]interface{}) ImageInput {
+	img := ImageInput{}
+	if s, ok := m["image"].(string); ok {
+		img.Image = s
+	}
+	if s, ok := m["type"].(string); ok {
+		img.Type = ImageRefType(s)
+	}
+	return img
+}
+
 func getVideoList(p internal.ParamsReader) []VideoRef {
 	v, ok := p.Get(internal.ParamVideoList)
 	if !ok {
 		return nil
 	}
-	slice, ok := v.([]interface{})
-	if !ok {
-		return nil
+	// Support strongly-typed []VideoRef (recommended)
+	if typed, ok := v.([]VideoRef); ok {
+		return typed
 	}
+	// Support []interface{} for backward compatibility
+	if slice, ok := v.([]interface{}); ok {
+		return parseVideoListFromSlice(slice)
+	}
+	// Support []map[string]interface{} for backward compatibility
+	if maps, ok := v.([]map[string]interface{}); ok {
+		return parseVideoListFromMaps(maps)
+	}
+	return nil
+}
+
+func parseVideoListFromSlice(slice []interface{}) []VideoRef {
 	var out []VideoRef
 	for _, item := range slice {
 		m, ok := item.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		ref := VideoRef{}
-		if s, ok := m["video_url"].(string); ok {
-			ref.VideoURL = s
-		}
-		if s, ok := m["refer_type"].(string); ok {
-			ref.ReferType = s
-		}
-		if s, ok := m["keep_original_sound"].(string); ok {
-			ref.KeepOriginalSound = s
-		}
+		ref := parseVideoRefFromMap(m)
 		if ref.VideoURL != "" {
 			out = append(out, ref)
 		}
 	}
 	return out
+}
+
+func parseVideoListFromMaps(maps []map[string]interface{}) []VideoRef {
+	var out []VideoRef
+	for _, m := range maps {
+		ref := parseVideoRefFromMap(m)
+		if ref.VideoURL != "" {
+			out = append(out, ref)
+		}
+	}
+	return out
+}
+
+func parseVideoRefFromMap(m map[string]interface{}) VideoRef {
+	ref := VideoRef{}
+	if s, ok := m["video_url"].(string); ok {
+		ref.VideoURL = s
+	}
+	if s, ok := m["refer_type"].(string); ok {
+		ref.ReferType = VideoReferType(s)
+	}
+	if s, ok := m["keep_original_sound"].(string); ok {
+		ref.KeepOriginalSound = KeepOriginalSound(s)
+	}
+	return ref
 }

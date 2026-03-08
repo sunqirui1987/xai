@@ -177,17 +177,17 @@ results, err := xai.Call(ctx, svc, op, svc.Options(), nil)
 
 kling-video-o1 uses `image_list` and `video_list`. Structure:
 
-- **image_list**: `[]map[string]interface{}`, each item has `image` (URL, required), `type` (optional: `first_frame`, `end_frame`)
-- **video_list**: `[]map[string]interface{}`, each item has `video_url` (required), `refer_type` (`feature` or `base`), `keep_original_sound` (optional: `yes`/`no`)
+- **image_list**: `[]kling.ImageInput`, each item has `Image` (URL, required), `Type` (optional: `first_frame`, `end_frame`)
+- **video_list**: `[]kling.VideoRef`, each item has `VideoURL` (required), `ReferType` (`feature` or `base`), `KeepOriginalSound` (optional: `yes`/`no`)
 
 ```go
 op, _ := svc.Operation(xai.Model(kling.ModelKlingVideoO1), xai.GenVideo)
-op.Params().Set(kling.ParamImageList, []map[string]interface{}{
-    {"image": "https://example.com/ref1.png"},
-    {"image": "https://example.com/ref2.png", "type": "first_frame"},
+op.Params().Set(kling.ParamImageList, []kling.ImageInput{
+    {Image: "https://example.com/ref1.png"},
+    {Image: "https://example.com/ref2.png", Type: "first_frame"},
 })
 op.Params().Set(kling.ParamPrompt, "blend the styles")
-op.Params().Set(kling.ParamVideoMode, "multi_ref")
+
 
 results, err := xai.Call(ctx, svc, op, svc.Options(), nil)
 ```

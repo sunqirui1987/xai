@@ -31,7 +31,6 @@ func RunKlingV15() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	ctx := context.Background()
 
@@ -43,9 +42,8 @@ func RunKlingV15() {
 	results, err := xai.Call(ctx, svc, op, svc.Options(), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
-	printImageResults("kling-v1-5", "text2image", results, op.Params().(*kling.Params).Export())
+	printImageResults("kling-v1-5", "text2image", results)
 
 	// 2. image2image with image_reference (subject)
 	fmt.Println("--- image2image (subject) ---")
@@ -57,7 +55,7 @@ func RunKlingV15() {
 	op2.Params().Set(kling.ParamHumanFidelity, 0.6)
 	op2.Params().Set(kling.ParamAspectRatio, kling.Aspect1x1)
 	results2, _ := xai.Call(ctx, svc, op2, svc.Options(), nil)
-	printImageResults("kling-v1-5", "image2image_subject", results2, op2.Params().(*kling.Params).Export())
+	printImageResults("kling-v1-5", "image2image_subject", results2)
 
 	// 3. text2image + negative_prompt
 	fmt.Println("--- text2image + negative_prompt ---")
@@ -66,5 +64,5 @@ func RunKlingV15() {
 	op3.Params().Set(kling.ParamNegativePrompt, "模糊,低质量")
 	op3.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results3, _ := xai.Call(ctx, svc, op3, svc.Options(), nil)
-	printImageResults("kling-v1-5", "text2image+negative_prompt", results3, op3.Params().(*kling.Params).Export())
+	printImageResults("kling-v1-5", "text2image+negative_prompt", results3)
 }

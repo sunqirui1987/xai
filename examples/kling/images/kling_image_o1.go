@@ -31,7 +31,6 @@ func RunKlingImageO1() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	ctx := context.Background()
 
@@ -42,7 +41,7 @@ func RunKlingImageO1() {
 	op.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	op.Params().Set(kling.ParamResolution, kling.Resolution2K)
 	results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
-	printImageResults("kling-image-o1", "text2image_16:9_2K", results, op.Params().(*kling.Params).Export())
+	printImageResults("kling-image-o1", "text2image_16:9_2K", results)
 
 	// 2. 带参考图生成（prompt 中用 <<<image_1>>> 引用）
 	fmt.Println("--- image2image with reference ---")
@@ -53,5 +52,5 @@ func RunKlingImageO1() {
 	op4.Params().Set(kling.ParamResolution, kling.Resolution2K)
 	op4.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results4, _ := xai.Call(ctx, svc, op4, svc.Options(), nil)
-	printImageResults("kling-image-o1", "image2image_reference", results4, op4.Params().(*kling.Params).Export())
+	printImageResults("kling-image-o1", "image2image_reference", results4)
 }

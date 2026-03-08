@@ -167,6 +167,7 @@ func TestBuildO1ImageRequest(t *testing.T) {
 
 func TestBuildV21VideoRequest(t *testing.T) {
 	params := &video.V21VideoParams{
+		ModelName:      kling.ModelKlingV21Video,
 		Prompt:         "a person running",
 		InputReference: "https://example.com/img.jpg",
 		Mode:           "pro",
@@ -231,6 +232,7 @@ func TestImageTaskStatusResponse(t *testing.T) {
 	}{
 		{"completed", StatusCompleted, true, false, false},
 		{"succeeded", StatusSucceeded, true, false, false},
+		{"succeed", StatusSucceed, true, false, false},
 		{"failed", StatusFailed, false, true, false},
 		{"processing", StatusProcessing, false, false, true},
 	}

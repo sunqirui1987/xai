@@ -17,7 +17,6 @@
 package image
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -27,14 +26,8 @@ import (
 // BuildImageParams builds typed ImageParams from ParamsReader for the given model.
 // Routing: 0-1 refs → /generations; 2-4 refs (subject_image_list) → /edits. See kling_image.md.
 func BuildImageParams(model string, p internal.ParamsReader) (ImageParams, error) {
-	if p == nil {
-		return nil, errors.New("kling: params is nil")
-	}
 	m := strings.ToLower(model)
 	prompt := p.GetString(internal.ParamPrompt)
-	if strings.TrimSpace(prompt) == "" {
-		return nil, internal.ErrPromptRequired
-	}
 
 	switch {
 	case m == internal.ModelKlingV1:

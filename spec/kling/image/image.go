@@ -23,9 +23,10 @@ import (
 )
 
 var (
-	limitAspectRatio = &xai.StringEnum{Values: []string{internal.Aspect1x1, internal.Aspect16x9, internal.Aspect9x16, internal.Aspect4x3, internal.Aspect3x4, internal.Aspect3x2, internal.Aspect2x3, internal.Aspect21x9}}
-	limitImageRef    = &xai.StringEnum{Values: []string{internal.ImageRefSubject, internal.ImageRefFace}}
-	limitResolution  = &xai.StringEnum{Values: []string{internal.Resolution1K, internal.Resolution2K, internal.Resolution4K}}
+	limitAspectRatio   = &xai.StringEnum{Values: []string{internal.Aspect1x1, internal.Aspect16x9, internal.Aspect9x16, internal.Aspect4x3, internal.Aspect3x4, internal.Aspect3x2, internal.Aspect2x3, internal.Aspect21x9}}
+	limitAspectRatioO1 = &xai.StringEnum{Values: []string{internal.AspectAuto, internal.Aspect1x1, internal.Aspect16x9, internal.Aspect9x16, internal.Aspect4x3, internal.Aspect3x4, internal.Aspect3x2, internal.Aspect2x3, internal.Aspect21x9}}
+	limitImageRef      = &xai.StringEnum{Values: []string{internal.ImageRefSubject, internal.ImageRefFace}}
+	limitResolution    = &xai.StringEnum{Values: []string{internal.Resolution1K, internal.Resolution2K, internal.Resolution4K}}
 )
 
 // SchemaForImage returns the InputSchema fields for the given image model.
@@ -54,6 +55,9 @@ func SchemaForImage(model string) []xai.Field {
 func Restrict(model, name string) *xai.Restriction {
 	switch name {
 	case internal.ParamAspectRatio:
+		if model == internal.ModelKlingImageO1 {
+			return &xai.Restriction{Limit: limitAspectRatioO1}
+		}
 		return &xai.Restriction{Limit: limitAspectRatio}
 	case internal.ParamImageReference:
 		if model == internal.ModelKlingV15 {

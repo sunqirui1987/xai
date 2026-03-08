@@ -31,7 +31,6 @@ func RunKlingV1() {
 	svc, err := shared.NewService()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
 	}
 	ctx := context.Background()
 
@@ -41,7 +40,7 @@ func RunKlingV1() {
 	op.Params().Set(kling.ParamPrompt, "一只可爱的橘猫坐在窗台上看着夕阳,照片风格,高清画质")
 	op.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
-	printImageResults("kling-v1", "text2image", results, op.Params().(*kling.Params).Export())
+	printImageResults("kling-v1", "text2image", results)
 
 	// 2. image2image (单图生图)
 	fmt.Println("--- image2image ---")
@@ -50,7 +49,7 @@ func RunKlingV1() {
 	op2.Params().Set(kling.ParamPrompt, "将这张图片转换为水彩画风格")
 	op2.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	results2, _ := xai.Call(ctx, svc, op2, svc.Options(), nil)
-	printImageResults("kling-v1", "image2image", results2, op2.Params().(*kling.Params).Export())
+	printImageResults("kling-v1", "image2image", results2)
 
 	// 3. text2image + negative_prompt
 	fmt.Println("--- text2image + negative_prompt ---")
@@ -59,7 +58,7 @@ func RunKlingV1() {
 	op3.Params().Set(kling.ParamNegativePrompt, "模糊,低质量,变形")
 	op3.Params().Set(kling.ParamAspectRatio, kling.Aspect1x1)
 	results3, _ := xai.Call(ctx, svc, op3, svc.Options(), nil)
-	printImageResults("kling-v1", "text2image+negative_prompt", results3, op3.Params().(*kling.Params).Export())
+	printImageResults("kling-v1", "text2image+negative_prompt", results3)
 
 	// 4. batch (n=2)
 	fmt.Println("--- batch n=2 ---")
@@ -68,5 +67,5 @@ func RunKlingV1() {
 	op4.Params().Set(kling.ParamAspectRatio, kling.Aspect16x9)
 	op4.Params().Set(kling.ParamN, 2)
 	results4, _ := xai.Call(ctx, svc, op4, svc.Options(), nil)
-	printImageResults("kling-v1", "batch_n=2", results4, op4.Params().(*kling.Params).Export())
+	printImageResults("kling-v1", "batch_n=2", results4)
 }

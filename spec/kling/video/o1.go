@@ -33,6 +33,5 @@ func SchemaVideoO1() []xai.Field {
 		{Name: internal.ParamSeconds, Kind: types.String},
 		{Name: internal.ParamSize, Kind: types.String},
 		{Name: internal.ParamMode, Kind: types.String},
-		{Name: internal.ParamVideoMode, Kind: types.String},
 	}
 }

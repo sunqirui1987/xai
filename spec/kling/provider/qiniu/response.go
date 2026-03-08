@@ -21,6 +21,7 @@ const (
 	StatusProcessing   = "processing"
 	StatusCompleted    = "completed"
 	StatusSucceeded    = "succeeded"
+	StatusSucceed      = "succeed" // API returns "succeed" (not "succeeded")
 	StatusFailed       = "failed"
 	StatusInitializing = "initializing"
 	StatusQueued       = "queued"
@@ -59,7 +60,7 @@ type ImageTaskStatusResponse struct {
 
 // IsCompleted returns true if the task is completed.
 func (r *ImageTaskStatusResponse) IsCompleted() bool {
-	return r.Status == StatusCompleted || r.Status == StatusSucceeded
+	return r.Status == StatusCompleted || r.Status == StatusSucceeded || r.Status == StatusSucceed
 }
 
 // IsFailed returns true if the task has failed.

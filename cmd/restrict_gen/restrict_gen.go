@@ -43,6 +43,8 @@ type fieldRestriction struct {
 	doc          []string   // field doc comment, split by "." and trimmed
 	stringEnum   []string   // string enum values, or nil
 	docEnumVals  []string   // enum values parsed from doc comment, or nil
+	optionalIf   []string   // optional if the fields are provided, or nil
+	notAllowedIf []string   // not allowed if the fields are provided, or nil
 	required     bool       // whether the field is required
 }
 
@@ -339,6 +341,36 @@ func collectFields(ret *typeRestriction, pkg *packages.Package, t types.Type, re
 	}
 }
 
+func checkOptionalIf(ret *fieldRestriction, part string) (ok bool) {
+	const (
+		prefix = "Optional if "
+		suffix = " is provided"
+	)
+	left, ok := strings.CutPrefix(part, prefix)
+	if ok {
+		if text, has := strings.CutSuffix(left, suffix); has {
+			vals := docValues(text, "or ", " or ")
+			ret.optionalIf = append(ret.optionalIf, vals...)
+		}
+	}
+	return
+}
+
+func checkNotAllowedIf(ret *fieldRestriction, part string) (ok bool) {
+	const (
+		prefix = "Not allowed if "
+		suffix = " is provided"
+	)
+	left, ok := strings.CutPrefix(part, prefix)
+	if ok {
+		if text, has := strings.CutSuffix(left, suffix); has {
+			vals := docValues(text, "or ", " or ")
+			ret.notAllowedIf = append(ret.notAllowedIf, vals...)
+		}
+	}
+	return
+}
+
 func checkEnumDoc(part string) (val string, ok bool) {
 	const (
 		prefix1 = "Supported values are: "
@@ -355,22 +387,24 @@ func checkEnumDoc(part string) (val string, ok bool) {
 	return
 }
 
+func docValues(text, cutPrefix, cutSep string) []string {
+	vals := strings.Split(text, ", ")
+	last := len(vals) - 1
+	lastVal := vals[last]
+	if v, ok := strings.CutPrefix(lastVal, cutPrefix); ok {
+		vals[last] = v
+	} else if v1, v2, ok := strings.Cut(lastVal, cutSep); ok {
+		vals = vals[:last]
+		vals = append(vals, v1, v2)
+	}
+	return vals
+}
+
 func collectRestrictionByDoc(ret *fieldRestriction, doc []string) {
 	for _, part := range doc {
 		if enumDoc, ok := checkEnumDoc(part); ok {
-			docEnumVals := strings.Split(enumDoc, ", ")
-			last := len(docEnumVals) - 1
-			lastVal := docEnumVals[last]
-			if v, ok := strings.CutPrefix(lastVal, "and "); ok {
-				docEnumVals[last] = v
-			} else if v1, v2, ok := strings.Cut(lastVal, " and "); ok {
-				docEnumVals = docEnumVals[:last]
-				if v1 != "" {
-					docEnumVals = append(docEnumVals, v1)
-				}
-				docEnumVals = append(docEnumVals, v2)
-			}
 			log(" ", ret.newName, "DocEnumVals")
+			docEnumVals := docValues(enumDoc, "and ", " and ")
 			for i, val := range docEnumVals {
 				n := len(val)
 				if n > 2 && val[0] == '"' && val[n-1] == '"' {
@@ -380,6 +414,8 @@ func collectRestrictionByDoc(ret *fieldRestriction, doc []string) {
 				log("   ", val)
 			}
 			ret.docEnumVals = docEnumVals
+		} else if !checkOptionalIf(ret, part) {
+			checkNotAllowedIf(ret, part)
 		}
 	}
 }

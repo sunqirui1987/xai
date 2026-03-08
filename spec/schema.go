@@ -75,11 +75,9 @@ type Restriction struct {
 	// no limit for the parameter.
 	Limit ValueLimit
 
-	// Include defines the parameters that should exist together with the parameter.
-	Include []string
-
-	// Exclude defines the  parameters that should not exist together with the parameter.
-	Exclude []string
+	// If NotAllowedIf is not nil, it indicates that the parameter is not allowed if
+	// the parameters in NotAllowedIf exist together.
+	NotAllowedIf []string
 
 	// If OptionalIf is not nil, it indicates that the parameter is optional only if the
 	// parameters in OptionalIf exist together. If OptionalIf is nil, the parameter is

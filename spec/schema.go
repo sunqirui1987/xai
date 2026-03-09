@@ -255,13 +255,15 @@ type GenVideoMask any
 
 // -----------------------------------------------------------------------------
 
-// Generated represents a generated image or video. It can be one of the following
+// Generated represents a generated image, video, or audio. It can be one of the following
 // types:
 //   - OutputVideo: represents a generated video, which is returned by GenVideo action.
 //   - OutputImage: represents a generated image, which is returned by GenImage, EditImage,
 //     RecontextImage, UpscaleImage actions.
 //   - OutputImageMask: represents a generated image mask with detected entity labels,
 //     which is returned by SegmentImage action.
+//   - OutputText: represents transcribed text, which is returned by Transcribe action.
+//   - OutputAudio: represents synthesized audio, which is returned by Synthesize action.
 type Generated interface {
 	generated()
 }
@@ -340,6 +342,34 @@ func (*OutputVideo) generated() {}
 func (o *OutputVideo) URL() string {
 	if o.Video != nil {
 		return o.Video.StgUri()
+	}
+	return ""
+}
+
+// OutputText represents transcribed text from ASR (Transcribe action).
+type OutputText struct {
+	Text     string   // Transcribed text
+	Duration *float64 // Audio duration in seconds, if available
+}
+
+func (*OutputText) generated() {}
+
+// OutputAudio represents synthesized audio from TTS (Synthesize action).
+type OutputAudio struct {
+	// Audio is the audio data: URL (http/https) or base64 data URI (data:audio/...;base64,...)
+	Audio  string
+	Format string // e.g. mp3, wav
+	// Duration in seconds or "HH:MM:SS" format, if available
+	Duration string
+}
+
+func (*OutputAudio) generated() {}
+
+// URL returns the storage URI of the output audio if it is a URL.
+// Returns empty string if the audio is base64 or not a URL.
+func (o *OutputAudio) URL() string {
+	if o != nil && len(o.Audio) >= 4 && (o.Audio[:4] == "http") {
+		return o.Audio
 	}
 	return ""
 }

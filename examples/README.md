@@ -8,6 +8,10 @@ Runnable demos for multiple providers/models via the xai API.
 # Run Kling examples
 go run ./examples/kling
 
+# Run Audio examples (ASR/TTS)
+go run ./examples/audio
+go run ./examples/audio all
+
 # List models, actions, and schema only
 go run ./examples/kling models
 
@@ -40,6 +44,13 @@ go run ./examples/kling kling-v2-1
 ```
 examples/
 ├── README.md
+├── audio/
+│   ├── README.md
+│   ├── main.go
+│   ├── service.go
+│   ├── asr.go
+│   ├── tts.go
+│   └── list_voices.go
 ├── sora/
 │   ├── README.md
 │   ├── main.go
@@ -90,6 +101,8 @@ examples/
 **Veo models**: veo-2.0-generate-001, veo-2.0-generate-exp, veo-2.0-generate-preview, veo-3.0-generate-preview, veo-3.0-fast-generate-preview, veo-3.1-generate-preview, veo-3.1-fast-generate-preview
 
 **Sora models**: sora-2, sora-2-pro
+
+**Audio models**: asr (ASR), tts-v1 (TTS)
 
 ## CallSync + TaskID
 

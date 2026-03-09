@@ -34,6 +34,10 @@ const (
 	RecontextImage Action = "recontext_image"
 	SegmentImage   Action = "segment_image"
 	UpscaleImage   Action = "upscale_image"
+
+	// Audio actions
+	Transcribe Action = "transcribe" // ASR: audio -> text
+	Synthesize Action = "synthesize" // TTS: text -> audio
 )
 
 // Results represents the results of an `Operation`.

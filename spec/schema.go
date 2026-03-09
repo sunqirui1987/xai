@@ -293,6 +293,15 @@ type OutputImage struct {
 
 func (*OutputImage) generated() {}
 
+// URL returns the storage URI of the output image.
+// Returns empty string if the image is nil or has no storage URI.
+func (o *OutputImage) URL() string {
+	if o.Image != nil {
+		return o.Image.StgUri()
+	}
+	return ""
+}
+
 // An entity representing the segmented area.
 type EntityLabel struct {
 	// Optional. The label of the segmented entity.
@@ -325,6 +334,15 @@ type OutputVideo struct {
 }
 
 func (*OutputVideo) generated() {}
+
+// URL returns the storage URI of the output video.
+// Returns empty string if the video is nil or has no storage URI.
+func (o *OutputVideo) URL() string {
+	if o.Video != nil {
+		return o.Video.StgUri()
+	}
+	return ""
+}
 
 // -----------------------------------------------------------------------------
 

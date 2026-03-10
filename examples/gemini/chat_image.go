@@ -32,7 +32,7 @@ func runChatImage() {
 	params := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
 		Messages(service.UserMsg().
-			Text("将这张图片转换为水彩画风格，保持主体清晰").
+			Text("Change this image to red.").
 			ImageURL(xai.ImageJPEG, DemoURLs.ImageToImage),
 		)
 

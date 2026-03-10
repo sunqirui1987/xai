@@ -65,21 +65,29 @@ func WithHTTPClient(cli HTTPDoer) ClientOption {
 // ImageFrom*, VideoFrom*, ReferenceImage, etc.) with a Qiniu-specific backend.
 type Service struct {
 	*gemini.Service
+	client *client
+}
+
+// SetApiKey updates the API key at runtime. Implements xai.ApiKeySetter.
+func (s *Service) SetApiKey(apiKey string) {
+	s.client.setApiKey(apiKey)
 }
 
 // NewService creates a Qiniu Gemini service.
-func NewService(token string, opts ...ClientOption) *Service {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+// The returned *Service supports SetApiKey(apiKey) for runtime API key updates.
+func NewService(apiKey string, opts ...ClientOption) *Service {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
 	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
-	cli := newClient(token, cfg.baseURL, cfg.httpClient, cfg.clientOptions)
+	cli := newClient(apiKey, cfg.baseURL, cfg.httpClient, cfg.clientOptions)
 	backend := newBackend(cli)
 	return &Service{
 		Service: gemini.NewWithBackend(backend),
+		client:  cli,
 	}
 }
 
@@ -94,31 +102,31 @@ func parseURIQuery(uri string) (url.Values, error) {
 }
 
 // Register registers the Qiniu-backed Gemini service with xai under scheme "gemini-qiniu".
-func Register(token string, opts ...ClientOption) {
+func Register(apiKey string, opts ...ClientOption) {
 	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 	defaultBaseURL := cfg.baseURL
 
-	svc := NewService(token, opts...)
+	svc := NewService(apiKey, opts...)
 	xai.Register(Scheme, func(_ context.Context, uri string) (xai.Service, error) {
 		params, err := parseURIQuery(uri)
 		if err != nil {
 			return nil, err
 		}
-		tok := token
-		if key := params.Get("key"); key != "" {
-			tok = key
+		key := apiKey
+		if k := params.Get("key"); k != "" {
+			key = k
 		}
-		if tok == "" {
-			tok = os.Getenv("QINIU_API_KEY")
+		if key == "" {
+			key = os.Getenv("QINIU_API_KEY")
 		}
 		base := defaultBaseURL
 		if b := params.Get("base"); b != "" {
 			base = normalizeBaseURL(b)
 		}
-		if tok == token && base == defaultBaseURL {
+		if key == apiKey && base == defaultBaseURL {
 			return svc, nil
 		}
 		var providerOpts []ClientOption
@@ -126,6 +134,6 @@ func Register(token string, opts ...ClientOption) {
 		if cfg.httpClient != nil {
 			providerOpts = append(providerOpts, WithHTTPClient(cfg.httpClient))
 		}
-		return NewService(tok, providerOpts...), nil
+		return NewService(key, providerOpts...), nil
 	})
 }

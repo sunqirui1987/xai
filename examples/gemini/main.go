@@ -28,11 +28,15 @@ import (
 )
 
 var demos = map[string]func(){
-	"chat-text":      runChatText,
-	"chat-image":     runChatImage,
-	"chat-tool":      runChatTool,
-	"image-generate": runImageGenerate,
-	"image-edit":     runImageEdit,
+	"chat-text":             runChatText,
+	"chat-image":            runChatImage,
+	"chat-tool":             runChatTool,
+	"image-generate":        runImageGenerate,
+	"image-generate-simple": runImageGenerateSimple,
+	"image-generate-portrait": runImageGeneratePortrait,
+	"image-edit":            runImageEdit,
+	"image-edit-single":     runImageEditSingle,
+	"image-edit-mask":       runImageEditMask,
 }
 
 var demoOrder = []string{
@@ -40,7 +44,11 @@ var demoOrder = []string{
 	"chat-image",
 	"chat-tool",
 	"image-generate",
+	"image-generate-simple",
+	"image-generate-portrait",
 	"image-edit",
+	"image-edit-single",
+	"image-edit-mask",
 }
 
 func main() {
@@ -88,15 +96,23 @@ func parseDemoArgs(args []string) []string {
 func demoDesc(name string) string {
 	switch name {
 	case "chat-text":
-		return "Text-only chat"
+		return "Text-only chat (intro Gemini)"
 	case "chat-image":
-		return "Text + image_url chat"
+		return "Text + image_url (image-to-image)"
 	case "chat-tool":
 		return "Tool call round-trip"
 	case "image-generate":
-		return "Operation GenImage"
+		return "GenImage with aspect_ratio 16:9"
+	case "image-generate-simple":
+		return "GenImage minimal prompt"
+	case "image-generate-portrait":
+		return "GenImage portrait 9:16"
 	case "image-edit":
-		return "Operation EditImage"
+		return "EditImage style fusion (2 refs)"
+	case "image-edit-single":
+		return "EditImage single image"
+	case "image-edit-mask":
+		return "EditImage with mask"
 	default:
 		return ""
 	}

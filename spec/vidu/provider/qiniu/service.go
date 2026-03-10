@@ -22,17 +22,35 @@ import (
 	"github.com/goplus/xai/spec/vidu"
 )
 
-// NewService creates a vidu.Service with Qiniu backend.
-func NewService(token string, opts ...ClientOption) *vidu.Service {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+// Service wraps vidu.Service with ApiKeySetter for runtime configuration.
+type Service struct {
+	*vidu.Service
+	client *Client
+}
+
+// SetApiKey updates the API key at runtime. Implements xai.ApiKeySetter.
+func (s *Service) SetApiKey(apiKey string) {
+	s.client.SetApiKey(apiKey)
+}
+
+// ViduService returns the embedded *vidu.Service for operation.Call.
+func (s *Service) ViduService() *vidu.Service { return s.Service }
+
+// NewService creates a Vidu Service with Qiniu backend.
+// The returned *Service supports SetApiKey(apiKey) for runtime API key updates.
+func NewService(apiKey string, opts ...ClientOption) *Service {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
-	client := NewClient(token, opts...)
-	return vidu.NewWithBackend(newBackend(client))
+	client := NewClient(apiKey, opts...)
+	return &Service{
+		Service: vidu.NewWithBackend(newBackend(client)),
+		client:  client,
+	}
 }
 
 // Register creates a vidu.Service with Qiniu backend and registers it with xai.
-func Register(token string, opts ...ClientOption) {
-	svc := NewService(token, opts...)
+func Register(apiKey string, opts ...ClientOption) {
+	svc := NewService(apiKey, opts...)
 	vidu.Register(svc)
 }

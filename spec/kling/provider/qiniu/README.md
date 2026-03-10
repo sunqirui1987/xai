@@ -57,6 +57,9 @@ import (
 // 创建 service
 svc := qiniu.NewService("your-api-token")
 
+// 支持运行时更新 API Key
+svc.SetApiKey("new-api-token")
+
 // 或者使用自定义选项
 svc := qiniu.NewService("your-api-token",
     qiniu.WithBaseURL(qiniu.OverseasBaseURL),  // 海外端点
@@ -80,7 +83,7 @@ svc := kling.NewService(imgExec, vidExec)
 
 ```go
 ctx := context.Background()
-svc := qiniu.NewService(token)
+svc := qiniu.NewService(apiKey)
 
 // 获取图像生成操作
 op, err := svc.Operation(kling.ModelKlingV2, xai.GenImage)

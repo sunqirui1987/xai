@@ -41,11 +41,15 @@ STREAM=1 go run ./examples/gemini chat-text
 
 ## Demo Matrix
 
-- `chat-text`: text-only chat
-- `chat-image`: text + image_url chat
+- `chat-text`: text-only chat (intro Gemini)
+- `chat-image`: text + image_url (image-to-image)
 - `chat-tool`: function calling round-trip
-- `image-generate`: `Operation(xai.GenImage)`
-- `image-edit`: `Operation(xai.EditImage)`
+- `image-generate`: `Operation(xai.GenImage)` with aspect_ratio 16:9
+- `image-generate-simple`: GenImage minimal prompt
+- `image-generate-portrait`: GenImage portrait 9:16
+- `image-edit`: EditImage style fusion (2 refs)
+- `image-edit-single`: EditImage single image
+- `image-edit-mask`: EditImage with mask
 
 ## Notes
 
@@ -72,3 +76,11 @@ examples/gemini/
     ├── blocks.go
     └── service.go
 ```
+
+## Diversity
+
+Examples cover:
+
+- **Chat**: pure text, image-to-image, tool calling
+- **GenImage**: landscape (16:9), portrait (9:16), minimal prompt
+- **EditImage**: style fusion, single-image edit, mask-based edit

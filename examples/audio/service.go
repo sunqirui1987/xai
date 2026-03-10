@@ -28,10 +28,16 @@ import (
 // DemoAudioURL is a public sample audio for ASR demos.
 const DemoAudioURL = "https://static.qiniu.com/ai-inference/example-resources/example.mp3"
 
-func newService() *audio.Service {
-	token := os.Getenv("QINIU_API_KEY")
-	if token != "" {
-		return qiniu.NewService(token)
+// audioService is the interface used by audio examples (Operation, ListVoices, etc).
+type audioService interface {
+	xai.Service
+	ListVoices(ctx context.Context) ([]audio.VoiceListItem, error)
+}
+
+func newService() audioService {
+	apiKey := os.Getenv("QINIU_API_KEY")
+	if apiKey != "" {
+		return qiniu.NewService(apiKey)
 	}
 	// Mock mode: no API key, returns placeholder results
 	asrExec := &mockASRExecutor{}

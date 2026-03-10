@@ -31,7 +31,7 @@ func runChatText() {
 
 	params := service.Params().
 		Model(xai.Model("gemini-2.5-flash-image")).
-		Messages(service.UserMsg().Text("画一只可爱的橘猫，坐在窗台上看着夕阳"))
+		Messages(service.UserMsg().Text("你好，请介绍一下 Gemini 模型的特点"))
 
 	resp, err := oshared.GenOrStream(ctx, service, params, nil)
 	if err != nil {

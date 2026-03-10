@@ -237,17 +237,35 @@ func NewExecutors(client *Client) (*ASRExecutor, *TTSExecutor) {
 	return NewASRExecutor(client), NewTTSExecutor(client)
 }
 
+// Service wraps audio.Service with ApiKeySetter for runtime configuration.
+type Service struct {
+	*audio.Service
+	client *Client
+}
+
+// SetApiKey updates the API key at runtime. Implements xai.ApiKeySetter.
+func (s *Service) SetApiKey(apiKey string) {
+	s.client.SetApiKey(apiKey)
+}
+
+// AudioService returns the embedded *audio.Service for operation.Call.
+func (s *Service) AudioService() *audio.Service { return s.Service }
+
 // NewService creates an audio.Service with Qiniu executors.
 // Includes VoiceLister for ListVoices support.
-func NewService(token string, opts ...ClientOption) *audio.Service {
-	client := NewClient(token, opts...)
+// The returned *Service supports SetApiKey(apiKey) for runtime API key updates.
+func NewService(apiKey string, opts ...ClientOption) *Service {
+	client := NewClient(apiKey, opts...)
 	asrExec, ttsExec := NewExecutors(client)
 	voiceLister := NewVoiceLister(client)
-	return audio.NewService(asrExec, ttsExec, audio.WithVoiceLister(voiceLister))
+	return &Service{
+		Service: audio.NewService(asrExec, ttsExec, audio.WithVoiceLister(voiceLister)),
+		client:  client,
+	}
 }
 
 // Register creates an audio.Service with Qiniu executors and registers it with xai.
-func Register(token string, opts ...ClientOption) {
-	svc := NewService(token, opts...)
+func Register(apiKey string, opts ...ClientOption) {
+	svc := NewService(apiKey, opts...)
 	audio.Register(svc)
 }

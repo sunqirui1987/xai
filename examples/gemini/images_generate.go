@@ -46,3 +46,44 @@ func runImageGenerate() {
 	}
 	printImageResults(resp.Results())
 }
+
+func runImageGenerateSimple() {
+	service := shared.NewService("")
+	ctx := context.Background()
+
+	op, err := service.Operation(xai.Model(shared.ModelFlashImage), xai.GenImage)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	op.Params().
+		Set("Prompt", "一只可爱的橘猫坐在窗台上看着夕阳，照片风格，高清画质")
+
+	resp, err := op.Call(ctx, service, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	printImageResults(resp.Results())
+}
+
+func runImageGeneratePortrait() {
+	service := shared.NewService("")
+	ctx := context.Background()
+
+	op, err := service.Operation(xai.Model(shared.ModelV31ImagePreview), xai.GenImage)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	op.Params().
+		Set("Prompt", "梦幻森林中的精灵小屋，魔法光芒环绕").
+		Set("AspectRatio", "9:16")
+
+	resp, err := op.Call(ctx, service, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	printImageResults(resp.Results())
+}

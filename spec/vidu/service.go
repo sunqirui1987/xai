@@ -67,6 +67,10 @@ func NewService(backend Backend, opts ...Option) *Service {
 	return NewWithBackend(backend, opts...)
 }
 
+// ViduService returns self. Provider wrappers expose the embedded *Service
+// through the same method so Operation.Call can unwrap them.
+func (s *Service) ViduService() *Service { return s }
+
 func (p *Service) Features() xai.Feature { return xai.FeatureOperation }
 
 func (p *Service) Gen(ctx context.Context, params xai.ParamBuilder, opts xai.OptionBuilder) (xai.GenResponse, error) {

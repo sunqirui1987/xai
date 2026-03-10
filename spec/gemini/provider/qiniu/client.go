@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -43,7 +44,8 @@ type HTTPDoer interface {
 }
 
 type client struct {
-	token          string
+	apiKeyMu       sync.RWMutex
+	apiKey         string
 	base           string
 	http           HTTPDoer
 	maxRetries     int
@@ -59,14 +61,26 @@ type clientOptions struct {
 	logger         *log.Logger
 }
 
-func newClient(token, baseURL string, doer HTTPDoer, opts *clientOptions) *client {
+func (c *client) setApiKey(apiKey string) {
+	c.apiKeyMu.Lock()
+	defer c.apiKeyMu.Unlock()
+	c.apiKey = apiKey
+}
+
+func (c *client) apiKeyValue() string {
+	c.apiKeyMu.RLock()
+	defer c.apiKeyMu.RUnlock()
+	return c.apiKey
+}
+
+func newClient(apiKey, baseURL string, doer HTTPDoer, opts *clientOptions) *client {
 	if doer == nil {
 		doer = &http.Client{Timeout: DefaultHTTPTimeout}
 	}
 	c := &client{
-		token: token,
-		base:  normalizeBaseURL(baseURL),
-		http:  doer,
+		apiKey: apiKey,
+		base:   normalizeBaseURL(baseURL),
+		http:   doer,
 	}
 	if opts != nil {
 		c.maxRetries = opts.maxRetries
@@ -127,10 +141,11 @@ func (c *client) logDebug(format string, args ...any) {
 
 // buildCurlCommand builds an equivalent curl command for debugging.
 func (c *client) buildCurlCommand(method, url string, body []byte) string {
+	apiKey := c.apiKeyValue()
 	var cmd bytes.Buffer
 	cmd.WriteString("curl -X ")
 	cmd.WriteString(method)
-	cmd.WriteString(fmt.Sprintf(" -H 'Authorization: Bearer %s'", c.token))
+	cmd.WriteString(fmt.Sprintf(" -H 'Authorization: Bearer %s'", apiKey))
 	cmd.WriteString(" -H 'Content-Type: application/json'")
 	cmd.WriteString(" -H 'Accept: application/json'")
 	if len(body) > 0 {
@@ -372,7 +387,7 @@ func (c *client) do(ctx context.Context, method, url string, body []byte) (*http
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.apiKeyValue())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	return c.http.Do(req)

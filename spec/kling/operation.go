@@ -27,6 +27,10 @@ import (
 
 // -----------------------------------------------------------------------------
 
+type serviceProvider interface {
+	KlingService() *Service
+}
+
 func (p *Service) Actions(model xai.Model) []xai.Action {
 	m := string(model)
 	var actions []xai.Action
@@ -61,7 +65,7 @@ func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operatio
 // -----------------------------------------------------------------------------
 
 type genImage struct {
-	model string
+	model  string
 	params *Params
 }
 
@@ -77,8 +81,12 @@ func (p *genImage) Params() xai.Params {
 }
 
 func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (xai.OperationResponse, error) {
-	s := svc.(*Service)
-	if s.imgExec == nil {
+	s, ok := svc.(serviceProvider)
+	if !ok {
+		return nil, xai.ErrNotFound
+	}
+	klingSvc := s.KlingService()
+	if klingSvc == nil || klingSvc.imgExec == nil {
 		return nil, xai.ErrNotFound
 	}
 	params := p.Params().(*Params)
@@ -92,13 +100,13 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if o, ok := opts.(*Options); ok && o.UserID != "" {
 		params.Set("_user_id", o.UserID)
 	}
-	return s.imgExec.Submit(ctx, xai.Model(p.model), params)
+	return klingSvc.imgExec.Submit(ctx, xai.Model(p.model), params)
 }
 
 // -----------------------------------------------------------------------------
 
 type genVideo struct {
-	model string
+	model  string
 	params *Params
 }
 
@@ -114,8 +122,12 @@ func (p *genVideo) Params() xai.Params {
 }
 
 func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (xai.OperationResponse, error) {
-	s := svc.(*Service)
-	if s.vidExec == nil {
+	s, ok := svc.(serviceProvider)
+	if !ok {
+		return nil, xai.ErrNotFound
+	}
+	klingSvc := s.KlingService()
+	if klingSvc == nil || klingSvc.vidExec == nil {
 		return nil, xai.ErrNotFound
 	}
 	params := p.Params().(*Params)
@@ -132,7 +144,7 @@ func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if o, ok := opts.(*Options); ok && o.UserID != "" {
 		params.Set("_user_id", o.UserID)
 	}
-	return s.vidExec.Submit(ctx, xai.Model(p.model), params)
+	return klingSvc.vidExec.Submit(ctx, xai.Model(p.model), params)
 }
 
 // inputSchema implements xai.InputSchema.

@@ -28,8 +28,8 @@ import (
 )
 
 func newService() *openai.Service {
-	token := strings.TrimSpace(os.Getenv("QINIU_API_KEY"))
-	return qiniu.NewService(token)
+	apiKey := strings.TrimSpace(os.Getenv("QINIU_API_KEY"))
+	return qiniu.NewService(apiKey)
 }
 
 func runOperation(ctx context.Context, svc *openai.Service, op xai.Operation, name string) {

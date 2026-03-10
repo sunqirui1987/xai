@@ -25,16 +25,33 @@ import (
 	"github.com/goplus/xai/spec/kling/provider/qiniu"
 )
 
+// Service wraps xai.Service with optional SetApiKey for runtime configuration.
+type Service struct {
+	xai.Service
+	setApiKey func(string)
+}
+
+// SetApiKey updates the API key at runtime. Only effective when using real Qiniu API;
+// no-op for mock service.
+func (s *Service) SetApiKey(apiKey string) {
+	if s.setApiKey != nil {
+		s.setApiKey(apiKey)
+	}
+}
+
 // NewService creates a Kling Service. If QINIU_API_KEY is set, uses real Qnagic API;
 // otherwise returns a mock service with placeholder URLs.
-func NewService() (*kling.Service, error) {
-	token := os.Getenv("QINIU_API_KEY")
-	if token != "" {
-		return qiniu.NewService(token), nil
+// The returned *Service supports SetApiKey(apiKey) for runtime API key updates.
+func NewService() (*Service, error) {
+	apiKey := os.Getenv("QINIU_API_KEY")
+	if apiKey != "" {
+		qiniuSvc := qiniu.NewService(apiKey)
+		return &Service{Service: qiniuSvc, setApiKey: qiniuSvc.SetApiKey}, nil
 	}
 	imgExec := &mockImageExecutor{urls: []string{"https://aitoken-public.qnaigc.com/example/generate-image/smile-woman.png"}}
 	vidExec := &mockVideoExecutor{urls: []string{"https://aitoken-public.qnaigc.com/example/generate-video/the-little-dog-is-running-on-the-lawn.mp4"}}
-	return kling.NewService(imgExec, vidExec), nil
+	mockSvc := kling.NewService(imgExec, vidExec)
+	return &Service{Service: mockSvc, setApiKey: nil}, nil
 }
 
 type mockImageExecutor struct {

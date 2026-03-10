@@ -243,7 +243,7 @@ func TestVideoExecutorSubmitAndPoll(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewClient("test-token", WithBaseURL(ts.URL), WithDebugLog(false))
+	client := NewClient("test-apikey", WithBaseURL(ts.URL), WithDebugLog(false))
 	backend := NewBackend(client)
 
 	params := vidu.NewParams().

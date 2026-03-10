@@ -28,6 +28,10 @@ var (
 	ErrInputRequired = internal.ErrInputRequired
 )
 
+type serviceProvider interface {
+	AudioService() *Service
+}
+
 func (p *Service) Actions(model xai.Model) []xai.Action {
 	m := string(model)
 	var actions []xai.Action
@@ -78,8 +82,12 @@ func (p *genTranscribe) Params() xai.Params {
 }
 
 func (p *genTranscribe) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (xai.OperationResponse, error) {
-	s := svc.(*Service)
-	if s.asrExec == nil {
+	s, ok := svc.(serviceProvider)
+	if !ok {
+		return nil, xai.ErrNotFound
+	}
+	asr := s.AudioService()
+	if asr == nil || asr.asrExec == nil {
 		return nil, xai.ErrNotFound
 	}
 	params := p.Params().(*Params)
@@ -89,7 +97,7 @@ func (p *genTranscribe) Call(ctx context.Context, svc xai.Service, opts xai.Opti
 	if o, ok := opts.(*Options); ok && o.UserID != "" {
 		params.Set("_user_id", o.UserID)
 	}
-	return s.asrExec.Transcribe(ctx, xai.Model(p.model), params)
+	return asr.asrExec.Transcribe(ctx, xai.Model(p.model), params)
 }
 
 // -----------------------------------------------------------------------------
@@ -111,8 +119,12 @@ func (p *genSynthesize) Params() xai.Params {
 }
 
 func (p *genSynthesize) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (xai.OperationResponse, error) {
-	s := svc.(*Service)
-	if s.ttsExec == nil {
+	s, ok := svc.(serviceProvider)
+	if !ok {
+		return nil, xai.ErrNotFound
+	}
+	tts := s.AudioService()
+	if tts == nil || tts.ttsExec == nil {
 		return nil, xai.ErrNotFound
 	}
 	params := p.Params().(*Params)
@@ -122,7 +134,7 @@ func (p *genSynthesize) Call(ctx context.Context, svc xai.Service, opts xai.Opti
 	if o, ok := opts.(*Options); ok && o.UserID != "" {
 		params.Set("_user_id", o.UserID)
 	}
-	return s.ttsExec.Synthesize(ctx, xai.Model(p.model), params)
+	return tts.ttsExec.Synthesize(ctx, xai.Model(p.model), params)
 }
 
 // inputSchema implements xai.InputSchema.

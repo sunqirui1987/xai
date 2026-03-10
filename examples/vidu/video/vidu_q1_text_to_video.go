@@ -23,7 +23,7 @@ import (
 	"github.com/goplus/xai/spec/vidu"
 )
 
-func runViduQ1TextToVideo(ctx context.Context, svc *vidu.Service, model xai.Model) error {
+func runViduQ1TextToVideo(ctx context.Context, svc xai.Service, model xai.Model) error {
 	op, err := svc.Operation(model, xai.GenVideo)
 	if err != nil {
 		return err

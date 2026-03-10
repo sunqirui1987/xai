@@ -71,7 +71,8 @@ func SchemaForSynthesize(model string) []xai.Field {
 //	svc := audio.NewService(asrExec, ttsExec)
 //	audio.Register(svc)
 //	// Then xai.New(ctx, "audio://") returns svc
-func Register(svc *Service) {
+// Accepts any xai.Service implementation (e.g. *audio.Service or *qiniu.Service).
+func Register(svc xai.Service) {
 	xai.Register(Scheme, func(ctx context.Context, uri string) (xai.Service, error) {
 		return svc, nil
 	})

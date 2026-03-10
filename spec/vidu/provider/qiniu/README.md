@@ -26,8 +26,8 @@ import (
     "github.com/goplus/xai/spec/vidu/provider/qiniu"
 )
 
-func run(ctx context.Context, token string) error {
-    svc := qiniu.NewService(token)
+func run(ctx context.Context, apiKey string) error {
+    svc := qiniu.NewService(apiKey)
 
     op, err := svc.Operation(xai.Model(vidu.ModelViduQ2), xai.GenVideo)
     if err != nil {
@@ -67,7 +67,7 @@ go run ./examples/vidu/video call-sync     # CallSync + GetTask resume
 Pass options to `NewService`:
 
 ```go
-svc := qiniu.NewService(token,
+svc := qiniu.NewService(apiKey,
     qiniu.WithBaseURL(qiniu.OverseasBaseURL),  // Overseas endpoint
     qiniu.WithRetry(3, time.Second),           // Retry with backoff
     qiniu.WithDebugLog(true),                  // Print curl and response logs

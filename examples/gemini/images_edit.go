@@ -54,3 +54,56 @@ func runImageEdit() {
 	}
 	printImageResults(resp.Results())
 }
+
+func runImageEditSingle() {
+	service := shared.NewService("")
+	ctx := context.Background()
+
+	op, err := service.Operation(xai.Model(shared.ModelV31ImagePreview), xai.EditImage)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	img := service.ImageFromStgUri(xai.ImageJPEG, DemoURLs.RunningMan)
+	ref, _ := service.ReferenceImage(img, 0, xai.RawReferenceImage)
+
+	op.Params().
+		Set("Prompt", "为这个场景添加日落效果，让整体色调更温暖").
+		Set("References", []genai.ReferenceImage{ref.(genai.ReferenceImage)})
+
+	resp, err := op.Call(ctx, service, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	printImageResults(resp.Results())
+}
+
+func runImageEditMask() {
+	service := shared.NewService("")
+	ctx := context.Background()
+
+	op, err := service.Operation(xai.Model(shared.ModelV31ImagePreview), xai.EditImage)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	imgBase := service.ImageFromStgUri(xai.ImageJPEG, DemoURLs.MaskBase)
+	imgMask := service.ImageFromStgUri(xai.ImagePNG, DemoURLs.MaskMask)
+	refBase, _ := service.ReferenceImage(imgBase, 0, xai.RawReferenceImage)
+	refMask, _ := service.ReferenceImage(imgMask, 1, xai.MaskReferenceImage)
+
+	op.Params().
+		Set("Prompt", "使用第二张图片作为遮罩图，仅在遮罩图中的白色区域允许生成内容。在第一张图片的对应位置添加两个人正在拥抱的场景。遮罩以白色区域为可生成区域，黑色区域保持第一张图片不变，不要修改遮罩外的背景、建筑或已有物体。不要把遮罩的白色保留到第一个图片。").
+		Set("References", []genai.ReferenceImage{refBase.(genai.ReferenceImage), refMask.(genai.ReferenceImage)}).
+		Set("AspectRatio", "16:9")
+
+	resp, err := op.Call(ctx, service, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	printImageResults(resp.Results())
+}

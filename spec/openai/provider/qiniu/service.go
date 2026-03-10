@@ -51,10 +51,10 @@ func WithBaseURL(u string) ClientOption {
 // NewService creates an OpenAI-compatible Service backed by Qiniu API (api.qnaigc.com).
 // It uses provider_v1 (Chat Completions API) for Gen/GenStream and supports
 // Sora video operations via Service.Operation(..., xai.GenVideo).
-// The token can be passed directly or read from QINIU_API_KEY env when empty.
+// The apiKey can be passed directly or read from QINIU_API_KEY env when empty.
 // Panics on error; use NewServiceWithError to handle errors.
-func NewService(token string, opts ...ClientOption) *openai.Service {
-	svc, err := NewServiceWithError(token, opts...)
+func NewService(apiKey string, opts ...ClientOption) *openai.Service {
+	svc, err := NewServiceWithError(apiKey, opts...)
 	if err != nil {
 		panic("qiniu: " + err.Error())
 	}
@@ -63,18 +63,18 @@ func NewService(token string, opts ...ClientOption) *openai.Service {
 
 // NewServiceWithError creates an OpenAI-compatible Service backed by Qiniu API.
 // Returns an error if the API key is missing or service creation fails.
-func NewServiceWithError(token string, opts ...ClientOption) (*openai.Service, error) {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+func NewServiceWithError(apiKey string, opts ...ClientOption) (*openai.Service, error) {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
-	if token == "" {
-		return nil, fmt.Errorf("API key is required (set QINIU_API_KEY or pass token)")
+	if apiKey == "" {
+		return nil, fmt.Errorf("API key is required (set QINIU_API_KEY or pass apiKey)")
 	}
 	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
-	uri := openai.SchemeV1 + ":base=" + cfg.baseURL + "&key=" + url.QueryEscape(token)
+	uri := openai.SchemeV1 + ":base=" + cfg.baseURL + "&key=" + url.QueryEscape(apiKey)
 	svc, err := openai.NewV1(context.Background(), uri)
 	if err != nil {
 		return nil, err
@@ -83,10 +83,10 @@ func NewServiceWithError(token string, opts ...ClientOption) (*openai.Service, e
 }
 
 // Register registers the Qiniu-backed OpenAI service with xai under scheme "qiniu".
-// After calling Register(token), xai.New(ctx, "qiniu:") returns the Qiniu service.
-// Token can be empty to use QINIU_API_KEY from environment.
-func Register(token string, opts ...ClientOption) {
-	svc, err := NewServiceWithError(token, opts...)
+// After calling Register(apiKey), xai.New(ctx, "qiniu:") returns the Qiniu service.
+// apiKey can be empty to use QINIU_API_KEY from environment.
+func Register(apiKey string, opts ...ClientOption) {
+	svc, err := NewServiceWithError(apiKey, opts...)
 	if err != nil {
 		panic("qiniu: " + err.Error())
 	}
@@ -99,12 +99,12 @@ func Register(token string, opts ...ClientOption) {
 		if err != nil {
 			return nil, err
 		}
-		tok := token
+		key := apiKey
 		if k := params["key"]; len(k) > 0 {
-			tok = k[0]
+			key = k[0]
 		}
-		if tok == "" {
-			tok = os.Getenv("QINIU_API_KEY")
+		if key == "" {
+			key = os.Getenv("QINIU_API_KEY")
 		}
 		base := DefaultBaseURL
 		if b := params["base"]; len(b) > 0 {
@@ -114,6 +114,6 @@ func Register(token string, opts ...ClientOption) {
 		if base != DefaultBaseURL {
 			opts = append(opts, WithBaseURL(base))
 		}
-		return NewServiceWithError(tok, opts...)
+		return NewServiceWithError(key, opts...)
 	})
 }

@@ -26,11 +26,11 @@ import (
 	exampleshared "github.com/goplus/xai/examples/vidu/shared"
 )
 
-func newService() (*vidu.Service, error) {
+func newService() (*exampleshared.Service, error) {
 	return exampleshared.NewService()
 }
 
-func newViduOptions(svc *vidu.Service, userID string) xai.OptionBuilder {
+func newViduOptions(svc xai.Service, userID string) xai.OptionBuilder {
 	opts := svc.Options()
 	if o, ok := opts.(*vidu.Options); ok && strings.TrimSpace(userID) != "" {
 		o.WithUserID(strings.TrimSpace(userID))

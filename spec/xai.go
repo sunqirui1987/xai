@@ -37,6 +37,15 @@ var (
 
 // -----------------------------------------------------------------------------
 
+// ApiKeySetter allows runtime API key updates. Services that use api-key-based
+// auth (e.g. Qiniu providers) can implement this to support changing the key
+// at runtime without recreating the service.
+type ApiKeySetter interface {
+	SetApiKey(apiKey string)
+}
+
+// -----------------------------------------------------------------------------
+
 type OptionBuilder interface {
 	WithBaseURL(base string) OptionBuilder
 }

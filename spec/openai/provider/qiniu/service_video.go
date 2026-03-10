@@ -31,16 +31,16 @@ import (
 // return xai.ErrNotSupported.
 //
 // Use this when you need only video generation without chat completions.
-// The token can be passed directly or read from QINIU_API_KEY env when empty.
-func NewVideoService(token string, opts ...ClientOption) *openai.Service {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+// The apiKey can be passed directly or read from QINIU_API_KEY env when empty.
+func NewVideoService(apiKey string, opts ...ClientOption) *openai.Service {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
 	cfg := &clientConfig{baseURL: DefaultBaseURL}
 	for _, opt := range opts {
 		opt(cfg)
 	}
-	uri := openai.SchemeV1 + ":base=" + cfg.baseURL + "&key=" + url.QueryEscape(token)
+	uri := openai.SchemeV1 + ":base=" + cfg.baseURL + "&key=" + url.QueryEscape(apiKey)
 	svc, err := openai.NewVideoOnly(context.Background(), uri)
 	if err != nil {
 		panic("qiniu: " + err.Error())
@@ -49,9 +49,9 @@ func NewVideoService(token string, opts ...ClientOption) *openai.Service {
 }
 
 // RegisterVideo registers a video-only Qiniu service with xai under scheme "qiniu-video".
-// After calling RegisterVideo(token), xai.New(ctx, "qiniu-video:") returns the video-only service.
-func RegisterVideo(token string, opts ...ClientOption) {
-	svc := NewVideoService(token, opts...)
+// After calling RegisterVideo(apiKey), xai.New(ctx, "qiniu-video:") returns the video-only service.
+func RegisterVideo(apiKey string, opts ...ClientOption) {
+	svc := NewVideoService(apiKey, opts...)
 	xai.Register("qiniu-video", func(ctx context.Context, uri string) (xai.Service, error) {
 		if uri == "" {
 			return svc, nil
@@ -60,12 +60,12 @@ func RegisterVideo(token string, opts ...ClientOption) {
 		if err != nil {
 			return nil, err
 		}
-		tok := token
+		key := apiKey
 		if k := params["key"]; len(k) > 0 {
-			tok = k[0]
+			key = k[0]
 		}
-		if tok == "" {
-			tok = os.Getenv("QINIU_API_KEY")
+		if key == "" {
+			key = os.Getenv("QINIU_API_KEY")
 		}
 		base := DefaultBaseURL
 		if b := params["base"]; len(b) > 0 {
@@ -75,6 +75,6 @@ func RegisterVideo(token string, opts ...ClientOption) {
 		if base != DefaultBaseURL {
 			clientOpts = append(clientOpts, WithBaseURL(base))
 		}
-		return NewVideoService(tok, clientOpts...), nil
+		return NewVideoService(key, clientOpts...), nil
 	})
 }

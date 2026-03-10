@@ -31,22 +31,44 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	token := "test-token"
-	c := NewClient(token)
+	apiKey := "test-apikey"
+	c := NewClient(apiKey)
 
-	if c.Token() != token {
-		t.Errorf("expected token %q, got %q", token, c.Token())
+	if c.ApiKey() != apiKey {
+		t.Errorf("expected apiKey %q, got %q", apiKey, c.ApiKey())
 	}
 	if c.BaseURL() != DefaultBaseURL {
 		t.Errorf("expected base URL %q, got %q", DefaultBaseURL, c.BaseURL())
 	}
 }
 
+func TestClientSetApiKey(t *testing.T) {
+	c := NewClient("initial-apikey")
+	if c.ApiKey() != "initial-apikey" {
+		t.Errorf("expected initial apiKey, got %q", c.ApiKey())
+	}
+	c.SetApiKey("new-apikey")
+	if c.ApiKey() != "new-apikey" {
+		t.Errorf("expected new apiKey after SetApiKey, got %q", c.ApiKey())
+	}
+}
+
+func TestServiceSetApiKey(t *testing.T) {
+	svc := NewService("initial-key")
+	if svc.client.ApiKey() != "initial-key" {
+		t.Errorf("expected initial key, got %q", svc.client.ApiKey())
+	}
+	svc.SetApiKey("new-key")
+	if svc.client.ApiKey() != "new-key" {
+		t.Errorf("expected new key after SetApiKey, got %q", svc.client.ApiKey())
+	}
+}
+
 func TestNewClientWithOptions(t *testing.T) {
-	token := "test-token"
+	apiKey := "test-apikey"
 	customURL := "https://custom.api.com"
 
-	c := NewClient(token, WithBaseURL(customURL))
+	c := NewClient(apiKey, WithBaseURL(customURL))
 
 	if c.BaseURL() != customURL {
 		t.Errorf("expected base URL %q, got %q", customURL, c.BaseURL())
@@ -54,8 +76,8 @@ func TestNewClientWithOptions(t *testing.T) {
 }
 
 func TestNewClientWithRetryAndDebug(t *testing.T) {
-	token := "test-token"
-	c := NewClient(token,
+	apiKey := "test-apikey"
+	c := NewClient(apiKey,
 		WithRetry(3, 500*time.Millisecond),
 		WithDebugLog(true),
 	)
@@ -444,7 +466,7 @@ func TestClientPost(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
-		if r.Header.Get("Authorization") != "Bearer test-token" {
+		if r.Header.Get("Authorization") != "Bearer test-apikey" {
 			t.Errorf("unexpected Authorization header: %s", r.Header.Get("Authorization"))
 		}
 		if r.Header.Get("Content-Type") != "application/json" {
@@ -456,7 +478,7 @@ func TestClientPost(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient("test-token", WithBaseURL(server.URL))
+	client := NewClient("test-apikey", WithBaseURL(server.URL))
 	ctx := context.Background()
 	resp, err := client.Post(ctx, "/v1/images/generations", map[string]string{"prompt": "test"})
 	if err != nil {
@@ -483,7 +505,7 @@ func TestClientGet(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient("test-token", WithBaseURL(server.URL))
+	client := NewClient("test-apikey", WithBaseURL(server.URL))
 	ctx := context.Background()
 	resp, err := client.Get(ctx, "/v1/images/tasks/test-123")
 	if err != nil {
@@ -542,7 +564,7 @@ func TestClientRetry(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient("test-token",
+	client := NewClient("test-apikey",
 		WithBaseURL(server.URL),
 		WithRetry(3, 10*time.Millisecond),
 	)
@@ -576,7 +598,7 @@ func TestClientRetryExhausted(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient("test-token",
+	client := NewClient("test-apikey",
 		WithBaseURL(server.URL),
 		WithRetry(2, 10*time.Millisecond),
 	)
@@ -699,7 +721,7 @@ func TestIsRetryableStatus(t *testing.T) {
 func TestBuildCurlCommand(t *testing.T) {
 	tests := []struct {
 		name     string
-		token    string
+		apiKey   string
 		method   string
 		url      string
 		body     []byte
@@ -707,13 +729,13 @@ func TestBuildCurlCommand(t *testing.T) {
 	}{
 		{
 			name:   "POST with body",
-			token:  "sk-test-token",
+			apiKey: "sk-test-apikey",
 			method: "POST",
 			url:    "https://api.qnaigc.com/v1/images/generations",
 			body:   []byte(`{"model":"kling-v1","prompt":"a cute cat"}`),
 			contains: []string{
 				"curl -X POST",
-				"-H 'Authorization: Bearer sk-test-token'",
+				"-H 'Authorization: Bearer sk-test-apikey'",
 				"-H 'Content-Type: application/json'",
 				`-d '{"model":"kling-v1","prompt":"a cute cat"}'`,
 				"'https://api.qnaigc.com/v1/images/generations'",
@@ -721,13 +743,13 @@ func TestBuildCurlCommand(t *testing.T) {
 		},
 		{
 			name:   "GET without body",
-			token:  "sk-test-token",
+			apiKey: "sk-test-apikey",
 			method: "GET",
 			url:    "https://api.qnaigc.com/v1/images/tasks/task-123",
 			body:   nil,
 			contains: []string{
 				"curl -X GET",
-				"-H 'Authorization: Bearer sk-test-token'",
+				"-H 'Authorization: Bearer sk-test-apikey'",
 				"-H 'Content-Type: application/json'",
 				"'https://api.qnaigc.com/v1/images/tasks/task-123'",
 			},
@@ -736,7 +758,7 @@ func TestBuildCurlCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := NewClient(tt.token)
+			client := NewClient(tt.apiKey)
 			curlCmd := client.buildCurlCommand(tt.method, tt.url, tt.body)
 
 			for _, substr := range tt.contains {
@@ -749,7 +771,7 @@ func TestBuildCurlCommand(t *testing.T) {
 }
 
 func TestBuildCurlCommandNoBody(t *testing.T) {
-	client := NewClient("test-token")
+	client := NewClient("test-apikey")
 	curlCmd := client.buildCurlCommand("GET", "https://api.example.com/test", nil)
 
 	if contains(curlCmd, "-d") {

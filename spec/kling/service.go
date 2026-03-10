@@ -51,7 +51,7 @@ type Options struct {
 	UserID  string
 }
 
-func (p *Options) WithBaseURL(base string) xai.OptionBuilder { p.BaseURL = base; return p }
+func (p *Options) WithBaseURL(base string) xai.OptionBuilder  { p.BaseURL = base; return p }
 func (p *Options) WithUserID(userID string) xai.OptionBuilder { p.UserID = userID; return p }
 
 // -----------------------------------------------------------------------------
@@ -81,6 +81,10 @@ func NewService(imgExec ImageGenExecutor, vidExec VideoGenExecutor, opts ...Opti
 	return s
 }
 
+// KlingService returns self. Provider wrappers expose the embedded *Service
+// through the same method so Operation.Call can unwrap them.
+func (s *Service) KlingService() *Service { return s }
+
 func (p *Service) Features() xai.Feature {
 	return xai.FeatureOperation
 }
@@ -107,12 +111,12 @@ func (p *Service) Params() xai.ParamBuilder {
 
 type noopParamBuilder struct{}
 
-func (p *noopParamBuilder) System(xai.TextBuilder) xai.ParamBuilder   { return p }
+func (p *noopParamBuilder) System(xai.TextBuilder) xai.ParamBuilder     { return p }
 func (p *noopParamBuilder) Messages(...xai.MsgBuilder) xai.ParamBuilder { return p }
-func (p *noopParamBuilder) Tools(...xai.ToolBase) xai.ParamBuilder    { return p }
-func (p *noopParamBuilder) Model(xai.Model) xai.ParamBuilder           { return p }
-func (p *noopParamBuilder) MaxOutputTokens(int64) xai.ParamBuilder     { return p }
-func (p *noopParamBuilder) Compact(int64) xai.ParamBuilder             { return p }
+func (p *noopParamBuilder) Tools(...xai.ToolBase) xai.ParamBuilder      { return p }
+func (p *noopParamBuilder) Model(xai.Model) xai.ParamBuilder            { return p }
+func (p *noopParamBuilder) MaxOutputTokens(int64) xai.ParamBuilder      { return p }
+func (p *noopParamBuilder) Compact(int64) xai.ParamBuilder              { return p }
 func (p *noopParamBuilder) Container(string) xai.ParamBuilder           { return p }
 func (p *noopParamBuilder) InferenceGeo(string) xai.ParamBuilder        { return p }
 func (p *noopParamBuilder) Temperature(float64) xai.ParamBuilder        { return p }
@@ -178,18 +182,18 @@ func (p *Service) Texts(texts ...string) xai.TextBuilder {
 
 type noopMsgBuilder struct{}
 
-func (p noopMsgBuilder) Text(text string) xai.MsgBuilder                                    { return p }
-func (p noopMsgBuilder) Image(image xai.ImageData) xai.MsgBuilder                            { return p }
-func (p noopMsgBuilder) ImageURL(mime xai.ImageType, url string) xai.MsgBuilder             { return p }
-func (p noopMsgBuilder) ImageFile(mime xai.ImageType, fileID string) xai.MsgBuilder          { return p }
-func (p noopMsgBuilder) Doc(doc xai.DocumentData) xai.MsgBuilder                            { return p }
-func (p noopMsgBuilder) DocURL(mime xai.DocumentType, url string) xai.MsgBuilder             { return p }
-func (p noopMsgBuilder) DocFile(mime xai.DocumentType, fileID string) xai.MsgBuilder        { return p }
-func (p noopMsgBuilder) Part(part xai.Part) xai.MsgBuilder                                  { return p }
-func (p noopMsgBuilder) Thinking(t xai.Thinking) xai.MsgBuilder                             { return p }
-func (p noopMsgBuilder) ToolUse(v xai.ToolUse) xai.MsgBuilder                               { return p }
-func (p noopMsgBuilder) ToolResult(v xai.ToolResult) xai.MsgBuilder                         { return p }
-func (p noopMsgBuilder) Compaction(data string) xai.MsgBuilder                               { return p }
+func (p noopMsgBuilder) Text(text string) xai.MsgBuilder                             { return p }
+func (p noopMsgBuilder) Image(image xai.ImageData) xai.MsgBuilder                    { return p }
+func (p noopMsgBuilder) ImageURL(mime xai.ImageType, url string) xai.MsgBuilder      { return p }
+func (p noopMsgBuilder) ImageFile(mime xai.ImageType, fileID string) xai.MsgBuilder  { return p }
+func (p noopMsgBuilder) Doc(doc xai.DocumentData) xai.MsgBuilder                     { return p }
+func (p noopMsgBuilder) DocURL(mime xai.DocumentType, url string) xai.MsgBuilder     { return p }
+func (p noopMsgBuilder) DocFile(mime xai.DocumentType, fileID string) xai.MsgBuilder { return p }
+func (p noopMsgBuilder) Part(part xai.Part) xai.MsgBuilder                           { return p }
+func (p noopMsgBuilder) Thinking(t xai.Thinking) xai.MsgBuilder                      { return p }
+func (p noopMsgBuilder) ToolUse(v xai.ToolUse) xai.MsgBuilder                        { return p }
+func (p noopMsgBuilder) ToolResult(v xai.ToolResult) xai.MsgBuilder                  { return p }
+func (p noopMsgBuilder) Compaction(data string) xai.MsgBuilder                       { return p }
 
 func (p *Service) UserMsg() xai.MsgBuilder {
 	return noopMsgBuilder{}
@@ -203,8 +207,8 @@ func (p *Service) AssistantMsg() xai.MsgBuilder {
 
 type noopWebSearchTool struct{}
 
-func (p noopWebSearchTool) UnderlyingAssignTo(any) {}
-func (p noopWebSearchTool) MaxUses(int64) xai.WebSearchTool { return p }
+func (p noopWebSearchTool) UnderlyingAssignTo(any)                     {}
+func (p noopWebSearchTool) MaxUses(int64) xai.WebSearchTool            { return p }
 func (p noopWebSearchTool) AllowedDomains(...string) xai.WebSearchTool { return p }
 func (p noopWebSearchTool) BlockedDomains(...string) xai.WebSearchTool { return p }
 
@@ -218,7 +222,7 @@ type noopTool struct {
 	name string
 }
 
-func (p noopTool) UnderlyingAssignTo(any) {}
+func (p noopTool) UnderlyingAssignTo(any)           {}
 func (p noopTool) Description(desc string) xai.Tool { return p }
 
 func (p *Service) ToolDef(name string) xai.Tool {

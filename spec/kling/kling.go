@@ -98,13 +98,14 @@ func SchemaForVideo(model string) []xai.Field { return video.SchemaForVideo(mode
 
 // Register registers the Kling service with xai. The application creates the
 // service with NewService (injecting Executors) and passes it here.
+// Accepts any xai.Service implementation (e.g. *kling.Service or *qiniu.Service).
 //
 // Example:
 //
 //	svc := kling.NewService(imgExec, vidExec)
 //	kling.Register(svc)
 //	// Then xai.New(ctx, "kling://") returns svc
-func Register(svc *Service) {
+func Register(svc xai.Service) {
 	xai.Register(Scheme, func(ctx context.Context, uri string) (xai.Service, error) {
 		return svc, nil
 	})

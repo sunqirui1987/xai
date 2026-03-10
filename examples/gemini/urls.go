@@ -18,11 +18,15 @@ package main
 
 // DemoURLs holds public image URLs used by examples.
 var DemoURLs = struct {
-	ImageToImage string
-	RunningMan   string
-	Lawn         string
+	ImageToImage   string
+	RunningMan     string
+	Lawn           string
+	MaskBase       string
+	MaskMask       string
 }{
 	ImageToImage: "https://aitoken-public.qnaigc.com/example/generate-image/image-to-image-1.jpg",
 	RunningMan:   "https://aitoken-public.qnaigc.com/example/generate-video/running-man.jpg",
 	Lawn:         "https://aitoken-public.qnaigc.com/example/generate-video/lawn.jpg",
+	MaskBase:     "https://aitoken-public.qnaigc.com/example/generate-image/image-to-image-with-mask-1.jpg",
+	MaskMask:     "https://aitoken-public.qnaigc.com/example/generate-image/image-to-image-with-mask-2.png",
 }

@@ -44,11 +44,11 @@ func init() {
 //
 // The returned value is intentionally typed as xai.Service so callers depend on
 // the portable service contract instead of a concrete provider type.
-func NewService(token string) xai.Service {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+func NewService(apiKey string) xai.Service {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
-	return qiniu.NewService(token)
+	return qiniu.NewService(apiKey)
 }
 
 // SetStreamMode sets whether GenOrStream uses streaming mode.

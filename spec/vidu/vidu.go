@@ -51,7 +51,8 @@ func VideoModels() []string {
 }
 
 // Register registers the Vidu service with xai.
-func Register(svc *Service) {
+// Accepts any xai.Service implementation (e.g. *vidu.Service or *qiniu.Service).
+func Register(svc xai.Service) {
 	xai.Register(Scheme, func(ctx context.Context, uri string) (xai.Service, error) {
 		return svc, nil
 	})

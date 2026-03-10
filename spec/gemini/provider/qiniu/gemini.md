@@ -38,7 +38,25 @@
 
 ## 4. Chat Completions（`/v1/chat/completions`）
 
-### 4.1 文生图（流式）
+### 4.1 纯文本对话（流式）
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "model": "gemini-3.1-flash-image-preview",
+  "stream": true,
+  "messages": [
+    {
+      "role": "user",
+      "content": "你好，请介绍一下 Gemini 模型的特点"
+    }
+  ]
+}'
+```
+
+### 4.2 文生图（流式）
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
@@ -56,14 +74,14 @@ curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
 }'
 ```
 
-### 4.2 图生图（流式，多模态输入）
+### 4.3 图生图（流式，多模态输入）
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
 --header 'Authorization: Bearer <token>' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-  "model": "gemini-3.0-pro-image-preview",
+  "model": "gemini-3.1-flash-image-preview",
   "stream": true,
   "messages": [
     {
@@ -71,7 +89,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
       "content": [
         {
           "type": "text",
-          "text": "将这张图片转换为水彩画风格"
+          "text": "Change this image to red."
         },
         {
           "type": "image_url",
@@ -85,7 +103,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
 }'
 ```
 
-### 4.3 非流式 + 比例控制
+### 4.4 非流式 + 比例与尺寸控制
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
@@ -101,12 +119,35 @@ curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
     }
   ],
   "image_config": {
-    "aspect_ratio": "16:9"
+    "aspect_ratio": "16:9",
+    "image_size": "4K"
   }
 }'
 ```
 
-### 4.4 非流式响应样例（核心字段）
+### 4.5 非流式 + 1:1 比例
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "model": "gemini-3.1-flash-image-preview",
+  "stream": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "画一只可爱的橘猫"
+    }
+  ],
+  "image_config": {
+    "aspect_ratio": "1:1",
+    "image_size": "512"
+  }
+}'
+```
+
+### 4.6 非流式响应样例（核心字段）
 
 ```json
 {
@@ -144,21 +185,33 @@ curl --location --request POST 'https://api.qnaigc.com/v1/chat/completions' \
 
 ## 5. Images Generations（`/v1/images/generations`）
 
-### 5.1 基础文生图
+### 5.1 基础文生图（无参数）
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
 --header 'Authorization: Bearer <token>' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-  "model": "gemini-2.5-flash-image",
+  "model": "gemini-3.1-flash-image-preview",
+  "prompt": "一只可爱的橘猫坐在窗台上看着夕阳，照片风格，高清画质"
+}'
+```
+
+### 5.2 文生图 + temperature/top_p
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "model": "gemini-3.1-flash-image-preview",
   "prompt": "梦幻森林中的精灵小屋，魔法光芒环绕",
   "temperature": 0.8,
   "top_p": 0.95
 }'
 ```
 
-### 5.2 文生图 + 画幅比例
+### 5.3 文生图 + 画幅比例
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
@@ -173,7 +226,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
 }'
 ```
 
-### 5.3 竖图比例
+### 5.4 竖图比例 + image_size
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
@@ -183,12 +236,13 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
   "model": "gemini-3.1-flash-image-preview",
   "prompt": "梦幻森林中的精灵小屋，魔法光芒环绕",
   "image_config": {
-    "aspect_ratio": "9:16"
+    "aspect_ratio": "9:16",
+    "image_size": "2K"
   }
 }'
 ```
 
-### 5.4 响应样例
+### 5.5 响应样例
 
 ```json
 {
@@ -213,7 +267,40 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/generations' \
 
 ## 6. Images Edits（`/v1/images/edits`）
 
-### 6.1 Base64 图编辑
+### 6.1 单图编辑（URL）
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "model": "gemini-3.1-flash-image-preview",
+  "image": "https://aitoken-public.qnaigc.com/example/generate-video/running-man.jpg",
+  "prompt": "为这个场景添加日落效果，让整体色调更温暖"
+}'
+```
+
+### 6.2 遮罩编辑（多图：原图 + 遮罩）
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "model": "gemini-3.1-flash-image-preview",
+  "image": [
+    "https://aitoken-public.qnaigc.com/example/generate-image/image-to-image-with-mask-1.jpg",
+    "https://aitoken-public.qnaigc.com/example/generate-image/image-to-image-with-mask-2.png"
+  ],
+  "prompt": "使用第二张图片作为遮罩图，仅在遮罩图中的白色区域允许生成内容。在第一张图片的对应位置添加两个人正在拥抱的场景。遮罩以白色区域为可生成区域，黑色区域保持第一张图片不变，不要修改遮罩外的背景、建筑或已有物体。不要把遮罩的白色保留到第一个图片。",
+  "image_config": {
+    "aspect_ratio": "16:9",
+    "image_size": "1K"
+  }
+}'
+```
+
+### 6.3 Base64 图编辑
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
@@ -226,7 +313,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
 }'
 ```
 
-### 6.2 多图融合
+### 6.4 多图融合风格
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
@@ -242,7 +329,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
 }'
 ```
 
-### 6.3 URL 图编辑 + 比例
+### 6.5 URL 图编辑 + 比例
 
 ```bash
 curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
@@ -258,7 +345,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/images/edits' \
 }'
 ```
 
-### 6.4 响应样例
+### 6.6 响应样例
 
 ```json
 {

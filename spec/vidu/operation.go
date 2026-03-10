@@ -23,6 +23,10 @@ import (
 	xai "github.com/goplus/xai/spec"
 )
 
+type serviceProvider interface {
+	ViduService() *Service
+}
+
 func (p *Service) Actions(model xai.Model) []xai.Action {
 	if IsVideoModel(string(model)) {
 		return []xai.Action{xai.GenVideo}
@@ -54,8 +58,12 @@ func (p *genVideo) Params() xai.Params {
 }
 
 func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBuilder) (xai.OperationResponse, error) {
-	s := svc.(*Service)
-	if s.backend == nil {
+	s, ok := svc.(serviceProvider)
+	if !ok {
+		return nil, xai.ErrNotFound
+	}
+	viduSvc := s.ViduService()
+	if viduSvc == nil || viduSvc.backend == nil {
 		return nil, xai.ErrNotFound
 	}
 
@@ -75,7 +83,7 @@ func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if o, ok := opts.(*Options); ok && strings.TrimSpace(o.UserID) != "" {
 		params.Set("_user_id", strings.TrimSpace(o.UserID))
 	}
-	return s.backend.Submit(ctx, xai.Model(p.model), params)
+	return viduSvc.backend.Submit(ctx, xai.Model(p.model), params)
 }
 
 // inputSchema implements xai.InputSchema.

@@ -263,15 +263,33 @@ func NewExecutors(client *Client) (*ImageExecutor, *VideoExecutor) {
 	return NewImageExecutor(client), NewVideoExecutor(client)
 }
 
-// NewService creates a kling.Service with Qiniu executors.
-func NewService(token string, opts ...ClientOption) *kling.Service {
-	client := NewClient(token, opts...)
+// Service wraps kling.Service with Qiniu-specific configuration (e.g. SetApiKey).
+type Service struct {
+	*kling.Service
+	client *Client
+}
+
+// SetApiKey updates the API key at runtime. Safe to call after NewService.
+func (s *Service) SetApiKey(apiKey string) {
+	s.client.SetApiKey(apiKey)
+}
+
+// KlingService returns the embedded *kling.Service for operation.Call.
+func (s *Service) KlingService() *kling.Service { return s.Service }
+
+// NewService creates a Kling Service with Qiniu executors.
+// The returned *Service embeds *kling.Service and adds SetApiKey for runtime configuration.
+func NewService(apiKey string, opts ...ClientOption) *Service {
+	client := NewClient(apiKey, opts...)
 	imgExec, vidExec := NewExecutors(client)
-	return kling.NewService(imgExec, vidExec)
+	return &Service{
+		Service: kling.NewService(imgExec, vidExec),
+		client:  client,
+	}
 }
 
 // Register creates a kling.Service with Qiniu executors and registers it with xai.
-func Register(token string, opts ...ClientOption) {
-	svc := NewService(token, opts...)
+func Register(apiKey string, opts ...ClientOption) {
+	svc := NewService(apiKey, opts...)
 	kling.Register(svc)
 }

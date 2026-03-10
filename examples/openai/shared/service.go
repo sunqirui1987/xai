@@ -42,12 +42,12 @@ func init() {
 
 // NewService creates an OpenAI-compatible Service backed by Qiniu API.
 // It is wired to provider_v1 (Chat Completions API) through qiniu.NewService.
-// Uses QINIU_API_KEY from environment when token is empty.
-func NewService(token string) *openai.Service {
-	if token == "" {
-		token = os.Getenv("QINIU_API_KEY")
+// Uses QINIU_API_KEY from environment when apiKey is empty.
+func NewService(apiKey string) *openai.Service {
+	if apiKey == "" {
+		apiKey = os.Getenv("QINIU_API_KEY")
 	}
-	return qiniu.NewService(token)
+	return qiniu.NewService(apiKey)
 }
 
 // SetStreamMode sets whether GenOrStream uses streaming mode.

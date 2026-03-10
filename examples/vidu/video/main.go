@@ -101,7 +101,7 @@ func demoDesc(name string) string {
 	}
 }
 
-func runDemo(ctx context.Context, model xai.Model, runFn func(context.Context, *vidu.Service, xai.Model) error) {
+func runDemo(ctx context.Context, model xai.Model, runFn func(context.Context, xai.Service, xai.Model) error) {
 	svc, err := newService()
 	if err != nil {
 		fmt.Println("Error:", err)

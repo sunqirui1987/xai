@@ -26,6 +26,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -42,7 +43,8 @@ const (
 type Client struct {
 	httpClient     *http.Client
 	baseURL        string
-	token          string
+	apiKeyMu       sync.RWMutex
+	apiKey         string
 	maxRetries     int
 	baseRetryDelay time.Duration
 	debugLog       bool
@@ -91,11 +93,11 @@ func WithLogger(logger *log.Logger) ClientOption {
 }
 
 // NewClient creates a new Qiniu API client.
-func NewClient(token string, opts ...ClientOption) *Client {
+func NewClient(apiKey string, opts ...ClientOption) *Client {
 	c := &Client{
 		httpClient:     &http.Client{Timeout: DefaultHTTPTimeout},
 		baseURL:        DefaultBaseURL,
-		token:          token,
+		apiKey:         apiKey,
 		maxRetries:     0,
 		baseRetryDelay: DefaultBaseRetryDelay,
 		debugLog:       true,
@@ -107,9 +109,18 @@ func NewClient(token string, opts ...ClientOption) *Client {
 	return c
 }
 
-// Token returns the current token.
-func (c *Client) Token() string {
-	return c.token
+// ApiKey returns the current API key.
+func (c *Client) ApiKey() string {
+	c.apiKeyMu.RLock()
+	defer c.apiKeyMu.RUnlock()
+	return c.apiKey
+}
+
+// SetApiKey updates the API key. Safe to call at runtime.
+func (c *Client) SetApiKey(apiKey string) {
+	c.apiKeyMu.Lock()
+	defer c.apiKeyMu.Unlock()
+	c.apiKey = apiKey
 }
 
 // BaseURL returns the current base URL.
@@ -140,11 +151,12 @@ func (c *Client) logDebug(format string, args ...any) {
 
 // buildCurlCommand builds an equivalent curl command for debugging.
 func (c *Client) buildCurlCommand(method, url string, body []byte) string {
+	apiKey := c.ApiKey()
 	var cmd bytes.Buffer
 	cmd.WriteString("curl -X ")
 	cmd.WriteString(method)
 
-	cmd.WriteString(fmt.Sprintf(" -H 'Authorization: Bearer %s'", c.token))
+	cmd.WriteString(fmt.Sprintf(" -H 'Authorization: Bearer %s'", apiKey))
 	cmd.WriteString(" -H 'Content-Type: application/json'")
 
 	if len(body) > 0 {
@@ -204,7 +216,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body an
 			return nil, fmt.Errorf("qiniu: failed to create request: %w", err)
 		}
 
-		req.Header.Set("Authorization", "Bearer "+c.token)
+		req.Header.Set("Authorization", "Bearer "+c.ApiKey())
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := c.httpClient.Do(req)

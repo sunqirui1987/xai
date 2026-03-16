@@ -34,6 +34,12 @@ func TestIsVideoModel(t *testing.T) {
 	if !IsVideoModel(ModelViduQ2Pro) {
 		t.Fatal("expected viduq2-pro to be a video model")
 	}
+	if !IsVideoModel(ModelViduQ3Turbo) {
+		t.Fatal("expected viduq3-turbo to be a video model")
+	}
+	if !IsVideoModel(ModelViduQ3Pro) {
+		t.Fatal("expected viduq3-pro to be a video model")
+	}
 	if IsVideoModel("kling-v2-1") {
 		t.Fatal("expected kling-v2-1 not to be a vidu model")
 	}
@@ -75,6 +81,25 @@ func TestBuildVideoParamsRoutes(t *testing.T) {
 		{
 			name:  "q2 start end",
 			model: ModelViduQ2,
+			setup: func(p *Params) {
+				p.Set(ParamPrompt, "a dragon lands")
+				p.Set(ParamStartImageURL, "https://example.com/start.png")
+				p.Set(ParamEndImageURL, "https://example.com/end.png")
+			},
+			wantRoute: RouteStartEndToVideo,
+		},
+		{
+			name:  "q3 image",
+			model: ModelViduQ3Turbo,
+			setup: func(p *Params) {
+				p.Set(ParamPrompt, "a cat running")
+				p.Set(ParamImageURL, "https://example.com/1.png")
+			},
+			wantRoute: RouteImageToVideo,
+		},
+		{
+			name:  "q3 start end",
+			model: ModelViduQ3Pro,
 			setup: func(p *Params) {
 				p.Set(ParamPrompt, "a dragon lands")
 				p.Set(ParamStartImageURL, "https://example.com/start.png")
@@ -262,6 +287,25 @@ func TestBuildVideoParamsValidation(t *testing.T) {
 			setup: func(p *Params) {
 				p.Set(ParamPrompt, "a cat")
 				p.Set(ParamReferenceImageURLs, []string{"https://example.com/1.png"})
+				p.Set(ParamDuration, 4)
+			},
+			wantErr: ErrInvalidQ2Duration,
+		},
+		{
+			name:  "q3 reference route not supported",
+			model: ModelViduQ3Turbo,
+			setup: func(p *Params) {
+				p.Set(ParamPrompt, "a cat running")
+				p.Set(ParamReferenceImageURLs, []string{"https://example.com/1.png"})
+			},
+			wantErr: ErrRouteNotSupported,
+		},
+		{
+			name:  "q3 image duration not 5",
+			model: ModelViduQ3Pro,
+			setup: func(p *Params) {
+				p.Set(ParamPrompt, "a cat running")
+				p.Set(ParamImageURL, "https://example.com/1.png")
 				p.Set(ParamDuration, 4)
 			},
 			wantErr: ErrInvalidQ2Duration,

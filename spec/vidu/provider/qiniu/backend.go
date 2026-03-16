@@ -45,6 +45,13 @@ const (
 	EndpointQ2ImageToVideoTurbo    = "/queue/fal-ai/vidu/q2/image-to-video/turbo"
 	EndpointQ2StartEndToVideoTurbo = "/queue/fal-ai/vidu/q2/start-end-to-video/turbo"
 
+	EndpointQ3TextToVideoTurbo     = "/queue/fal-ai/vidu/q3/text-to-video/turbo"
+	EndpointQ3ImageToVideoTurbo    = "/queue/fal-ai/vidu/q3/image-to-video/turbo"
+	EndpointQ3StartEndToVideoTurbo = "/queue/fal-ai/vidu/q3/start-end-to-video/turbo"
+	EndpointQ3TextToVideoPro       = "/queue/fal-ai/vidu/q3/text-to-video/pro"
+	EndpointQ3ImageToVideoPro      = "/queue/fal-ai/vidu/q3/image-to-video/pro"
+	EndpointQ3StartEndToVideoPro   = "/queue/fal-ai/vidu/q3/start-end-to-video/pro"
+
 	EndpointTaskStatus = "/queue/fal-ai/vidu/requests/"
 )
 
@@ -177,6 +184,12 @@ var endpointByRoute = map[endpointKey]string{
 	{model: vidu.ModelViduQ2Pro, route: vidu.RouteReferenceToVideo}:   EndpointQ2ReferenceToVideo,
 	{model: vidu.ModelViduQ2Pro, route: vidu.RouteImageToVideo}:       EndpointQ2ImageToVideoPro,
 	{model: vidu.ModelViduQ2Pro, route: vidu.RouteStartEndToVideo}:    EndpointQ2StartEndToVideoPro,
+	{model: vidu.ModelViduQ3Turbo, route: vidu.RouteTextToVideo}:       EndpointQ3TextToVideoTurbo,
+	{model: vidu.ModelViduQ3Turbo, route: vidu.RouteImageToVideo}:     EndpointQ3ImageToVideoTurbo,
+	{model: vidu.ModelViduQ3Turbo, route: vidu.RouteStartEndToVideo}:   EndpointQ3StartEndToVideoTurbo,
+	{model: vidu.ModelViduQ3Pro, route: vidu.RouteTextToVideo}:         EndpointQ3TextToVideoPro,
+	{model: vidu.ModelViduQ3Pro, route: vidu.RouteImageToVideo}:       EndpointQ3ImageToVideoPro,
+	{model: vidu.ModelViduQ3Pro, route: vidu.RouteStartEndToVideo}:     EndpointQ3StartEndToVideoPro,
 }
 
 type routeBodyPatcher func(dst map[string]any, params *vidu.VideoParams)

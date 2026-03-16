@@ -97,6 +97,60 @@ func TestBuildVideoRequestRouting(t *testing.T) {
 			},
 			wantEndpoint: EndpointQ2ImageToVideoPro,
 		},
+		{
+			name: "viduq3-turbo text-to-video",
+			params: &vidu.VideoParams{
+				ModelName: vidu.ModelViduQ3Turbo,
+				Prompt:    "a cat chasing butterflies",
+			},
+			wantEndpoint: EndpointQ3TextToVideoTurbo,
+		},
+		{
+			name: "viduq3-turbo image-to-video",
+			params: &vidu.VideoParams{
+				ModelName: vidu.ModelViduQ3Turbo,
+				Prompt:    "a woman walking",
+				ImageURL:  "https://example.com/1.png",
+			},
+			wantEndpoint: EndpointQ3ImageToVideoTurbo,
+		},
+		{
+			name: "viduq3-turbo start-end-to-video",
+			params: &vidu.VideoParams{
+				ModelName:     vidu.ModelViduQ3Turbo,
+				Prompt:        "dragon lands",
+				StartImageURL: "https://example.com/start.png",
+				EndImageURL:   "https://example.com/end.png",
+			},
+			wantEndpoint: EndpointQ3StartEndToVideoTurbo,
+		},
+		{
+			name: "viduq3-pro text-to-video",
+			params: &vidu.VideoParams{
+				ModelName: vidu.ModelViduQ3Pro,
+				Prompt:    "a cat chasing butterflies",
+			},
+			wantEndpoint: EndpointQ3TextToVideoPro,
+		},
+		{
+			name: "viduq3-pro image-to-video",
+			params: &vidu.VideoParams{
+				ModelName: vidu.ModelViduQ3Pro,
+				Prompt:    "a woman walking",
+				ImageURL:  "https://example.com/1.png",
+			},
+			wantEndpoint: EndpointQ3ImageToVideoPro,
+		},
+		{
+			name: "viduq3-pro start-end-to-video",
+			params: &vidu.VideoParams{
+				ModelName:     vidu.ModelViduQ3Pro,
+				Prompt:        "dragon lands",
+				StartImageURL: "https://example.com/start.png",
+				EndImageURL:   "https://example.com/end.png",
+			},
+			wantEndpoint: EndpointQ3StartEndToVideoPro,
+		},
 	}
 
 	for _, tt := range tests {
@@ -315,6 +369,15 @@ func TestBuildVideoRequestUnsupportedModelAndRoute(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "does not support route") {
 		t.Fatalf("expected unsupported route error, got %v", err)
+	}
+
+	_, err = BuildVideoRequest(vidu.ModelViduQ3Turbo, &vidu.VideoParams{
+		ModelName:          vidu.ModelViduQ3Turbo,
+		Prompt:             "test",
+		ReferenceImageURLs: []string{"https://example.com/1.png"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "does not support route") {
+		t.Fatalf("expected Q3 reference-to-video unsupported, got %v", err)
 	}
 }
 

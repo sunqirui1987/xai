@@ -1,6 +1,6 @@
 # Vidu Video Generation API Reference
 
-This document is based on [Qiniu Qnagic API](https://apidocs.qnaigc.com) and describes the Vidu (Q1/Q2) video generation interfaces.
+This document is based on [Qiniu Qnagic API](https://apidocs.qnaigc.com) and describes the Vidu (Q1/Q2/Q3) video generation interfaces.
 
 ---
 
@@ -18,15 +18,15 @@ This document is based on [Qiniu Qnagic API](https://apidocs.qnaigc.com) and des
 
 ## 2. Model Capability Comparison
 
-| Capability/Parameter | vidu-q1 | vidu-q2 | viduq2-turbo | viduq2-pro |
-|----------------------|---------|---------|--------------|------------|
-| Text-to-video | ✓ (`/q1/text-to-video`) | ✓ (`/q2/text-to-video`) | ✓ | ✓ |
-| Reference-to-video (`reference_image_urls`) | ✓ | ✓ | ✓ | ✓ |
-| Reference subjects (`subjects`) | ✓ | ✓ | ✓ | ✓ |
-| Image-to-video (`image_url`) | - | ✓ (`/q2/image-to-video/pro`) | ✓ (`/q2/image-to-video/turbo`) | ✓ (`/q2/image-to-video/pro`) |
-| Start-end-to-video (`start_image_url` + `end_image_url`) | - | ✓ (`/q2/start-end-to-video/pro`) | ✓ (`/q2/start-end-to-video/turbo`) | ✓ (`/q2/start-end-to-video/pro`) |
-| Common params: `prompt`/`seed`/`duration`/`resolution`/`movement_amplitude` | ✓ | ✓ | ✓ | ✓ |
-| `watermark` | ✓ | ✓ | ✓ | ✓ |
+| Capability/Parameter | vidu-q1 | vidu-q2 | viduq2-turbo | viduq2-pro | viduq3-turbo | viduq3-pro |
+|----------------------|---------|---------|--------------|------------|--------------|------------|
+| Text-to-video | ✓ (`/q1/text-to-video`) | ✓ (`/q2/text-to-video`) | ✓ | ✓ | ✓ (`/q3/text-to-video/turbo`) | ✓ (`/q3/text-to-video/pro`) |
+| Reference-to-video (`reference_image_urls`) | ✓ | ✓ | ✓ | ✓ | - | - |
+| Reference subjects (`subjects`) | ✓ | ✓ | ✓ | ✓ | - | - |
+| Image-to-video (`image_url`) | - | ✓ (`/q2/image-to-video/pro`) | ✓ (`/q2/image-to-video/turbo`) | ✓ (`/q2/image-to-video/pro`) | ✓ (`/q3/image-to-video/turbo`) | ✓ (`/q3/image-to-video/pro`) |
+| Start-end-to-video (`start_image_url` + `end_image_url`) | - | ✓ (`/q2/start-end-to-video/pro`) | ✓ (`/q2/start-end-to-video/turbo`) | ✓ (`/q2/start-end-to-video/pro`) | ✓ (`/q3/start-end-to-video/turbo`) | ✓ (`/q3/start-end-to-video/pro`) |
+| Common params: `prompt`/`seed`/`duration`/`resolution`/`movement_amplitude` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `watermark` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
@@ -36,7 +36,7 @@ This document is based on [Qiniu Qnagic API](https://apidocs.qnaigc.com) and des
 |-----------|------|----------|---------|------------------------|
 | prompt | string | ✓ (most) | - | Max 2000 characters |
 | seed | int | | 0 (random) | 0 or omit = random; manual value = fixed seed |
-| duration | int | | 5 | **q1**: only 5; **q2 text-to-video**: 1–10; **q2 others**: 5 |
+| duration | int | | 5 | **q1**: only 5; **q2/q3 text-to-video**: 1–10; **q2/q3 others**: 5 |
 | resolution | string | | model-dependent | q1: 1080p; q2: 720p, 1080p |
 | movement_amplitude | string | | auto | auto, small, medium, large |
 | aspect_ratio | string | | 16:9 | 16:9, 9:16, 3:4, 4:3, 1:1 (3:4, 4:3 q2 only) |
@@ -397,7 +397,203 @@ curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q2/star
 
 ---
 
-### 3.9 Query Task Status
+### 3.9 vidu-q3 Text-to-Video (Turbo)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/text-to-video/turbo`
+
+**Reference**: [Create task (q3 turbo)](https://apidocs.qnaigc.com/426455788e0)
+
+#### Request Parameters
+
+| Parameter | Type | Required | Default | Limits / Allowed Values |
+|-----------|------|----------|---------|------------------------|
+| prompt | string | ✓ | - | Max 2000 characters |
+| seed | int | | 0 (random) | - |
+| duration | int | | 5 | 1–10 |
+| resolution | string | | 1080p | 720p, 1080p |
+| movement_amplitude | string | | auto | auto, small, medium, large |
+| watermark | bool | | - | - |
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/text-to-video/turbo' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "一只可爱的橘猫在阳光下追逐蝴蝶，慢镜头，电影质感，温暖的光线",
+    "seed": 1,
+    "duration": 5,
+    "resolution": "1080p",
+    "movement_amplitude": "auto"
+}'
+```
+
+---
+
+### 3.10 vidu-q3 Image-to-Video (Turbo)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/image-to-video/turbo`
+
+**Reference**: [Create task (q3 turbo)](https://apidocs.qnaigc.com/426455788e0)
+
+#### Request Parameters
+
+| Parameter | Type | Required | Default | Limits |
+|-----------|------|----------|---------|--------|
+| prompt | string | | - | Max 2000 chars |
+| image_url | string | ✓ | - | 1 image; see [Image Constraints](#4-image-constraints) |
+| seed | int | | 0 | - |
+| duration | int | | 5 | 5 |
+| resolution | string | | 720p | 720p, 1080p |
+| movement_amplitude | string | | auto | auto, small, medium, large |
+| watermark | bool | | - | - |
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/image-to-video/turbo' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "这个人在跑马拉松",
+    "image_url": "https://aitoken-public.qnaigc.com/example/generate-video/running-man.jpg",
+    "seed": 2,
+    "duration": 4,
+    "resolution": "720p",
+    "movement_amplitude": "auto",
+    "watermark": true
+}'
+```
+
+---
+
+### 3.11 vidu-q3 Start-End-to-Video (Turbo)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/start-end-to-video/turbo`
+
+**Reference**: [Create task (q3 turbo)](https://apidocs.qnaigc.com/426455788e0)
+
+#### Request Parameters
+
+| Parameter | Type | Required | Default | Limits |
+|-----------|------|----------|---------|--------|
+| prompt | string | | - | Max 2000 chars |
+| start_image_url | string | ✓ | - | 1 image |
+| end_image_url | string | ✓ | - | 1 image |
+| seed | int | | 0 | - |
+| duration | int | | 5 | 5 |
+| resolution | string | | 720p | 720p, 1080p |
+| movement_amplitude | string | | auto | auto, small, medium, large |
+| watermark | bool | | - | - |
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/start-end-to-video/turbo' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "Dragon lands on a rock",
+    "start_image_url": "https://v3.fal.media/files/zebra/sgsdKvPigPhJ1S7Hl5bWc_first_frame_q1.png",
+    "end_image_url": "https://v3.fal.media/files/kangaroo/CASBu_OmOnZ8IafirarFL_last_frame_q1.png",
+    "seed": 2,
+    "duration": 4,
+    "resolution": "720p",
+    "movement_amplitude": "auto",
+    "watermark": true
+}'
+```
+
+---
+
+### 3.12 vidu-q3 Text-to-Video (Pro)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/text-to-video/pro`
+
+**Reference**: [Create task (q3 pro)](https://apidocs.qnaigc.com/426890494e0)
+
+#### Request Parameters
+
+Same as [3.9 vidu-q3 Text-to-Video (Turbo)](#39-vidu-q3-text-to-video-turbo).
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/text-to-video/pro' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "一只可爱的橘猫在阳光下追逐蝴蝶，慢镜头，电影质感，温暖的光线",
+    "seed": 1,
+    "duration": 5,
+    "resolution": "1080p",
+    "movement_amplitude": "auto"
+}'
+```
+
+---
+
+### 3.13 vidu-q3 Image-to-Video (Pro)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/image-to-video/pro`
+
+**Reference**: [Create task (q3 pro)](https://apidocs.qnaigc.com/426890494e0)
+
+#### Request Parameters
+
+Same as [3.10 vidu-q3 Image-to-Video (Turbo)](#310-vidu-q3-image-to-video-turbo).
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/image-to-video/pro' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "这个人在跑马拉松",
+    "image_url": "https://aitoken-public.qnaigc.com/example/generate-video/running-man.jpg",
+    "seed": 2,
+    "duration": 4,
+    "resolution": "720p",
+    "movement_amplitude": "auto",
+    "watermark": true
+}'
+```
+
+---
+
+### 3.14 vidu-q3 Start-End-to-Video (Pro)
+
+**Endpoint**: `POST /queue/fal-ai/vidu/q3/start-end-to-video/pro`
+
+**Reference**: [Create task (q3 pro)](https://apidocs.qnaigc.com/426890494e0)
+
+#### Request Parameters
+
+Same as [3.11 vidu-q3 Start-End-to-Video (Turbo)](#311-vidu-q3-start-end-to-video-turbo).
+
+#### curl Example
+
+```bash
+curl --location --request POST 'https://api.qnaigc.com/queue/fal-ai/vidu/q3/start-end-to-video/pro' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt": "Dragon lands on a rock",
+    "start_image_url": "https://v3.fal.media/files/zebra/sgsdKvPigPhJ1S7Hl5bWc_first_frame_q1.png",
+    "end_image_url": "https://v3.fal.media/files/kangaroo/CASBu_OmOnZ8IafirarFL_last_frame_q1.png",
+    "seed": 2,
+    "duration": 4,
+    "resolution": "720p",
+    "movement_amplitude": "auto",
+    "watermark": true
+}'
+```
+
+---
+
+### 3.15 Query Task Status
 
 **Endpoint**: `GET /queue/fal-ai/vidu/requests/{request_id}/status`
 
@@ -468,13 +664,13 @@ In `github.com/goplus/xai/spec/vidu`, set parameters via `Params.Set(name, value
 |---------------|--------------|------|-------------|
 | prompt | `ParamPrompt` | string | Required; max 2000 chars |
 | seed | `ParamSeed` | int | 0 = random |
-| duration | `ParamDuration` | int | q1: 5; q2 text-to-video: 1–10; q2 others: 5 |
+| duration | `ParamDuration` | int | q1: 5; q2/q3 text-to-video: 1–10; q2/q3 others: 5 |
 | resolution | `ParamResolution` | string | `Resolution720p` / `Resolution1080p` |
 | movement_amplitude | `ParamMovementAmplitude` | string | auto, small, medium, large |
 | watermark | `ParamWatermark` | bool | - |
 | reference_image_urls | `ParamReferenceImageURLs` | []string | 1–7; mutually exclusive with subjects |
 | subjects | `ParamSubjects` | []vidu.Subject | 1–7; mutually exclusive with reference_image_urls |
-| image_url | `ParamImageURL` | string | q2 image-to-video only |
+| image_url | `ParamImageURL` | string | q2/q3 image-to-video only |
 | start_image_url | `ParamStartImageURL` | string | Must pair with end_image_url |
 | end_image_url | `ParamEndImageURL` | string | Must pair with start_image_url |
 
@@ -501,8 +697,8 @@ Validation in `spec/vidu` (`params.go`):
 | prompt length > 2000 | `ErrPromptTooLong` |
 | duration <= 0 | `ErrInvalidDuration` |
 | vidu-q1 duration != 5 | `ErrInvalidQ1Duration` |
-| vidu-q2 / viduq2-turbo / viduq2-pro text-to-video duration not in 1–10 | `ErrInvalidQ2Duration` |
-| vidu-q2 / viduq2-turbo / viduq2-pro others duration != 5 | `ErrInvalidQ2Duration` |
+| vidu-q2 / viduq2-turbo / viduq2-pro / viduq3-turbo / viduq3-pro text-to-video duration not in 1–10 | `ErrInvalidQ2Duration` |
+| vidu-q2 / viduq2-turbo / viduq2-pro / viduq3-turbo / viduq3-pro others duration != 5 | `ErrInvalidQ2Duration` |
 | reference_image_urls and subjects both set | `ErrReferenceInputsConflict` |
 | image_url mixed with reference params | `ErrConflictingGenerationMode` |
 | start/end mixed with image/reference | `ErrConflictingGenerationMode` |
@@ -511,6 +707,7 @@ Validation in `spec/vidu` (`params.go`):
 | subjects count not 1–7 | `ErrInvalidSubjectsCount` |
 | subject images per subject > 3 or total not 1–7 | `ErrInvalidSubjectImages` |
 | vidu-q1 image-to-video / start-end-to-video | `ErrRouteNotSupported` |
+| viduq3-turbo / viduq3-pro reference-to-video | `ErrRouteNotSupported` |
 | resolution not in enum | `ErrValueNotAllowed` |
 | movement_amplitude not in enum | `ErrValueNotAllowed` |
 | aspect_ratio not in enum | `ErrValueNotAllowed` |
@@ -530,4 +727,6 @@ Validation in `spec/vidu` (`params.go`):
 - [q2 start-end-to-video/pro](https://apidocs.qnaigc.com/417918627e0)
 - q2 image-to-video/turbo: `POST /queue/fal-ai/vidu/q2/image-to-video/turbo`
 - q2 start-end-to-video/turbo: `POST /queue/fal-ai/vidu/q2/start-end-to-video/turbo`
+- [q3 turbo](https://apidocs.qnaigc.com/426455788e0)
+- [q3 pro](https://apidocs.qnaigc.com/426890494e0)
 - [q2 status](https://apidocs.qnaigc.com/417938129e0)

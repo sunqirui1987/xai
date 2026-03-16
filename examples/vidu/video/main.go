@@ -40,12 +40,19 @@ var demos = map[string]func(){
 	"q2-image-pro-audio":    runDemoQ2ImageProAudio,
 	"q2-image-turbo":        runDemoQ2ImageTurbo,
 	"q2-start-end-pro":      runDemoQ2StartEndPro,
+	"q3-text-turbo":         runDemoQ3TextTurbo,
+	"q3-image-turbo":        runDemoQ3ImageTurbo,
+	"q3-start-end-turbo":    runDemoQ3StartEndTurbo,
+	"q3-text-pro":           runDemoQ3TextPro,
+	"q3-image-pro":          runDemoQ3ImagePro,
+	"q3-start-end-pro":      runDemoQ3StartEndPro,
 	"call-sync":             RunCallSyncExample,
 }
 
 var demoOrder = []string{
 	"q1-text", "q1-ref-urls", "q1-ref-subjects", "q1-ref-subjects-audio",
 	"q2-text", "q2-ref-urls", "q2-ref-subjects", "q2-image-pro", "q2-image-pro-audio", "q2-image-turbo", "q2-start-end-pro",
+	"q3-text-turbo", "q3-image-turbo", "q3-start-end-turbo", "q3-text-pro", "q3-image-pro", "q3-start-end-pro",
 	"call-sync",
 }
 
@@ -111,6 +118,18 @@ func demoDesc(name string) string {
 		return "Q2 Turbo image-to-video"
 	case "q2-start-end-pro":
 		return "Q2 start-end-to-video-pro"
+	case "q3-text-turbo":
+		return "Q3 Turbo text-to-video"
+	case "q3-image-turbo":
+		return "Q3 Turbo image-to-video"
+	case "q3-start-end-turbo":
+		return "Q3 Turbo start-end-to-video"
+	case "q3-text-pro":
+		return "Q3 Pro text-to-video"
+	case "q3-image-pro":
+		return "Q3 Pro image-to-video"
+	case "q3-start-end-pro":
+		return "Q3 Pro start-end-to-video"
 	case "call-sync":
 		return "CallSync + TaskID + GetTask resume"
 	default:
@@ -167,6 +186,30 @@ func runDemoQ2ImageTurbo() {
 
 func runDemoQ2StartEndPro() {
 	runDemo(context.Background(), xai.Model(vidu.ModelViduQ2), runViduQ2StartEndToVideoPro)
+}
+
+func runDemoQ3TextTurbo() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Turbo), runViduQ3TextToVideoTurbo)
+}
+
+func runDemoQ3ImageTurbo() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Turbo), runViduQ3ImageToVideoTurbo)
+}
+
+func runDemoQ3StartEndTurbo() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Turbo), runViduQ3StartEndToVideoTurbo)
+}
+
+func runDemoQ3TextPro() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Pro), runViduQ3TextToVideoPro)
+}
+
+func runDemoQ3ImagePro() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Pro), runViduQ3ImageToVideoPro)
+}
+
+func runDemoQ3StartEndPro() {
+	runDemo(context.Background(), xai.Model(vidu.ModelViduQ3Pro), runViduQ3StartEndToVideoPro)
 }
 
 func runDemoQ1RefSubjectsAudio() {

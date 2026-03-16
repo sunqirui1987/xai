@@ -43,6 +43,16 @@ func (s *Service) SetApiKey(apiKey string) {
 	}
 }
 
+// ViduService returns the embedded vidu.Service for operation.Call.
+// Required so that *Service implements the serviceProvider interface
+// used by vidu.genVideo.Call when delegating to the backend.
+func (s *Service) ViduService() *vidu.Service {
+	if sp, ok := s.Service.(interface{ ViduService() *vidu.Service }); ok {
+		return sp.ViduService()
+	}
+	return nil
+}
+
 // NewService creates a Vidu Service.
 // If QINIU_API_KEY is set, real Qiniu backend is used.
 // Otherwise, a local async mock executor is used.

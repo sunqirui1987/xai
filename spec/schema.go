@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/goplus/xai/types"
 )
@@ -75,6 +76,25 @@ func (s *StringEnum) Contains(value string) bool {
 	return false
 }
 
+type IntEnum struct {
+	Values []int64
+}
+
+func (*IntEnum) valueLimit() {}
+
+// Contains returns true if value is in the allowed Values.
+func (s *IntEnum) Contains(value int64) bool {
+	if s == nil {
+		return false
+	}
+	for _, v := range s.Values {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
 // -----------------------------------------------------------------------------
 
 type Field struct {
@@ -107,6 +127,32 @@ type Restriction struct {
 // ErrValueNotAllowed is returned when a param value is not in the allowed enum.
 var ErrValueNotAllowed = errors.New("xai: param value not in allowed values")
 
+// AllowedValues returns stringified enum values for known enum limits.
+// It returns nil when the restriction is nil or the limit type is not an enum.
+func (r *Restriction) AllowedValues() []string {
+	if r == nil || r.Limit == nil {
+		return nil
+	}
+	switch limit := r.Limit.(type) {
+	case *StringEnum:
+		if limit == nil {
+			return nil
+		}
+		return append([]string(nil), limit.Values...)
+	case *IntEnum:
+		if limit == nil {
+			return nil
+		}
+		out := make([]string, 0, len(limit.Values))
+		for _, v := range limit.Values {
+			out = append(out, strconv.FormatInt(v, 10))
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
 // ValidateString checks if value is allowed when Limit is *StringEnum.
 // Returns nil if Limit is nil or not *StringEnum, or if value is in Values.
 func (r *Restriction) ValidateString(name, value string) error {
@@ -121,6 +167,22 @@ func (r *Restriction) ValidateString(name, value string) error {
 		return nil
 	}
 	return fmt.Errorf("%w: param %q value %q not in %v", ErrValueNotAllowed, name, value, enum.Values)
+}
+
+// ValidateInt checks if value is allowed when Limit is *IntEnum.
+// Returns nil if Limit is nil or not *IntEnum, or if value is in Values.
+func (r *Restriction) ValidateInt(name string, value int64) error {
+	if r == nil || r.Limit == nil {
+		return nil
+	}
+	enum, ok := r.Limit.(*IntEnum)
+	if !ok {
+		return nil
+	}
+	if enum.Contains(value) {
+		return nil
+	}
+	return fmt.Errorf("%w: param %q value %d not in %v", ErrValueNotAllowed, name, value, enum.Values)
 }
 
 // InputSchema represents the schema of `Params`.

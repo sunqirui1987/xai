@@ -20,19 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	xai "github.com/goplus/xai/spec"
 	"google.golang.org/genai"
 )
 
-// Veo duration constraints: Veo 2 supports 5-8s; Veo 3 supports 4, 6, 8s.
-var (
-	veo2DurationSeconds = map[int32]bool{5: true, 6: true, 7: true, 8: true}
-	veo3DurationSeconds = map[int32]bool{4: true, 6: true, 8: true}
-)
-
 const (
-	veo2Prefix = "veo-2."
-	veo3Prefix = "veo-3."
-	maxSeed    = 4294967295
+	maxSeed = 4294967295
 )
 
 // validateGenVideoConfig validates GenerateVideosConfig and GenerateVideosSource
@@ -49,30 +42,18 @@ func validateGenVideoConfig(model string, source *genai.GenerateVideosSource, co
 		return nil
 	}
 
-	// DurationSeconds: Veo 2 supports 5-8; Veo 3 supports 4, 6, 8
+	videoSchema := VideoSchemaFor(model)
+
 	if config.DurationSeconds != nil {
-		d := *config.DurationSeconds
-		m := strings.ToLower(model)
-		if strings.HasPrefix(m, veo3Prefix) {
-			if !veo3DurationSeconds[d] {
-				return fmt.Errorf("xai: DurationSeconds %d not in [4, 6, 8] for Veo 3 models", d)
-			}
-		} else if strings.HasPrefix(m, veo2Prefix) {
-			if !veo2DurationSeconds[d] {
-				return fmt.Errorf("xai: DurationSeconds %d not in [5, 6, 7, 8] for Veo 2 models", d)
-			}
-		} else {
-			// Unknown model: allow 4, 5, 6, 7, 8
-			allowed := veo2DurationSeconds[d] || veo3DurationSeconds[d]
-			if !allowed {
-				return fmt.Errorf("xai: DurationSeconds %d not in [4, 5, 6, 7, 8]", d)
-			}
+		if err := validateIntRestriction(videoSchema, ParamDurationSeconds, int64(*config.DurationSeconds)); err != nil {
+			return err
 		}
 	}
 
-	// NumberOfVideos: 0 (use default) or 1-4
-	if config.NumberOfVideos != 0 && (config.NumberOfVideos < 1 || config.NumberOfVideos > 4) {
-		return fmt.Errorf("xai: NumberOfVideos %d not in [1, 4]", config.NumberOfVideos)
+	if config.NumberOfVideos != 0 {
+		if err := validateIntRestriction(videoSchema, ParamNumberOfVideos, int64(config.NumberOfVideos)); err != nil {
+			return err
+		}
 	}
 
 	// Seed: 0-4294967295
@@ -102,6 +83,18 @@ func validateGenVideoConfig(model string, source *genai.GenerateVideosSource, co
 			if err := r.ValidateString(name, val); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+func validateIntRestriction(schema xai.VideoSchema, name string, value int64) error {
+	if schema == nil {
+		return nil
+	}
+	if r := schema.Restrict(name); r != nil {
+		if err := r.ValidateInt(name, value); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -40,6 +40,8 @@ type geminiVideoSchema struct {
 	model string
 }
 
+var veoNumberOfVideosEnum = &xai.IntEnum{Values: []int64{1, 2, 3, 4}}
+
 // SupportedModes returns the video generation modes supported by this model.
 func (s *geminiVideoSchema) SupportedModes() []xai.VideoGenMode {
 	modes := []xai.VideoGenMode{
@@ -85,7 +87,26 @@ func (s *geminiVideoSchema) Fields() []xai.Field {
 
 // Restrict returns the restriction for a field.
 func (s *geminiVideoSchema) Restrict(name string) *xai.Restriction {
+	switch name {
+	case ParamDurationSeconds:
+		if limit := s.durationSecondsLimit(); limit != nil {
+			return &xai.Restriction{Limit: limit}
+		}
+	case ParamNumberOfVideos:
+		return &xai.Restriction{Limit: veoNumberOfVideosEnum}
+	}
 	return restriction_genVideo[name]
+}
+
+func (s *geminiVideoSchema) durationSecondsLimit() *xai.IntEnum {
+	switch {
+	case strings.HasPrefix(s.model, "veo-3."):
+		return &xai.IntEnum{Values: []int64{4, 6, 8}}
+	case strings.HasPrefix(s.model, "veo-2."):
+		return &xai.IntEnum{Values: []int64{5, 6, 7, 8}}
+	default:
+		return &xai.IntEnum{Values: []int64{4, 5, 6, 7, 8}}
+	}
 }
 
 // FieldModes returns the modes that a field is applicable to.

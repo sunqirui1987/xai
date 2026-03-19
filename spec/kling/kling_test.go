@@ -183,6 +183,19 @@ func TestKlingService_Operation_Call_Validation(t *testing.T) {
 		t.Fatalf("expected ErrKeyframeSecondsRequired when kling-v2-1 keyframe without seconds, got %v", err)
 	}
 
+	// Keyframe kling-v2-6: image_tail + sound on + pro + seconds=5 → ErrImageTailSoundSecondsNotSupported
+	opKfSound, _ := svc.Operation(xai.Model("kling-v2-6"), xai.GenVideo)
+	opKfSound.Params().Set(ParamPrompt, "scene")
+	opKfSound.Params().Set(ParamInputReference, "https://example.com/img.png")
+	opKfSound.Params().Set(ParamImageTail, "https://example.com/tail.png")
+	opKfSound.Params().Set(ParamMode, ModePro)
+	opKfSound.Params().Set(ParamSound, SoundOn)
+	opKfSound.Params().Set(ParamSeconds, Seconds5)
+	_, err = opKfSound.Call(ctx, svc, &Options{})
+	if !errors.Is(err, ErrImageTailSoundSecondsNotSupported) {
+		t.Fatalf("expected ErrImageTailSoundSecondsNotSupported when image_tail+sound+pro+5s on kling-v2-6, got %v", err)
+	}
+
 	// Keyframe kling-v2-1: mode=pro, seconds=10 → OK
 	opKf5, _ := svc.Operation(xai.Model("kling-v2-1"), xai.GenVideo)
 	opKf5.Params().Set(ParamPrompt, "scene")

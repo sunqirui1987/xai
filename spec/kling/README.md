@@ -209,6 +209,7 @@ Missing required params returns:
 - `ErrInputReferenceRequired` — kling-v2-1 without input_reference
 - `ErrKeyframeModeRequired` — image_tail set but mode != "pro"
 - `ErrKeyframeSecondsRequired` — kling-v2-1 keyframe without seconds="10"
+- `ErrImageTailSoundSecondsNotSupported` — image_tail with sound on requires seconds="10" for kling-v2-6~v2-9 in pro mode
 
 ### 3.2 Value Limits (Restrict)
 
@@ -377,6 +378,7 @@ go test ./spec/kling/provider/qiniu/... -v -run Example
 - `ErrInputReferenceRequired`
 - `ErrKeyframeModeRequired`
 - `ErrKeyframeSecondsRequired`
+- `ErrImageTailSoundSecondsNotSupported`
 - `qiniu.ErrTaskFailed` — returned when async task fails; use `errors.Is(err, qiniu.ErrTaskFailed)` to detect
 
 ---

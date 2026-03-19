@@ -209,6 +209,7 @@ results, err := xai.Call(ctx, svc, op, svc.Options(), nil)
 - `ErrInputReferenceRequired` — kling-v2-1 缺少 input_reference
 - `ErrKeyframeModeRequired` — 设置了 image_tail 但 mode != "pro"
 - `ErrKeyframeSecondsRequired` — kling-v2-1 首尾帧缺少 seconds="10"
+- `ErrImageTailSoundSecondsNotSupported` — image_tail 与 sound=on 同时使用时，kling-v2-6~v2-9 pro 模式需 seconds="10"
 
 ### 3.2 取值限制 (Restrict)
 
@@ -376,6 +377,7 @@ go test ./spec/kling/provider/qiniu/... -v -run Example
 - `ErrInputReferenceRequired`
 - `ErrKeyframeModeRequired`
 - `ErrKeyframeSecondsRequired`
+- `ErrImageTailSoundSecondsNotSupported`
 - `qiniu.ErrTaskFailed` — 异步任务失败时返回，可用 `errors.Is(err, qiniu.ErrTaskFailed)` 判断
 
 ---

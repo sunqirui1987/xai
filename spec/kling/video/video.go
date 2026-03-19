@@ -43,6 +43,10 @@ var ErrKeyframeModeRequired = errors.New("kling: mode must be \"pro\" when using
 // ErrKeyframeSecondsRequired is returned when kling-v2-1 keyframe mode uses seconds other than "10".
 var ErrKeyframeSecondsRequired = errors.New("kling: kling-v2-1 keyframe mode requires seconds=\"10\"")
 
+// ErrImageTailSoundSecondsNotSupported is returned when image_tail + sound on
+// is used with kling-v2-6~v2-9 in pro mode with seconds=5.
+var ErrImageTailSoundSecondsNotSupported = errors.New("kling: image_tail with sound on requires seconds=\"10\" for kling-v2-6~v2-9 in pro mode")
+
 // ParamsChecker is used by Validate to check params without importing kling.Params.
 // Implementations must provide HasNonEmptyString and GetString for video validation.
 type ParamsChecker interface {
@@ -97,7 +101,7 @@ func Restrict(model, name string) *xai.Restriction {
 }
 
 // Validate runs model-specific validation for video generation.
-// Returns ErrInputReferenceRequired, ErrKeyframeModeRequired, or ErrKeyframeSecondsRequired when constraints are violated.
+// Returns ErrInputReferenceRequired, ErrKeyframeModeRequired, ErrKeyframeSecondsRequired, or ErrImageTailSoundSecondsNotSupported when constraints are violated.
 func Validate(model string, p ParamsChecker) error {
 	m := strings.ToLower(model)
 	if err := validateRequiredParams(m, p); err != nil {
@@ -136,6 +140,12 @@ func validateKeyframeConstraints(model string, p ParamsChecker) error {
 		sec := p.GetString(internal.ParamSeconds)
 		if sec != internal.Seconds10 {
 			return ErrKeyframeSecondsRequired
+		}
+	}
+	if p.GetString(internal.ParamSound) == internal.SoundOn && isKlingV26OrNewer(model) {
+		sec := p.GetString(internal.ParamSeconds)
+		if sec == "" || sec == internal.Seconds5 {
+			return ErrImageTailSoundSecondsNotSupported
 		}
 	}
 	return nil

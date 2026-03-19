@@ -200,7 +200,7 @@ curl --location --request POST 'https://api.qnaigc.com/v1/videos' \
 | model | string | ✓ | `kling-v2-6`、`kling-v2-7`、`kling-v2-8`、`kling-v2-9` |
 | prompt | string | ✓ | 视频生成的文本描述，≤2500 字符 |
 | input_reference | string | | 参考图 URL 或 Base64（图生视频时使用） |
-| image_tail | string | | 尾帧参考图（首尾帧生视频时使用） |
+| image_tail | string | | 尾帧参考图（首尾帧生视频时使用）。**注意**：`image_tail` + `sound=on` 时，pro 模式需使用 `seconds=10` |
 | sound | string | | 是否生成声音，`on` 或 `off` |
 | image_url | string | | 参考图片 URL（动作控制专用） |
 | video_url | string | | 参考视频 URL（动作控制专用） |

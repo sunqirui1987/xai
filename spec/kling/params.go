@@ -99,9 +99,10 @@ type MultiPromptItem = video.MultiPromptItem
 
 // Re-export video validation errors for backward compatibility.
 var (
-	ErrInputReferenceRequired  = video.ErrInputReferenceRequired
-	ErrKeyframeModeRequired    = video.ErrKeyframeModeRequired
-	ErrKeyframeSecondsRequired = video.ErrKeyframeSecondsRequired
+	ErrInputReferenceRequired           = video.ErrInputReferenceRequired
+	ErrKeyframeModeRequired             = video.ErrKeyframeModeRequired
+	ErrKeyframeSecondsRequired          = video.ErrKeyframeSecondsRequired
+	ErrImageTailSoundSecondsNotSupported = video.ErrImageTailSoundSecondsNotSupported
 )
 
 // -----------------------------------------------------------------------------

@@ -320,6 +320,29 @@ func TestValidate_Keyframe_NonV21_AnySeconds(t *testing.T) {
 	}
 }
 
+func TestValidate_Keyframe_ImageTailSound_RequiresSeconds10(t *testing.T) {
+	models := []string{
+		internal.ModelKlingV26, internal.ModelKlingV27,
+		internal.ModelKlingV28, internal.ModelKlingV29,
+	}
+	for _, model := range models {
+		p := &mockChecker{vals: map[string]string{
+			internal.ParamPrompt:    "test",
+			internal.ParamImageTail: "http://example.com/tail.jpg",
+			internal.ParamMode:      "pro",
+			internal.ParamSeconds:   "5",
+			internal.ParamSound:     "on",
+		}}
+		if err := Validate(model, p); err != ErrImageTailSoundSecondsNotSupported {
+			t.Errorf("model %q: expected ErrImageTailSoundSecondsNotSupported with image_tail+sound+pro+5s, got: %v", model, err)
+		}
+		p.vals[internal.ParamSeconds] = "10"
+		if err := Validate(model, p); err != nil {
+			t.Errorf("model %q: expected nil with image_tail+sound+pro+10s, got: %v", model, err)
+		}
+	}
+}
+
 func TestValidate_NoImageTail_SkipsKeyframeCheck(t *testing.T) {
 	for _, model := range allVideoModels {
 		p := &mockChecker{vals: map[string]string{

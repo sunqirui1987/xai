@@ -463,22 +463,53 @@ func (p *v1Provider) buildMessage(msg *message) []openai.ChatCompletionMessagePa
 	return result
 }
 
+func buildV1StreamFinalResponse(cc *openai.ChatCompletion) *v1Response {
+	if cc == nil || len(cc.Choices) == 0 || len(cc.Choices[0].Message.ToolCalls) == 0 {
+		return nil
+	}
+	if cc.Choices[0].FinishReason != "" && cc.Choices[0].Message.Role != "" {
+		return &v1Response{msg: cc}
+	}
+	cloned := *cc
+	cloned.Choices = append([]openai.ChatCompletionChoice(nil), cc.Choices...)
+	choice := cloned.Choices[0]
+	if choice.FinishReason == "" {
+		choice.FinishReason = "tool_calls"
+	}
+	if choice.Message.Role == "" {
+		choice.Message.Role = "assistant"
+	}
+	cloned.Choices[0] = choice
+	return &v1Response{msg: &cloned}
+}
+
 func (p *v1Provider) buildRespIter(stream *ssestream.Stream[openai.ChatCompletionChunk]) iter.Seq2[genResponse, error] {
 	return func(yield func(genResponse, error) bool) {
 		defer stream.Close()
+		var acc openai.ChatCompletionAccumulator
+
 		for stream.Next() {
 			chunk := stream.Current()
-			if len(chunk.Choices) > 0 {
-				delta := chunk.Choices[0].Delta
-				if delta.Content != "" {
-					if !yield(&v1StreamChunk{text: delta.Content}, nil) {
-						return
-					}
+			if !acc.AddChunk(chunk) {
+				yield(nil, fmt.Errorf("chat completion stream: failed to accumulate chunk"))
+				return
+			}
+			if len(chunk.Choices) == 0 {
+				continue
+			}
+			delta := chunk.Choices[0].Delta
+			if delta.Content != "" {
+				if !yield(&v1StreamChunk{text: delta.Content}, nil) {
+					return
 				}
 			}
 		}
 		if err := stream.Err(); err != nil {
-			yield(&v1StreamChunk{}, err)
+			yield(nil, err)
+			return
+		}
+		if resp := buildV1StreamFinalResponse(&acc.ChatCompletion); resp != nil {
+			yield(resp, nil)
 		}
 	}
 }

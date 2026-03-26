@@ -66,23 +66,38 @@ func (p v1ContentBlock) AsThinking() (ret xai.Thinking, ok bool) {
 // The Input field is normalized as:
 //   - json.RawMessage when the source string is valid JSON
 //   - map[string]any{"raw": <source>} when the source is non-JSON text
+func toolUseFromV1ToolCall(call *openai.ChatCompletionMessageToolCallUnion) (ret xai.ToolUse, ok bool) {
+	if call == nil {
+		return
+	}
+	switch call.Type {
+	case "custom":
+		ret.ID = call.ID
+		ret.Name = call.Custom.Name
+		ret.Input = rawJSONOrString(call.Custom.Input)
+		if call.RawJSON() != "" {
+			u := call.AsCustom()
+			ret.Underlying = &u
+		} else {
+			ret.Underlying = call
+		}
+	default:
+		ret.ID = call.ID
+		ret.Name = call.Function.Name
+		ret.Input = rawJSONOrString(call.Function.Arguments)
+		if call.RawJSON() != "" {
+			u := call.AsFunction()
+			ret.Underlying = &u
+		} else {
+			ret.Underlying = call
+		}
+	}
+	return ret, true
+}
+
 func (p v1ContentBlock) AsToolUse() (ret xai.ToolUse, ok bool) {
 	if p.toolCall != nil {
-		switch p.toolCall.Type {
-		case "custom":
-			u := p.toolCall.AsCustom()
-			ret.ID = u.ID
-			ret.Name = u.Custom.Name
-			ret.Input = rawJSONOrString(u.Custom.Input)
-			ret.Underlying = &u
-		default:
-			u := p.toolCall.AsFunction()
-			ret.ID = u.ID
-			ret.Name = u.Function.Name
-			ret.Input = rawJSONOrString(u.Function.Arguments)
-			ret.Underlying = &u
-		}
-		return ret, true
+		return toolUseFromV1ToolCall(p.toolCall)
 	}
 	if p.legacyFunctionCall != nil {
 		ret.Name = p.legacyFunctionCall.Name
@@ -427,6 +442,10 @@ func (p *v1StreamChunk) Part(i int) xai.Part {
 	return v1ContentBlock{text: p.text}
 }
 func (p *v1StreamChunk) Len() int { return 1 }
+
+// IsStreamTextDelta marks streaming incremental yields (see xai.IsStreamTextDelta).
+func (p *v1StreamChunk) IsStreamTextDelta() bool { return true }
+
 func (p *v1StreamChunk) At(i int) xai.Candidate {
 	if i != 0 {
 		panicIndex("v1StreamChunk.At", i, 1)

@@ -118,6 +118,52 @@ func TestV1ContentBlockAsToolUse(t *testing.T) {
 	}
 }
 
+func TestV1ContentBlockAsToolUseWithoutRawJSON(t *testing.T) {
+	fnCall := openai.ChatCompletionMessageToolCallUnion{
+		ID:   "call_manual_fn",
+		Type: "function",
+		Function: openai.ChatCompletionMessageFunctionToolCallFunction{
+			Name:      "lookup_weather",
+			Arguments: `{"city":"Shanghai"}`,
+		},
+	}
+	fnTool, ok := (v1ContentBlock{toolCall: &fnCall}).AsToolUse()
+	if !ok {
+		t.Fatalf("expected function tool use")
+	}
+	if fnTool.ID != "call_manual_fn" || fnTool.Name != "lookup_weather" {
+		t.Fatalf("unexpected function tool use: %+v", fnTool)
+	}
+	if raw, ok := fnTool.Input.(json.RawMessage); !ok || string(raw) != `{"city":"Shanghai"}` {
+		t.Fatalf("unexpected function input: %#v", fnTool.Input)
+	}
+	if underlying, ok := fnTool.Underlying.(*openai.ChatCompletionMessageToolCallUnion); !ok || underlying != &fnCall {
+		t.Fatalf("unexpected function underlying: %#v", fnTool.Underlying)
+	}
+
+	customCall := openai.ChatCompletionMessageToolCallUnion{
+		ID:   "call_manual_custom",
+		Type: "custom",
+		Custom: openai.ChatCompletionMessageCustomToolCallCustom{
+			Name:  "custom_echo",
+			Input: `{"text":"hello"}`,
+		},
+	}
+	customTool, ok := (v1ContentBlock{toolCall: &customCall}).AsToolUse()
+	if !ok {
+		t.Fatalf("expected custom tool use")
+	}
+	if customTool.ID != "call_manual_custom" || customTool.Name != "custom_echo" {
+		t.Fatalf("unexpected custom tool use: %+v", customTool)
+	}
+	if raw, ok := customTool.Input.(json.RawMessage); !ok || string(raw) != `{"text":"hello"}` {
+		t.Fatalf("unexpected custom input: %#v", customTool.Input)
+	}
+	if underlying, ok := customTool.Underlying.(*openai.ChatCompletionMessageToolCallUnion); !ok || underlying != &customCall {
+		t.Fatalf("unexpected custom underlying: %#v", customTool.Underlying)
+	}
+}
+
 func TestNewV1CandidateWithOverridesAndPartOrder(t *testing.T) {
 	choice := &openai.ChatCompletionChoice{
 		FinishReason: "tool_calls",

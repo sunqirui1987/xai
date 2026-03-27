@@ -17,6 +17,8 @@
 package openai
 
 import (
+	"encoding/json"
+
 	xai "github.com/goplus/xai/spec"
 )
 
@@ -35,6 +37,11 @@ func (p tool) UnderlyingAssignTo(ret any) {
 
 func (p tool) Description(desc string) xai.Tool {
 	p.def.Description = desc
+	return p
+}
+
+func (p tool) Parameters(schema json.RawMessage) xai.Tool {
+	p.def.Parameters = append(json.RawMessage(nil), schema...)
 	return p
 }
 

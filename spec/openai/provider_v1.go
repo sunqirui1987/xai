@@ -318,11 +318,7 @@ func (p *v1Provider) buildParams(req *genRequest) openai.ChatCompletionNewParams
 					Function: shared.FunctionDefinitionParam{
 						Name:        t.Name,
 						Description: param.NewOpt(t.Description),
-						// Keep schema explicit for OpenAI-compatible backends that require parameters.type.
-						Parameters: shared.FunctionParameters{
-							"type":       "object",
-							"properties": map[string]any{},
-						},
+						Parameters:  shared.FunctionParameters(toolParametersOrDefault(t.Parameters)),
 					},
 				},
 			})

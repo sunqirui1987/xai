@@ -123,7 +123,27 @@ type thinkingContent struct {
 type toolDef struct {
 	Name        string
 	Description string
+	Parameters  json.RawMessage
 	IsWebSearch bool
 }
 
 // -----------------------------------------------------------------------------
+
+func toolParametersOrDefault(raw json.RawMessage) map[string]any {
+	defaultSchema := map[string]any{
+		"type":       "object",
+		"properties": map[string]any{},
+	}
+	if len(raw) == 0 {
+		return defaultSchema
+	}
+	var decoded any
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		return defaultSchema
+	}
+	schema, ok := decoded.(map[string]any)
+	if !ok || schema == nil {
+		return defaultSchema
+	}
+	return schema
+}

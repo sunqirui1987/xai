@@ -88,10 +88,7 @@ func (p *v3Provider) buildParams(req *genRequest) responses.ResponseNewParams {
 					Name:        t.Name,
 					Description: param.NewOpt(t.Description),
 					Strict:      param.NewOpt(false),
-					Parameters: map[string]any{
-						"type":       "object",
-						"properties": map[string]any{},
-					},
+					Parameters:  toolParametersOrDefault(t.Parameters),
 				}
 			}
 		}

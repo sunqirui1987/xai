@@ -46,6 +46,14 @@ go run ./examples/veo veo-3.0-generate-preview
 
 # Vidu video
 go run ./examples/vidu/video q2-image-pro-audio
+
+# Seedance (Volc Ark)
+export ARK_API_KEY=your-ark-key
+go run ./examples/seedance
+
+# Same GenVideo flow, provider chosen from model (Seedance→Ark, Kling→Qiniu)
+go run ./examples/videorouter doubao-seedance-2-0-260128
+go run ./examples/videorouter kling-v2-5-turbo
 ```
 
 ## Examples Overview
@@ -58,11 +66,13 @@ go run ./examples/vidu/video q2-image-pro-audio
 | [examples/sora](examples/sora) | Sora text-to-video, image-to-video, remix |
 | [examples/veo](examples/veo) | Veo text-to-video, image-to-video, first+last frame, reference images |
 | [examples/vidu](examples/vidu) | Vidu Q1/Q2/Q2 Pro/Turbo text-to-video, reference-to-video, image-to-video, audio-video |
+| [examples/seedance](examples/seedance) | Seedance 2.0 on [Volc Ark](https://www.volcengine.com/docs/82379/1520757?lang=zh): async GenVideo via `ARK_API_KEY` |
+| [examples/videorouter](examples/videorouter) | GenVideo with [examples/shared/video_by_model.go](examples/shared/video_by_model.go): route by model to Volc Ark or Qiniu Kling |
 
 ## Backend Mode
 
 - **Mock** (default): No API key. Returns placeholder URLs. Works in CI.
-- **Real**: Set `QINIU_API_KEY` to call Qnagic API.
+- **Real**: Set `QINIU_API_KEY` to call Qnagic API; set `ARK_API_KEY` for Volc Ark Seedance ([spec/seedance/provider/volc](spec/seedance/provider/volc/README.md)).
 
 ## Supported Models
 
@@ -73,6 +83,7 @@ go run ./examples/vidu/video q2-image-pro-audio
 | Veo | veo-2.0-generate-001, veo-2.0-generate-exp, veo-3.0-generate-preview, veo-3.1-generate-preview, ... |
 | Sora | sora-2, sora-2-pro |
 | Vidu | vidu-q1, vidu-q2, viduq2-pro, viduq2-turbo |
+| Seedance (Volc Ark) | doubao-seedance-2-0-260128, other `doubao-seedance-*` ids |
 | Chat | gemini-3.0-pro-preview, deepseek-v3.2, etc. |
 
 ## API Usage

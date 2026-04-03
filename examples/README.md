@@ -27,6 +27,14 @@ go run ./examples/sora all
 go run ./examples/vidu/video
 go run ./examples/vidu/video all
 
+# Seedance (Volc Ark, needs ARK_API_KEY)
+export ARK_API_KEY=your-key
+go run ./examples/seedance
+
+# Video: pick Volc Ark vs Qiniu Kling from model id (see examples/shared/video_by_model.go)
+go run ./examples/videorouter doubao-seedance-2-0-260128
+go run ./examples/videorouter kling-v2-5-turbo
+
 # Run by model (Kling)
 go run ./examples/kling kling-v2-1
 go run ./examples/kling/images kling-v2-1
@@ -36,7 +44,7 @@ go run ./examples/kling/video kling-v2-6
 ## Backend Mode
 
 - **Mock** (default): No API key needed. Returns placeholder URLs. Works in CI.
-- **Real**: Set `QINIU_API_KEY` to use the Qnagic API for actual generation.
+- **Real**: Set `QINIU_API_KEY` to use the Qnagic API for actual generation. Volc Ark Seedance uses `ARK_API_KEY` ([spec/seedance/provider/volc/README.md](../spec/seedance/provider/volc/README.md)).
 
 ```bash
 export QINIU_API_KEY=your-key
@@ -91,8 +99,13 @@ examples/
 │   ├── veo_3_0_fast_generate_preview.go
 │   ├── veo_3_1_generate_preview.go
 │   └── veo_3_1_fast_generate_preview.go
+├── seedance/
+│   └── main.go             # Volc Ark Seedance GenVideo
+├── videorouter/
+│   └── main.go             # GenVideo: provider from model (Seedance→Ark, Kling→Qiniu)
 ├── shared/
-│   └── service.go          # NewService, NewServiceForModels
+│   ├── service.go          # NewService (Kling + mock)
+│   └── video_by_model.go   # VideoGenServiceForModel → Volc Seedance vs Qiniu Kling
 └── kling/
     ├── main.go             # Dispatches to images/ and video/ by model
     ├── models.go           # RunModels: list models, actions, schema
@@ -129,6 +142,8 @@ examples/
 **Sora models**: sora-2, sora-2-pro
 
 **Vidu models**: vidu-q1, vidu-q2, viduq2-pro, viduq2-turbo
+
+**Seedance (Volc Ark)**: doubao-seedance-2-0-260128 (see [Ark 文档](https://www.volcengine.com/docs/82379/1520757?lang=zh))
 
 **Audio models**: asr (ASR), tts-v1 (TTS)
 

@@ -150,57 +150,47 @@ func truncateLog(s string, n int) string {
 
 // buildTaskBody maps seedance.Params to the Ark JSON body (model, content[], duration, ratio,
 // generate_audio, watermark). See https://www.volcengine.com/docs/82379/1520757?lang=zh .
-// When ark_content_json is set, its array replaces the synthesized content from text/reference URLs.
 func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 	m := strings.TrimSpace(model)
 	if m == "" {
 		return nil, fmt.Errorf("volc: empty model")
 	}
 
-	arkItems, err := p.ArkContentFromJSON()
-	if err != nil {
-		return nil, fmt.Errorf("volc: ark_content_json: %w", err)
+	text := p.PrimaryText()
+	if text == "" {
+		return nil, seedance.ErrTextRequired
 	}
-
 	var content []any
-	if len(arkItems) > 0 {
-		content = arkItems
-	} else {
-		text := p.PrimaryText()
-		if text == "" {
-			return nil, seedance.ErrTextRequired
-		}
+	content = append(content, map[string]any{
+		"type": "text",
+		"text": text,
+	})
+	for _, u := range p.GetStringSlice(seedance.ParamReferenceImageURLs) {
 		content = append(content, map[string]any{
-			"type": "text",
-			"text": text,
+			"type": "image_url",
+			"image_url": map[string]any{
+				"url": u,
+			},
+			"role": "reference_image",
 		})
-		for _, u := range p.GetStringSlice(seedance.ParamReferenceImageURLs) {
-			content = append(content, map[string]any{
-				"type": "image_url",
-				"image_url": map[string]any{
-					"url": u,
-				},
-				"role": "reference_image",
-			})
-		}
-		for _, u := range p.GetStringSlice(seedance.ParamReferenceVideoURLs) {
-			content = append(content, map[string]any{
-				"type": "video_url",
-				"video_url": map[string]any{
-					"url": u,
-				},
-				"role": "reference_video",
-			})
-		}
-		for _, u := range p.GetStringSlice(seedance.ParamReferenceAudioURLs) {
-			content = append(content, map[string]any{
-				"type": "audio_url",
-				"audio_url": map[string]any{
-					"url": u,
-				},
-				"role": "reference_audio",
-			})
-		}
+	}
+	for _, u := range p.GetStringSlice(seedance.ParamReferenceVideoURLs) {
+		content = append(content, map[string]any{
+			"type": "video_url",
+			"video_url": map[string]any{
+				"url": u,
+			},
+			"role": "reference_video",
+		})
+	}
+	for _, u := range p.GetStringSlice(seedance.ParamReferenceAudioURLs) {
+		content = append(content, map[string]any{
+			"type": "audio_url",
+			"audio_url": map[string]any{
+				"url": u,
+			},
+			"role": "reference_audio",
+		})
 	}
 
 	body := map[string]any{

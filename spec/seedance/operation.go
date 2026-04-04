@@ -62,11 +62,7 @@ func (p *genVideo) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	}
 
 	params := p.Params().(*Params)
-	arkItems, err := params.ArkContentFromJSON()
-	if err != nil {
-		return nil, err
-	}
-	if params.PrimaryText() == "" && len(arkItems) == 0 {
+	if params.PrimaryText() == "" {
 		return nil, ErrTextRequired
 	}
 

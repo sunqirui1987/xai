@@ -11,7 +11,6 @@
 package seedance
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -30,11 +29,6 @@ const (
 	ParamRatio              = "ratio"
 	ParamGenerateAudio      = "generate_audio"
 	ParamWatermark          = "watermark"
-
-	// ParamArkContentJSON is optional raw JSON array for the Ark request field "content".
-	// When non-empty, it replaces the synthesized content from text / reference_*_urls
-	// (see [Volc Ark 创建视频生成任务 API](https://www.volcengine.com/docs/82379/1520757?lang=zh)).
-	ParamArkContentJSON = "ark_content_json"
 )
 
 var (
@@ -42,7 +36,7 @@ var (
 )
 
 // Params stores GenVideo inputs. Field names match xai.Operation InputSchema and map to Ark JSON
-// (see provider/volc buildTaskBody). Use ParamArkContentJSON for a raw content[] array.
+// (see provider/volc buildTaskBody).
 type Params struct {
 	m map[string]any
 }
@@ -79,22 +73,6 @@ func (p *Params) PrimaryText() string {
 		return s
 	}
 	return strings.TrimSpace(p.GetString(ParamPrompt))
-}
-
-// ArkContentFromJSON returns the full Ark "content" array when ParamArkContentJSON is set and valid.
-func (p *Params) ArkContentFromJSON() ([]any, error) {
-	raw := strings.TrimSpace(p.GetString(ParamArkContentJSON))
-	if raw == "" {
-		return nil, nil
-	}
-	var items []any
-	if err := json.Unmarshal([]byte(raw), &items); err != nil {
-		return nil, err
-	}
-	if len(items) == 0 {
-		return nil, nil
-	}
-	return items, nil
 }
 
 // GetString returns a trimmed string or "".

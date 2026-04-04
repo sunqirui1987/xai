@@ -14,22 +14,21 @@
 |------|------|
 | `seedance.Scheme` (`seedance://`) | 通过 `seedance.Register(svc)` 注册到 `xai.New` |
 | `Service` + `Backend` | 仅支持 `FeatureOperation`；`GenVideo` 提交任务并轮询 |
-| `Params` | 仅暴露与当前实现对齐的一组字段；`content` 可合成或整段 `ark_content_json` |
+| `Params` | 仅暴露与当前实现对齐的一组字段；`content` 由 `text`/`prompt` 与参考 URL 合成 |
 | `schema.GenVideoFields` | `InputSchema` 字段列表，与 `params.go` 常量一致 |
 
 ## 与 Ark 请求体的对应关系
 
 `model` 由操作层传入（**非** `Params`）。`Params` 与 Ark 的对应关系如下（其余官方根级字段如 `resolution`、`callback_url`、`tools` 等**不在**本包参数中，需自行扩展实现或在提示词中使用官方文档说明的 `--` 弱校验方式）。
 
-### `content` 与合成规则
+### `content` 合成规则
 
 | xai 参数名（常量见 `params.go`） | Ark 行为 |
 |----------------------------------|----------|
-| `text` 或 `prompt` | 在 `content` 中追加 `{ "type":"text", "text":"..." }`（与 `ark_content_json` 互斥） |
+| `text` 或 `prompt` | 必选；在 `content` 中写入 `{ "type":"text", "text":"..." }` |
 | `reference_image_urls` | 多条 `{ "type":"image_url", "image_url":{"url":"..."}, "role":"reference_image" }` |
 | `reference_video_urls` | `type`=`video_url`，`role`=`reference_video` |
 | `reference_audio_urls` | `type`=`audio_url`，`role`=`reference_audio` |
-| `ark_content_json` | **整段替换** `content`：值为 JSON **数组**字符串 |
 
 ### 根级字段（本包写入）
 

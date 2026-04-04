@@ -27,7 +27,6 @@ func GenVideoFields() []xai.Field {
 		{Name: ParamRatio, Kind: types.String},
 		{Name: ParamGenerateAudio, Kind: types.Bool},
 		{Name: ParamWatermark, Kind: types.Bool},
-		{Name: ParamArkContentJSON, Kind: types.String},
 	}
 }
 

@@ -73,11 +73,10 @@
 
 | `seedance` 参数名 | 写入 Ark 的位置 | 说明 |
 |-------------------|-----------------|------|
-| `text` 或 `prompt` | `content[]` 中 `{ "type":"text", "text":"..." }` | 与 `ark_content_json` **互斥**；至少其一非空（或由 `ark_content_json` 提供整段 `content`）。 |
+| `text` 或 `prompt` | `content[]` 中 `{ "type":"text", "text":"..." }` | 必选（`Operation.Call` 与 `buildTaskBody` 均要求有主文案）。 |
 | `reference_image_urls` | `content[]` 多条 `{ "type":"image_url", "image_url":{"url":"..."}, "role":"reference_image" }` | 可为多条 URL 字符串或 JSON/代码中的 `[]string`。 |
 | `reference_video_urls` | `content[]`，`type`=`video_url`，`role`=`reference_video` | 同上。 |
 | `reference_audio_urls` | `content[]`，`type`=`audio_url`，`role`=`reference_audio` | 同上；须满足官方「不可仅音频」约束。 |
-| `ark_content_json` | **整段替换** `content` | 值为 JSON **数组**字符串；与官方示例一致时可完全自控 `content`。 |
 | `duration` | 根对象 `duration` | 经 [`seedance.ValidateVideoDuration`](../duration.go) 按 **model id** 校验区间与是否允许 `-1`；`0` 非法。不传则请求体不含该字段，方舟默认 **5s**。 |
 | `ratio` | 根对象 `ratio` | 非空则写入，如 `16:9`、`adaptive`。 |
 | `generate_audio` | 根对象 `generate_audio` | bool 或 Params 支持的字符串真假。 |
@@ -146,8 +145,6 @@ func main() {
     _ = results
 }
 ```
-
-与官方 cURL 完全一致的 `content` 数组可设置 `seedance.ParamArkContentJSON` 为 **JSON 数组字符串**，见 [`spec/seedance/README.md`](../README.md)。
 
 ---
 

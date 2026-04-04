@@ -64,16 +64,15 @@ func TestBackendSubmitAndPollSuccess(t *testing.T) {
 	}
 }
 
-func TestBuildTaskBodyArkContentJSON(t *testing.T) {
-	raw := `[{"type":"text","text":"x"},{"type":"image_url","image_url":{"url":"https://u"},"role":"reference_image"}]`
+func TestBuildTaskBodySynthesizedContent(t *testing.T) {
 	p := seedance.NewParams()
-	p.Set(seedance.ParamArkContentJSON, raw).Set(seedance.ParamDuration, 5)
+	p.Set(seedance.ParamPrompt, "x").Set(seedance.ParamDuration, 5)
 	body, err := buildTaskBody(seedance.ModelDoubaoSeedance20, p)
 	if err != nil {
 		t.Fatal(err)
 	}
 	arr, ok := body["content"].([]any)
-	if !ok || len(arr) != 2 {
+	if !ok || len(arr) != 1 {
 		t.Fatalf("content: %#v", body["content"])
 	}
 }

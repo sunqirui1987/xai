@@ -148,7 +148,8 @@ func truncateLog(s string, n int) string {
 	return s[:n] + "..."
 }
 
-// buildTaskBody maps seedance.Params to the Ark JSON body: model, content[], duration, ratio, generate_audio, watermark.
+// buildTaskBody maps seedance.Params to the Ark JSON body (model, content[], duration, ratio,
+// generate_audio, watermark). See https://www.volcengine.com/docs/82379/1520757?lang=zh .
 // When ark_content_json is set, its array replaces the synthesized content from text/reference URLs.
 func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 	m := strings.TrimSpace(model)
@@ -206,9 +207,10 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 		"model":   m,
 		"content": content,
 	}
+
 	if d := p.GetInt(seedance.ParamDuration); d != nil {
-		if *d < 1 {
-			return nil, fmt.Errorf("volc: duration must be >= 1")
+		if err := seedance.ValidateVideoDuration(m, *d); err != nil {
+			return nil, err
 		}
 		body["duration"] = *d
 	}

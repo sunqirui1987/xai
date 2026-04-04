@@ -78,6 +78,36 @@ func TestBuildTaskBodyArkContentJSON(t *testing.T) {
 	}
 }
 
+func TestBuildTaskBodyDurationMinusOne(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "hi").Set(seedance.ParamDuration, -1)
+	body, err := buildTaskBody(seedance.ModelDoubaoSeedance20, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body["duration"] != -1 {
+		t.Fatalf("duration: %v", body["duration"])
+	}
+}
+
+func TestBuildTaskBodyInvalidDurationZero(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "x").Set(seedance.ParamDuration, 0)
+	_, err := buildTaskBody("m", p)
+	if err == nil {
+		t.Fatal("expected error for duration 0")
+	}
+}
+
+func TestBuildTaskBodyDuration20OutOfRange(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "x").Set(seedance.ParamDuration, 3)
+	_, err := buildTaskBody(seedance.ModelDoubaoSeedance20, p)
+	if err == nil {
+		t.Fatal("expected error for duration 3 on 2.0 model")
+	}
+}
+
 func TestGetTaskFallbackQueryID(t *testing.T) {
 	var pathLog []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -21,15 +21,15 @@ import (
 
 // Param name constants (Ark contents/generations/tasks body).
 const (
-	ParamText                 = "text"
-	ParamPrompt               = "prompt" // alias → first text block
-	ParamReferenceImageURLs   = "reference_image_urls"
-	ParamReferenceVideoURLs   = "reference_video_urls"
-	ParamReferenceAudioURLs   = "reference_audio_urls"
-	ParamDuration             = "duration"
-	ParamRatio                = "ratio"
-	ParamGenerateAudio        = "generate_audio"
-	ParamWatermark            = "watermark"
+	ParamText               = "text"
+	ParamPrompt             = "prompt" // alias → first text block
+	ParamReferenceImageURLs = "reference_image_urls"
+	ParamReferenceVideoURLs = "reference_video_urls"
+	ParamReferenceAudioURLs = "reference_audio_urls"
+	ParamDuration           = "duration"
+	ParamRatio              = "ratio"
+	ParamGenerateAudio      = "generate_audio"
+	ParamWatermark          = "watermark"
 
 	// ParamArkContentJSON is optional raw JSON array for the Ark request field "content".
 	// When non-empty, it replaces the synthesized content from text / reference_*_urls
@@ -42,7 +42,7 @@ var (
 )
 
 // Params stores GenVideo inputs. Field names match xai.Operation InputSchema and map to Ark JSON
-// (see provider/volc buildTaskBody). Use ParamArkContentJSON to pass a raw content[] array.
+// (see provider/volc buildTaskBody). Use ParamArkContentJSON for a raw content[] array.
 type Params struct {
 	m map[string]any
 }

@@ -14,20 +14,43 @@
 |------|------|
 | `seedance.Scheme` (`seedance://`) | 通过 `seedance.Register(svc)` 注册到 `xai.New` |
 | `Service` + `Backend` | 仅支持 `FeatureOperation`；`GenVideo` 提交任务并轮询 |
-| `Params` | 映射到 Ark 请求体字段；也可用 `ark_content_json` 传入与文档一致的完整 `content` 数组 |
+| `Params` | 仅暴露与当前实现对齐的一组字段；`content` 可合成或整段 `ark_content_json` |
+| `schema.GenVideoFields` | `InputSchema` 字段列表，与 `params.go` 常量一致 |
 
 ## 与 Ark 请求体的对应关系
 
-Ark 创建任务体核心字段为 `model`、`content`（多模态块数组），以及可选的 `generate_audio`、`ratio`、`duration`、`watermark` 等（见[创建视频生成任务 API](https://www.volcengine.com/docs/82379/1520757?lang=zh)）。
+`model` 由操作层传入（**非** `Params`）。`Params` 与 Ark 的对应关系如下（其余官方根级字段如 `resolution`、`callback_url`、`tools` 等**不在**本包参数中，需自行扩展实现或在提示词中使用官方文档说明的 `--` 弱校验方式）。
 
-| xai 参数名 | Ark JSON 字段 / 行为 |
-|------------|----------------------|
+### `content` 与合成规则
+
+| xai 参数名（常量见 `params.go`） | Ark 行为 |
+|----------------------------------|----------|
 | `text` 或 `prompt` | 在 `content` 中追加 `{ "type":"text", "text":"..." }`（与 `ark_content_json` 互斥） |
 | `reference_image_urls` | 多条 `{ "type":"image_url", "image_url":{"url":"..."}, "role":"reference_image" }` |
 | `reference_video_urls` | `type`=`video_url`，`role`=`reference_video` |
 | `reference_audio_urls` | `type`=`audio_url`，`role`=`reference_audio` |
-| `duration` / `ratio` / `generate_audio` / `watermark` | 同名字段写入请求根对象 |
-| `ark_content_json` | **整段替换** `content` 数组（JSON 字符串，需为数组）；用于与官方示例完全一致的高级用法 |
+| `ark_content_json` | **整段替换** `content`：值为 JSON **数组**字符串 |
+
+### 根级字段（本包写入）
+
+| 参数名 | 说明 |
+|--------|------|
+| `duration` | 整数秒；**不传**时请求体不含该字段，方舟默认 **5** 秒（见官方文档）。`0` 非法。[`ValidateVideoDuration`](duration.go) 按 Model ID 校验 **1.0 / 1.5 / 2.0** 文档区间与是否允许 `-1`。 |
+| `ratio` | 如 `16:9`、`adaptive` |
+| `generate_audio` | bool |
+| `watermark` | bool |
+
+### `duration` 官方时长范围（客户端校验摘要）
+
+| 模型线（文档） | 合法 `duration`（秒） |
+|----------------|----------------------|
+| Seedance 1.0 pro / pro fast / lite | **`[2, 12]`**；**不支持 `-1`** |
+| Seedance 1.5 pro | **`[4, 12]`** 或 **`-1`**（智能时长） |
+| Seedance 2.0 / 2.0 fast | **`[4, 15]`** 或 **`-1`** |
+
+无法从 model id 识别的 Endpoint：仅拒绝 `0`，其余交由接口校验。
+
+更多 HTTP 与调试说明见 [`provider/volc/README.md`](provider/volc/README.md)。
 
 ## 任务状态
 

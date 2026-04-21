@@ -1,15 +1,17 @@
-// Seedance (Volc Ark) video generation example.
+// Seedance (Qiniu/Qnagic) video generation example.
 //
-// Official docs:
-//   - https://www.volcengine.com/docs/82379/1520757?lang=zh — create task
-//   - https://www.volcengine.com/docs/82379/1521309?lang=zh — query task
+// Qnagic docs:
+//   - https://apidocs.qnaigc.com/439818050e0 — create task
+//   - https://apidocs.qnaigc.com/439818051e0 — query task
 //
 // Usage:
 //
-//	export ARK_API_KEY=your-ark-api-key
-//	go run ./examples/seedance
+//	export QINIU_API_KEY=your-qiniu-api-key
+//	go run ./examples/seedance_qiniu
 //
-// To use the Qiniu provider demo, see examples/seedance_qiniu.
+// Note:
+//   - This demo uses the current generic seedance spec only.
+//   - The qiniu provider maps `reference_image_urls` to first/last frame when 1-2 images are provided.
 package main
 
 import (
@@ -19,16 +21,16 @@ import (
 
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/seedance"
-	"github.com/goplus/xai/spec/seedance/provider/volc"
+	"github.com/goplus/xai/spec/seedance/provider/qiniu"
 )
 
 func main() {
-	if os.Getenv("ARK_API_KEY") == "" {
-		fmt.Println("Set ARK_API_KEY to call Volc Ark (see spec/seedance/provider/volc/README.md).")
+	if os.Getenv("QINIU_API_KEY") == "" {
+		fmt.Println("Set QINIU_API_KEY to call Qiniu Seedance (see spec/seedance/provider/qiniu/README.md).")
 		os.Exit(1)
 	}
 
-	volc.Register(os.Getenv("ARK_API_KEY"))
+	qiniu.Register(os.Getenv("QINIU_API_KEY"))
 	ctx := context.Background()
 	svc, err := xai.New(ctx, "seedance://")
 	if err != nil {
@@ -44,11 +46,10 @@ func main() {
 	}
 
 	op.Params().(*seedance.Params).
-		Set(seedance.ParamPrompt, "A short product clip, cinematic lighting.").
+		Set(seedance.ParamPrompt, "夕阳下的城市街道，电影感镜头缓慢推进").
 		Set(seedance.ParamRatio, "16:9").
 		Set(seedance.ParamDuration, 5).
-		Set(seedance.ParamGenerateAudio, false).
-		Set(seedance.ParamWatermark, false)
+		Set(seedance.ParamGenerateAudio, true)
 
 	resp, err := xai.CallSync(ctx, svc, op, svc.Options())
 	if err != nil {

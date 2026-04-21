@@ -51,7 +51,11 @@ go run ./examples/vidu/video q2-image-pro-audio
 export ARK_API_KEY=your-ark-key
 go run ./examples/seedance
 
-# Same GenVideo flow, provider chosen from model (Seedance→Ark, Kling→Qiniu)
+# Seedance (Qiniu/Qnagic)
+export QINIU_API_KEY=your-qiniu-key
+go run ./examples/seedance_qiniu
+
+# Same GenVideo flow, provider chosen from model (Seedance→Qiniu, fallback Ark; Kling→Qiniu)
 go run ./examples/videorouter doubao-seedance-2-0-260128
 go run ./examples/videorouter kling-v2-5-turbo
 ```
@@ -67,12 +71,13 @@ go run ./examples/videorouter kling-v2-5-turbo
 | [examples/veo](examples/veo) | Veo text-to-video, image-to-video, first+last frame, reference images |
 | [examples/vidu](examples/vidu) | Vidu Q1/Q2/Q2 Pro/Turbo text-to-video, reference-to-video, image-to-video, audio-video |
 | [examples/seedance](examples/seedance) | Seedance 2.0 on [Volc Ark](https://www.volcengine.com/docs/82379/1520757?lang=zh): async GenVideo via `ARK_API_KEY` |
-| [examples/videorouter](examples/videorouter) | GenVideo with [examples/shared/video_by_model.go](examples/shared/video_by_model.go): route by model to Volc Ark or Qiniu Kling |
+| [examples/seedance_qiniu](examples/seedance_qiniu) | Seedance 2.0 on Qiniu/Qnagic: async GenVideo via `QINIU_API_KEY` |
+| [examples/videorouter](examples/videorouter) | GenVideo with [examples/shared/video_by_model.go](examples/shared/video_by_model.go): route by model to Qiniu Seedance / Volc Ark / Qiniu Kling |
 
 ## Backend Mode
 
 - **Mock** (default): No API key. Returns placeholder URLs. Works in CI.
-- **Real**: Set `QINIU_API_KEY` to call Qnagic API; set `ARK_API_KEY` for Volc Ark Seedance ([spec/seedance/provider/volc](spec/seedance/provider/volc/README.md)).
+- **Real**: Set `QINIU_API_KEY` to call Qnagic API for Seedance/Kling; `ARK_API_KEY` is still supported for Volc Ark Seedance ([spec/seedance/provider/qiniu](spec/seedance/provider/qiniu/README.md), [spec/seedance/provider/volc](spec/seedance/provider/volc/README.md)).
 
 ## Supported Models
 
@@ -83,7 +88,7 @@ go run ./examples/videorouter kling-v2-5-turbo
 | Veo | veo-2.0-generate-001, veo-2.0-generate-exp, veo-3.0-generate-preview, veo-3.1-generate-preview, ... |
 | Sora | sora-2, sora-2-pro |
 | Vidu | vidu-q1, vidu-q2, viduq2-pro, viduq2-turbo |
-| Seedance (Volc Ark) | doubao-seedance-2-0-260128, other `doubao-seedance-*` ids |
+| Seedance (Qiniu / Volc Ark) | doubao-seedance-2-0-260128, other `doubao-seedance-*` ids |
 | Chat | gemini-3.0-pro-preview, deepseek-v3.2, etc. |
 
 ## API Usage

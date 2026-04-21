@@ -31,7 +31,11 @@ go run ./examples/vidu/video all
 export ARK_API_KEY=your-key
 go run ./examples/seedance
 
-# Video: pick Volc Ark vs Qiniu Kling from model id (see examples/shared/video_by_model.go)
+# Seedance (Qiniu/Qnagic, needs QINIU_API_KEY)
+export QINIU_API_KEY=your-key
+go run ./examples/seedance_qiniu
+
+# Video: pick Qiniu Seedance / Volc Ark / Qiniu Kling from model id (see examples/shared/video_by_model.go)
 go run ./examples/videorouter doubao-seedance-2-0-260128
 go run ./examples/videorouter kling-v2-5-turbo
 
@@ -44,7 +48,7 @@ go run ./examples/kling/video kling-v2-6
 ## Backend Mode
 
 - **Mock** (default): No API key needed. Returns placeholder URLs. Works in CI.
-- **Real**: Set `QINIU_API_KEY` to use the Qnagic API for actual generation. Volc Ark Seedance uses `ARK_API_KEY` ([spec/seedance/provider/volc/README.md](../spec/seedance/provider/volc/README.md)).
+- **Real**: Set `QINIU_API_KEY` to use the Qnagic API for actual generation. Volc Ark Seedance still supports `ARK_API_KEY` ([spec/seedance/provider/qiniu/README.md](../spec/seedance/provider/qiniu/README.md), [spec/seedance/provider/volc/README.md](../spec/seedance/provider/volc/README.md)).
 
 ```bash
 export QINIU_API_KEY=your-key
@@ -101,11 +105,13 @@ examples/
 │   └── veo_3_1_fast_generate_preview.go
 ├── seedance/
 │   └── main.go             # Volc Ark Seedance GenVideo
+├── seedance_qiniu/
+│   └── main.go             # Qiniu Seedance GenVideo
 ├── videorouter/
-│   └── main.go             # GenVideo: provider from model (Seedance→Ark, Kling→Qiniu)
+│   └── main.go             # GenVideo: provider from model (Seedance→Qiniu, fallback Ark; Kling→Qiniu)
 ├── shared/
 │   ├── service.go          # NewService (Kling + mock)
-│   └── video_by_model.go   # VideoGenServiceForModel → Volc Seedance vs Qiniu Kling
+│   └── video_by_model.go   # VideoGenServiceForModel → Qiniu Seedance / Volc Ark / Qiniu Kling
 └── kling/
     ├── main.go             # Dispatches to images/ and video/ by model
     ├── models.go           # RunModels: list models, actions, schema
@@ -143,7 +149,7 @@ examples/
 
 **Vidu models**: vidu-q1, vidu-q2, viduq2-pro, viduq2-turbo
 
-**Seedance (Volc Ark)**: doubao-seedance-2-0-260128 (see [Ark 文档](https://www.volcengine.com/docs/82379/1520757?lang=zh))
+**Seedance (Qiniu / Volc Ark)**: doubao-seedance-2-0-260128
 
 **Audio models**: asr (ASR), tts-v1 (TTS)
 

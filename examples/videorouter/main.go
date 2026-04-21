@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Video GenVideo demo: pick provider from model id (Volc Ark Seedance vs Qiniu Kling).
+// Video GenVideo demo: pick provider from model id (Qiniu/Volc Seedance vs Qiniu Kling).
 //
 // Usage:
 //
@@ -16,7 +16,7 @@
 //
 // Examples:
 //
-//	go run ./examples/videorouter doubao-seedance-2-0-260128   # needs ARK_API_KEY for real Ark
+//	go run ./examples/videorouter doubao-seedance-2-0-260128   # prefers QINIU_API_KEY, falls back to ARK_API_KEY
 //	go run ./examples/videorouter kling-v2-5-turbo             # needs QINIU_API_KEY for real Kling
 //
 // Without API keys, each line uses the corresponding mock (placeholder video URL).

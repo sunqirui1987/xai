@@ -19,6 +19,7 @@ import (
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/kling"
 	"github.com/goplus/xai/spec/seedance"
+	seedanceqiniu "github.com/goplus/xai/spec/seedance/provider/qiniu"
 	"github.com/goplus/xai/spec/seedance/provider/volc"
 )
 
@@ -26,16 +27,18 @@ import (
 type VideoProvider string
 
 const (
-	VideoProviderVolcArk        VideoProvider = "volc-ark"         // ARK_API_KEY set
-	VideoProviderVolcArkMock    VideoProvider = "volc-ark-mock"    // Seedance model, no ARK_API_KEY
-	VideoProviderQiniuKling     VideoProvider = "qiniu-kling"      // QINIU_API_KEY set
-	VideoProviderQiniuKlingMock VideoProvider = "qiniu-kling-mock" // Kling video model, no key
+	VideoProviderQiniuSeedance     VideoProvider = "qiniu-seedance"      // QINIU_API_KEY set
+	VideoProviderQiniuSeedanceMock VideoProvider = "qiniu-seedance-mock" // Seedance model, no key
+	VideoProviderVolcArk           VideoProvider = "volc-ark"            // ARK_API_KEY set
+	VideoProviderVolcArkMock       VideoProvider = "volc-ark-mock"       // Seedance model, no ARK_API_KEY
+	VideoProviderQiniuKling        VideoProvider = "qiniu-kling"         // QINIU_API_KEY set
+	VideoProviderQiniuKlingMock    VideoProvider = "qiniu-kling-mock"    // Kling video model, no key
 )
 
 // VideoGenServiceForModel returns an xai.Service for GenVideo on the given model.
 //
 // Routing (first match wins):
-//   - doubao-seedance-* / known Seedance ids → Volc Ark if ARK_API_KEY else in-process mock
+//   - doubao-seedance-* / known Seedance ids → Qiniu if QINIU_API_KEY else Volc Ark if ARK_API_KEY else in-process mock
 //   - Kling video models → Qiniu Kling if QINIU_API_KEY else existing Kling mock
 //
 // Env: ARK_API_KEY (火山方舟), QINIU_API_KEY (七牛 Qnagic / Kling).
@@ -45,11 +48,14 @@ func VideoGenServiceForModel(model xai.Model) (svc xai.Service, provider VideoPr
 		return nil, "", fmt.Errorf("empty model")
 	}
 	if seedance.IsVideoModel(m) {
+		if k := strings.TrimSpace(os.Getenv("QINIU_API_KEY")); k != "" {
+			return seedanceqiniu.NewService(k), VideoProviderQiniuSeedance, nil
+		}
 		if k := strings.TrimSpace(os.Getenv("ARK_API_KEY")); k != "" {
 			return volc.NewService(k), VideoProviderVolcArk, nil
 		}
 		b := &mockSeedanceVideoBackend{}
-		return seedance.NewWithBackend(b), VideoProviderVolcArkMock, nil
+		return seedance.NewWithBackend(b), VideoProviderQiniuSeedanceMock, nil
 	}
 	if kling.IsVideoModel(m) {
 		ks, e := NewService()

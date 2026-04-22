@@ -21,7 +21,6 @@ import (
 	"iter"
 
 	xai "github.com/goplus/xai/spec"
-	"github.com/openai/openai-go/v3/option"
 )
 
 // videoOnlyProvider implements provider for services that only support video
@@ -36,11 +35,11 @@ func (p *videoOnlyProvider) Features() xai.Feature {
 	return xai.FeatureOperation
 }
 
-func (p *videoOnlyProvider) Gen(ctx context.Context, req *genRequest, opts []option.RequestOption) (genResponse, error) {
+func (p *videoOnlyProvider) Gen(ctx context.Context, req *genRequest, opts *options) (genResponse, error) {
 	return nil, xai.ErrNotSupported
 }
 
-func (p *videoOnlyProvider) GenStream(ctx context.Context, req *genRequest, opts []option.RequestOption) iter.Seq2[genResponse, error] {
+func (p *videoOnlyProvider) GenStream(ctx context.Context, req *genRequest, opts *options) iter.Seq2[genResponse, error] {
 	return func(yield func(genResponse, error) bool) {
 		yield(nil, xai.ErrNotSupported)
 	}

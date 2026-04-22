@@ -71,6 +71,7 @@ STREAM=1 go run ./examples/openai text
 - `multi-video`: two videos with text between (`chat_multi_video.go`)
 - `function-call`: function calling full loop (`chat_function_call.go`)
 - `thinking`: thinking enabled vs disabled (`chat_thinking.go`)
+- `thinking-off`: thinking explicitly disabled (`chat_thinking_disabled.go`)
 
 ## Output Format (Block Structure)
 
@@ -157,6 +158,18 @@ opts := openai.WithThinking(svc.Options(), false)
 
 Model used in this demo: `deepseek/deepseek-v3.2-251201`.
 
+If you only want to verify the disabled request path, run:
+
+```bash
+go run ./examples/openai thinking-off
+```
+
+The outgoing curl body should include:
+
+```json
+"thinking":{"type":"disabled"}
+```
+
 ## Defaults
 
 Defined in `examples/openai/shared/service.go`:
@@ -200,6 +213,7 @@ examples/openai/
 ├── chat_multi_video.go
 ├── chat_function_call.go
 ├── chat_thinking.go
+├── chat_thinking_disabled.go
 └── shared/
     ├── blocks.go
     └── service.go

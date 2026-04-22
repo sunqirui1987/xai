@@ -31,8 +31,10 @@ import (
 // -----------------------------------------------------------------------------
 
 type options struct {
-	opts    []option.RequestOption
-	baseURL string
+	opts            []option.RequestOption
+	baseURL         string
+	thinkingSet     bool
+	thinkingEnabled bool
 }
 
 func (p *options) WithBaseURL(base string) xai.OptionBuilder {
@@ -65,6 +67,8 @@ func WithDebugCurl(ob xai.OptionBuilder, enabled bool) xai.OptionBuilder {
 }
 
 func (p *options) withThinking(enabled bool) *options {
+	p.thinkingSet = true
+	p.thinkingEnabled = enabled
 	typ := "disabled"
 	if enabled {
 		typ = "enabled"
@@ -137,11 +141,11 @@ func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'"'"'`) + "'"
 }
 
-func buildOptions(opts xai.OptionBuilder) (ret []option.RequestOption) {
+func buildOptions(opts xai.OptionBuilder) *options {
 	if p, ok := opts.(*options); ok {
-		ret = p.opts
+		return p
 	}
-	return
+	return &options{}
 }
 
 func baseURLOption(opts xai.OptionBuilder) string {

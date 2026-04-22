@@ -64,20 +64,24 @@ func (p *v1Provider) Features() xai.Feature {
 	return xai.FeatureGen | xai.FeatureGenStream
 }
 
-func (p *v1Provider) Gen(ctx context.Context, req *genRequest, opts []option.RequestOption) (genResponse, error) {
+func (p *v1Provider) Gen(ctx context.Context, req *genRequest, opts *options) (genResponse, error) {
 	params := p.buildParams(req)
 	if p.baseURL != "" && p.apiKey != "" {
-		return p.genWithExtendedParsing(ctx, params)
+		return p.genWithExtendedParsing(ctx, params, opts)
 	}
-	resp, err := p.chat.New(ctx, params, opts...)
+	resp, err := p.chat.New(ctx, params, requestOptions(opts)...)
 	if err != nil {
 		return nil, err
 	}
 	return &v1Response{msg: resp}, nil
 }
 
-func (p *v1Provider) genWithExtendedParsing(ctx context.Context, params openai.ChatCompletionNewParams) (genResponse, error) {
+func (p *v1Provider) genWithExtendedParsing(ctx context.Context, params openai.ChatCompletionNewParams, opts *options) (genResponse, error) {
 	body, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	body, err = applyExplicitOptionsToJSONBody(body, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +183,35 @@ func mockExtendedChatCompletionResponse(body []byte) (genResponse, error) {
 	}
 }
 
-func (p *v1Provider) GenStream(ctx context.Context, req *genRequest, opts []option.RequestOption) iter.Seq2[genResponse, error] {
+func (p *v1Provider) GenStream(ctx context.Context, req *genRequest, opts *options) iter.Seq2[genResponse, error] {
 	params := p.buildParams(req)
-	stream := p.chat.NewStreaming(ctx, params, opts...)
+	stream := p.chat.NewStreaming(ctx, params, requestOptions(opts)...)
 	return p.buildRespIter(stream)
+}
+
+func requestOptions(opts *options) []option.RequestOption {
+	if opts == nil {
+		return nil
+	}
+	return opts.opts
+}
+
+func applyExplicitOptionsToJSONBody(body []byte, opts *options) ([]byte, error) {
+	if opts == nil || !opts.thinkingSet {
+		return body, nil
+	}
+	var payload map[string]any
+	if len(body) == 0 {
+		payload = make(map[string]any)
+	} else if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	typ := "disabled"
+	if opts.thinkingEnabled {
+		typ = "enabled"
+	}
+	payload["thinking"] = map[string]any{"type": typ}
+	return json.Marshal(payload)
 }
 
 // chatCompletionResponseRaw parses the extended response format with images.

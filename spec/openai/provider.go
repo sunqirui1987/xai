@@ -22,15 +22,14 @@ import (
 	"iter"
 
 	xai "github.com/goplus/xai/spec"
-	"github.com/openai/openai-go/v3/option"
 )
 
 // -----------------------------------------------------------------------------
 
 // provider is the internal interface for different OpenAI API versions.
 type provider interface {
-	Gen(ctx context.Context, req *genRequest, opts []option.RequestOption) (genResponse, error)
-	GenStream(ctx context.Context, req *genRequest, opts []option.RequestOption) iter.Seq2[genResponse, error]
+	Gen(ctx context.Context, req *genRequest, opts *options) (genResponse, error)
+	GenStream(ctx context.Context, req *genRequest, opts *options) iter.Seq2[genResponse, error]
 	Features() xai.Feature
 }
 

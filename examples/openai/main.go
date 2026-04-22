@@ -36,10 +36,11 @@ var demos = map[string]func(){
 	"multi-video":   runChatMultiVideo,
 	"function-call": runChatFunctionCall,
 	"thinking":      runChatThinking,
+	"thinking-off":  runChatThinkingDisabled,
 }
 
 var demoOrder = []string{
-	"text", "image", "image-detail", "image-ultra", "video", "video-fileid", "multi-video", "function-call", "thinking",
+	"text", "image", "image-detail", "image-ultra", "video", "video-fileid", "multi-video", "function-call", "thinking", "thinking-off",
 }
 
 func main() {
@@ -103,6 +104,8 @@ func demoDesc(name string) string {
 		return "Function calling: tool call + tool result"
 	case "thinking":
 		return "DeepSeek response style: reasoning vs final-only"
+	case "thinking-off":
+		return "DeepSeek with thinking explicitly disabled"
 	default:
 		return ""
 	}

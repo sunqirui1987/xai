@@ -112,3 +112,43 @@ func TestBuildV1StreamFinalResponseDefaultsMetadata(t *testing.T) {
 		t.Fatalf("Role got=%q want=%q", got, want)
 	}
 }
+
+func TestApplyExplicitOptionsToJSONBodyThinkingDisabled(t *testing.T) {
+	body := []byte(`{"model":"deepseek/deepseek-v3.2-251201","messages":[{"role":"user","content":"hello"}]}`)
+	opts := &options{thinkingSet: true, thinkingEnabled: false}
+	got, err := applyExplicitOptionsToJSONBody(body, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(got, &payload); err != nil {
+		t.Fatal(err)
+	}
+	thinking, ok := payload["thinking"].(map[string]any)
+	if !ok {
+		t.Fatalf("thinking missing: %s", string(got))
+	}
+	if thinking["type"] != "disabled" {
+		t.Fatalf("thinking.type=%v body=%s", thinking["type"], string(got))
+	}
+}
+
+func TestApplyExplicitOptionsToJSONBodyThinkingEnabled(t *testing.T) {
+	body := []byte(`{"model":"deepseek/deepseek-v3.2-251201"}`)
+	opts := &options{thinkingSet: true, thinkingEnabled: true}
+	got, err := applyExplicitOptionsToJSONBody(body, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(got, &payload); err != nil {
+		t.Fatal(err)
+	}
+	thinking, ok := payload["thinking"].(map[string]any)
+	if !ok {
+		t.Fatalf("thinking missing: %s", string(got))
+	}
+	if thinking["type"] != "enabled" {
+		t.Fatalf("thinking.type=%v body=%s", thinking["type"], string(got))
+	}
+}

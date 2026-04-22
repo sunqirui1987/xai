@@ -46,18 +46,18 @@ func (p *v3Provider) Features() xai.Feature {
 	return xai.FeatureGen | xai.FeatureGenStream | xai.FeatureOperation
 }
 
-func (p *v3Provider) Gen(ctx context.Context, req *genRequest, opts []option.RequestOption) (genResponse, error) {
+func (p *v3Provider) Gen(ctx context.Context, req *genRequest, opts *options) (genResponse, error) {
 	params := p.buildParams(req)
-	resp, err := p.responses.New(ctx, params, opts...)
+	resp, err := p.responses.New(ctx, params, requestOptions(opts)...)
 	if err != nil {
 		return nil, err
 	}
 	return &v3Response{msg: resp}, nil
 }
 
-func (p *v3Provider) GenStream(ctx context.Context, req *genRequest, opts []option.RequestOption) iter.Seq2[genResponse, error] {
+func (p *v3Provider) GenStream(ctx context.Context, req *genRequest, opts *options) iter.Seq2[genResponse, error] {
 	params := p.buildParams(req)
-	stream := p.responses.NewStreaming(ctx, params, opts...)
+	stream := p.responses.NewStreaming(ctx, params, requestOptions(opts)...)
 	return p.buildRespIter(stream)
 }
 

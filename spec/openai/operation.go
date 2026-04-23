@@ -25,6 +25,9 @@ import (
 // -----------------------------------------------------------------------------
 
 func (p *Service) Actions(model xai.Model) []xai.Action {
+	if isGPTImageModel(model) {
+		return []xai.Action{xai.GenImage, xai.EditImage}
+	}
 	if isSoraModel(model) {
 		return []xai.Action{xai.GenVideo}
 	}
@@ -32,10 +35,20 @@ func (p *Service) Actions(model xai.Model) []xai.Action {
 }
 
 func (p *Service) Operation(model xai.Model, action xai.Action) (op xai.Operation, err error) {
-	if action != xai.GenVideo || !isSoraModel(model) {
-		return nil, xai.ErrNotFound
+	switch {
+	case isGPTImageModel(model):
+		switch action {
+		case xai.GenImage:
+			return &genImage{model: string(model)}, nil
+		case xai.EditImage:
+			return &editImage{model: string(model)}, nil
+		}
+	case isSoraModel(model):
+		if action == xai.GenVideo {
+			return &genVideo{model: string(model)}, nil
+		}
 	}
-	return &genVideo{model: string(model)}, nil
+	return nil, xai.ErrNotFound
 }
 
 // GetTask returns the current status for an existing Sora video task.

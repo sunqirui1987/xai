@@ -461,7 +461,7 @@ func (p *Service) operationBaseURL(opts xai.OptionBuilder) string {
 
 func (p *Service) postVideoTask(ctx context.Context, baseURL, endpoint string, body map[string]any) (*videoTask, error) {
 	var ret videoTask
-	if err := p.doVideoJSON(ctx, http.MethodPost, baseURL, endpoint, body, &ret); err != nil {
+	if err := p.doOperationJSON(ctx, http.MethodPost, baseURL, endpoint, body, &ret); err != nil {
 		return nil, err
 	}
 	return &ret, nil
@@ -473,7 +473,7 @@ func (p *Service) getVideoTask(ctx context.Context, baseURL, taskID string) (*vi
 		return nil, fmt.Errorf("openai: empty video task id")
 	}
 	var ret videoTask
-	if err := p.doVideoJSON(ctx, http.MethodGet, baseURL, videoEndpoint+"/"+url.PathEscape(taskID), nil, &ret); err != nil {
+	if err := p.doOperationJSON(ctx, http.MethodGet, baseURL, videoEndpoint+"/"+url.PathEscape(taskID), nil, &ret); err != nil {
 		return nil, err
 	}
 	if ret.ID == "" {
@@ -482,7 +482,7 @@ func (p *Service) getVideoTask(ctx context.Context, baseURL, taskID string) (*vi
 	return &ret, nil
 }
 
-func (p *Service) doVideoJSON(ctx context.Context, method, baseURL, endpoint string, body any, out any) error {
+func (p *Service) doOperationJSON(ctx context.Context, method, baseURL, endpoint string, body any, out any) error {
 	baseURL = normalizeAPIBaseURL(baseURL)
 	u := strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(endpoint, "/")
 
@@ -522,7 +522,7 @@ func (p *Service) doVideoJSON(ctx context.Context, method, baseURL, endpoint str
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseVideoAPIError(resp.StatusCode, data)
+		return parseOperationAPIError(resp.StatusCode, data)
 	}
 	if out == nil || len(data) == 0 {
 		return nil
@@ -539,7 +539,7 @@ func (p *Service) httpDoer() httpDoer {
 	return p.httpClient
 }
 
-type videoAPIError struct {
+type operationAPIError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	Error   *struct {
@@ -548,8 +548,8 @@ type videoAPIError struct {
 	} `json:"error"`
 }
 
-func parseVideoAPIError(statusCode int, body []byte) error {
-	var apiErr videoAPIError
+func parseOperationAPIError(statusCode int, body []byte) error {
+	var apiErr operationAPIError
 	_ = json.Unmarshal(body, &apiErr)
 
 	code := strings.TrimSpace(apiErr.Code)

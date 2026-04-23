@@ -9,6 +9,7 @@ OpenAI-compatible implementation of [xai.Service](https://github.com/goplus/xai/
 - **Streaming** and non-streaming generation
 - **Tools** (function calling) and **Web Search** tool
 - **Thinking / reasoning** and **compaction** blocks
+- **Image operations**: `Operation(model, xai.GenImage|xai.EditImage)` for `openai/gpt-image-2`
 - **Video operations**: `Operation(model, xai.GenVideo)` for `sora-*` models
 - **Provider extensions**: Qiniu provider with `ImageURLWithDetail`, `VideoFile`
 
@@ -246,6 +247,57 @@ for i := 0; i < resp.Len(); i++ {
 opts := svc.Options().WithBaseURL("https://custom.endpoint/v1/")
 resp, err := svc.Gen(ctx, params, opts)
 ```
+
+### Image Operations (GPT Image)
+
+`spec/openai` supports synchronous image generation and editing for `openai/gpt-image-2`.
+
+```go
+op, err := svc.Operation(xai.Model("openai/gpt-image-2"), xai.GenImage)
+if err != nil {
+    panic(err)
+}
+
+op.Params().
+    Set("Prompt", "可爱的少女，动漫").
+    Set("Quality", "high")
+
+resp, err := op.Call(ctx, svc, nil)
+if err != nil {
+    panic(err)
+}
+
+img := resp.Results().At(0).(*xai.OutputImage)
+fmt.Println(img.URL())
+```
+
+For image edit:
+
+```go
+op, err := svc.Operation(xai.Model("openai/gpt-image-2"), xai.EditImage)
+if err != nil {
+    panic(err)
+}
+
+op.Params().
+    Set("Prompt", "图片中增加一个人").
+    Set("Quality", "low").
+    Set("Images", []string{
+        "https://aitoken-public.qnaigc.com/example/generate-video/running-man.jpg",
+    })
+```
+
+Supported params in the first version:
+
+- `Prompt` required
+- `Quality` optional: `low`, `medium`, `high`, `auto`
+- `Image` optional for `GenImage`
+- `Images` required for `EditImage`
+
+These operations target OpenAI-compatible image endpoints such as:
+
+- `POST /v1/images/generations`
+- `POST /v1/images/edits`
 
 ### Video Operations (Sora)
 

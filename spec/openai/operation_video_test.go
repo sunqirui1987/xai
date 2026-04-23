@@ -12,6 +12,218 @@ import (
 	xai "github.com/goplus/xai/spec"
 )
 
+func TestGPTImageActionsAndOperation(t *testing.T) {
+	svc := &Service{}
+
+	actions := svc.Actions(ModelGPTImage2)
+	if len(actions) != 2 || actions[0] != xai.GenImage || actions[1] != xai.EditImage {
+		t.Fatalf("unexpected actions for %s: %v", ModelGPTImage2, actions)
+	}
+
+	if got := svc.Actions("gpt-4o"); len(got) != 0 {
+		t.Fatalf("expected no actions for gpt-4o, got: %v", got)
+	}
+
+	if _, err := svc.Operation(ModelGPTImage2, xai.GenImage); err != nil {
+		t.Fatalf("operation gptimage/gen_image failed: %v", err)
+	}
+	if _, err := svc.Operation(ModelGPTImage2, xai.EditImage); err != nil {
+		t.Fatalf("operation gptimage/edit_image failed: %v", err)
+	}
+	if _, err := svc.Operation(ModelGPTImage2, xai.GenVideo); !errors.Is(err, xai.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound for gptimage/gen_video, got: %v", err)
+	}
+}
+
+func TestGPTImageGenerate(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/images/generations" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-1" {
+			t.Fatalf("unexpected auth header: %s", got)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode body failed: %v", err)
+		}
+		if body["model"] != ModelGPTImage2 {
+			t.Fatalf("unexpected model: %#v", body["model"])
+		}
+		if body["prompt"] != "可爱的少女，动漫" {
+			t.Fatalf("unexpected prompt: %#v", body["prompt"])
+		}
+		if body["quality"] != "high" {
+			t.Fatalf("unexpected quality: %#v", body["quality"])
+		}
+		if body["image"] != "https://example.com/source.png" {
+			t.Fatalf("unexpected image: %#v", body["image"])
+		}
+		_, _ = w.Write([]byte(`{
+			"created": 1,
+			"output_format": "png",
+			"quality": "high",
+			"data": [{"b64_json":"aGVsbG8="}]
+		}`))
+	}))
+	defer ts.Close()
+
+	svc := &Service{
+		baseURL:    ts.URL + "/v1/",
+		apiKey:     "token-1",
+		httpClient: ts.Client(),
+	}
+
+	op, err := svc.Operation(ModelGPTImage2, xai.GenImage)
+	if err != nil {
+		t.Fatalf("Operation failed: %v", err)
+	}
+	op.Params().
+		Set("Prompt", "可爱的少女，动漫").
+		Set("Quality", "high").
+		Set("Image", "https://example.com/source.png")
+
+	resp, err := op.Call(context.Background(), svc, nil)
+	if err != nil {
+		t.Fatalf("Call failed: %v", err)
+	}
+	if !resp.Done() {
+		t.Fatal("expected sync response")
+	}
+	results := resp.Results()
+	if results.Len() != 1 {
+		t.Fatalf("unexpected results len: %d", results.Len())
+	}
+	imgOut := results.At(0).(*xai.OutputImage)
+	if got := imgOut.URL(); got != "data:image/png;base64,aGVsbG8=" {
+		t.Fatalf("unexpected image url: %s", got)
+	}
+	if got := imgOut.Image.Type(); got != xai.ImagePNG {
+		t.Fatalf("unexpected image type: %s", got)
+	}
+}
+
+func TestGPTImageEdit(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/images/edits" {
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode body failed: %v", err)
+		}
+		if body["prompt"] != "图片中增加一个人" {
+			t.Fatalf("unexpected prompt: %#v", body["prompt"])
+		}
+		if body["quality"] != "low" {
+			t.Fatalf("unexpected quality: %#v", body["quality"])
+		}
+		images, ok := body["image"].([]any)
+		if !ok || len(images) != 2 {
+			t.Fatalf("unexpected image list: %#v", body["image"])
+		}
+		if images[0] != "https://example.com/one.jpg" {
+			t.Fatalf("unexpected image[0]: %#v", images[0])
+		}
+		if !strings.HasPrefix(images[1].(string), "data:image/png;base64,") {
+			t.Fatalf("unexpected image[1]: %#v", images[1])
+		}
+		_, _ = w.Write([]byte(`{
+			"created": 2,
+			"data": [{"url":"https://example.com/edited.webp"}]
+		}`))
+	}))
+	defer ts.Close()
+
+	svc := &Service{
+		baseURL:    ts.URL + "/v1/",
+		apiKey:     "token-1",
+		httpClient: ts.Client(),
+	}
+
+	op, err := svc.Operation(ModelGPTImage2, xai.EditImage)
+	if err != nil {
+		t.Fatalf("Operation failed: %v", err)
+	}
+	op.Params().
+		Set("Prompt", "图片中增加一个人").
+		Set("Quality", "low").
+		Set("Images", []any{
+			"https://example.com/one.jpg",
+			svc.ImageFromBytes(xai.ImagePNG, []byte("hello")),
+		})
+
+	resp, err := op.Call(context.Background(), svc, nil)
+	if err != nil {
+		t.Fatalf("Call failed: %v", err)
+	}
+	if !resp.Done() {
+		t.Fatal("expected sync response")
+	}
+	results := resp.Results()
+	if results.Len() != 1 {
+		t.Fatalf("unexpected results len: %d", results.Len())
+	}
+	imgOut := results.At(0).(*xai.OutputImage)
+	if got := imgOut.URL(); got != "https://example.com/edited.webp" {
+		t.Fatalf("unexpected image url: %s", got)
+	}
+	if got := imgOut.Image.Type(); got != xai.ImageWebP {
+		t.Fatalf("unexpected image type: %s", got)
+	}
+}
+
+func TestGPTImageValidationAndBaseURLOverride(t *testing.T) {
+	svc := &Service{
+		baseURL: defaultAPIBaseURL,
+		apiKey:  "token-1",
+	}
+
+	testErr := func(t *testing.T, action xai.Action, want string, setup func(xai.Operation)) {
+		t.Helper()
+		op, err := svc.Operation(ModelGPTImage2, action)
+		if err != nil {
+			t.Fatalf("Operation failed: %v", err)
+		}
+		setup(op)
+		_, err = op.Call(context.Background(), svc, nil)
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error containing %q, got: %v", want, err)
+		}
+	}
+
+	testErr(t, xai.GenImage, "Prompt is required", func(op xai.Operation) {})
+	testErr(t, xai.EditImage, "Images is required", func(op xai.Operation) {
+		op.Params().Set("Prompt", "hello")
+	})
+	testErr(t, xai.GenImage, "Quality", func(op xai.Operation) {
+		op.Params().Set("Prompt", "hello").Set("Quality", "ultra")
+	})
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/alt/images/generations" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"created":1,"output_format":"jpeg","data":[{"url":"https://example.com/out.jpg"}]}`))
+	}))
+	defer ts.Close()
+
+	op, err := svc.Operation(ModelGPTImage2, xai.GenImage)
+	if err != nil {
+		t.Fatalf("Operation failed: %v", err)
+	}
+	op.Params().Set("Prompt", "hello")
+
+	resp, err := op.Call(context.Background(), svc, svc.Options().WithBaseURL(ts.URL+"/alt/"))
+	if err != nil {
+		t.Fatalf("Call failed: %v", err)
+	}
+	imgOut := resp.Results().At(0).(*xai.OutputImage)
+	if got := imgOut.Image.Type(); got != xai.ImageJPEG {
+		t.Fatalf("unexpected image type: %s", got)
+	}
+}
+
 func TestSoraActionsAndOperation(t *testing.T) {
 	svc := &Service{}
 

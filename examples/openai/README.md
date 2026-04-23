@@ -11,6 +11,7 @@ The examples are wired to `provider_v1` (Chat Completions API) through:
 
 - Text-only chat
 - Image + text chat
+- GPT Image generate / edit via `Service.Operation(...)`
 - Image detail levels (`low`, `ultra_high`)
 - Video input (`URL` or `qfile-...` style ID)
 - Multi-video chat (with text between videos)
@@ -64,6 +65,8 @@ STREAM=1 go run ./examples/openai text
 
 - `text`: text-only prompt (`chat_text.go`)
 - `image`: image URL + text (`chat_image.go`)
+- `gptimage`: image generation with `openai/gpt-image-2` (`gptimage.go`)
+- `gptimage-edit`: image editing with `openai/gpt-image-2` (`gptimage.go`)
 - `image-detail`: image URL with `detail=low` (`chat_image_detail.go`)
 - `image-ultra`: image URL with `detail=ultra_high` (`chat_image_detail.go`)
 - `video`: video URL + text (`chat_video.go`)
@@ -170,6 +173,25 @@ The outgoing curl body should include:
 "thinking":{"type":"disabled"}
 ```
 
+## GPT Image Demo Details
+
+The `gptimage` and `gptimage-edit` demos use OpenAI image operations through:
+
+- `svc.Operation(xai.Model("openai/gpt-image-2"), xai.GenImage)`
+- `svc.Operation(xai.Model("openai/gpt-image-2"), xai.EditImage)`
+
+These examples target Qiniu's OpenAI-compatible image endpoints:
+
+- `POST /v1/images/generations`
+- `POST /v1/images/edits`
+
+Run them with:
+
+```bash
+go run ./examples/openai gptimage
+go run ./examples/openai gptimage-edit
+```
+
 ## Defaults
 
 Defined in `examples/openai/shared/service.go`:
@@ -208,6 +230,7 @@ examples/openai/
 ├── urls.go
 ├── chat_text.go
 ├── chat_image.go
+├── gptimage.go
 ├── chat_image_detail.go
 ├── chat_video.go
 ├── chat_multi_video.go

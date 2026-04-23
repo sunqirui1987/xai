@@ -113,9 +113,10 @@ func buildParams(in xai.ParamBuilder) *genRequest {
 // -----------------------------------------------------------------------------
 
 const (
-	ModelSora2     = "sora-2"
-	ModelSora2Pro  = "sora-2-pro"
+	ModelSora2      = "sora-2"
+	ModelSora2Pro   = "sora-2-pro"
 	ModelSora2Turbo = "sora-2-turbo"
+	ModelGPTImage2  = "openai/gpt-image-2"
 )
 
 const (
@@ -124,6 +125,9 @@ const (
 	ParamSeconds          = "Seconds"
 	ParamSize             = "Size"
 	ParamRemixFromVideoID = "RemixFromVideoID"
+	ParamQuality          = "Quality"
+	ParamImage            = "Image"
+	ParamImages           = "Images"
 )
 
 // -----------------------------------------------------------------------------

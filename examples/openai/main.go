@@ -29,6 +29,8 @@ import (
 var demos = map[string]func(){
 	"text":          runChatText,
 	"image":         runChatImage,
+	"gptimage":      runGPTImageGenerate,
+	"gptimage-edit": runGPTImageEdit,
 	"image-detail":  runChatImageDetailLow,
 	"image-ultra":   runChatImageDetailUltraHigh,
 	"video":         runChatVideo,
@@ -40,7 +42,7 @@ var demos = map[string]func(){
 }
 
 var demoOrder = []string{
-	"text", "image", "image-detail", "image-ultra", "video", "video-fileid", "multi-video", "function-call", "thinking", "thinking-off",
+	"text", "image", "gptimage", "gptimage-edit", "image-detail", "image-ultra", "video", "video-fileid", "multi-video", "function-call", "thinking", "thinking-off",
 }
 
 func main() {
@@ -90,6 +92,10 @@ func demoDesc(name string) string {
 		return "Text-only: What is the Sun?"
 	case "image":
 		return "Image + text: What is in this image?"
+	case "gptimage":
+		return "GPT Image generate: openai/gpt-image-2"
+	case "gptimage-edit":
+		return "GPT Image edit: openai/gpt-image-2"
 	case "image-detail":
 		return "Image with detail=low"
 	case "image-ultra":

@@ -135,12 +135,19 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 		},
 	}
 
-	refs := p.GetStringSlice(seedance.ParamReferenceImageURLs)
-	if len(refs) > 0 {
-		content = append(content, imageURLContent(refs[0], "first_frame"))
-	}
-	if len(refs) > 1 {
-		content = append(content, imageURLContent(refs[1], "last_frame"))
+	explicitRefs := p.GetReferenceImages(seedance.ParamReferenceImages)
+	if len(explicitRefs) > 0 {
+		for _, ref := range explicitRefs {
+			role := strings.TrimSpace(ref.Role)
+			if role == "" {
+				role = "reference_image"
+			}
+			content = append(content, imageURLContent(ref.URL, role))
+		}
+	} else {
+		for _, refURL := range p.GetStringSlice(seedance.ParamReferenceImageURLs) {
+			content = append(content, imageURLContent(refURL, "reference_image"))
+		}
 	}
 
 	body := map[string]any{

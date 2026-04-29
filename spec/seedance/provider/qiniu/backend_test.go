@@ -96,7 +96,7 @@ func TestBuildTaskBodyKeepsExplicitQiniuModel(t *testing.T) {
 	}
 }
 
-func TestBuildTaskBodyFirstLastFrameFromReferenceImages(t *testing.T) {
+func TestBuildTaskBodyReferenceImageURLsDefaultToReferenceImage(t *testing.T) {
 	p := seedance.NewParams()
 	p.Set(seedance.ParamPrompt, "从首帧自然过渡到尾帧")
 	p.Set(seedance.ParamReferenceImageURLs, []string{"https://example.com/first.png", "https://example.com/last.png"})
@@ -109,11 +109,38 @@ func TestBuildTaskBodyFirstLastFrameFromReferenceImages(t *testing.T) {
 		t.Fatalf("content_len=%d", len(content))
 	}
 	second := content[1].(map[string]any)
-	if second["role"] != "first_frame" {
+	if second["role"] != "reference_image" {
 		t.Fatalf("second role=%v", second["role"])
 	}
 	third := content[2].(map[string]any)
-	if third["role"] != "last_frame" {
+	if third["role"] != "reference_image" {
 		t.Fatalf("third role=%v", third["role"])
+	}
+}
+
+func TestBuildTaskBodyUsesExplicitReferenceImageRoles(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "从首帧自然过渡到尾帧")
+	p.Set(seedance.ParamReferenceImages, []map[string]any{
+		{"url": "https://example.com/first.png", "role": "first_frame"},
+		{"url": "https://example.com/last.png", "role": "last_frame"},
+		{"url": "https://example.com/ref.png"},
+	})
+	body, err := buildTaskBody(seedance.ModelDoubaoSeedance20, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := body["content"].([]any)
+	if len(content) != 4 {
+		t.Fatalf("content_len=%d", len(content))
+	}
+	if got := content[1].(map[string]any)["role"]; got != "first_frame" {
+		t.Fatalf("content[1].role=%v", got)
+	}
+	if got := content[2].(map[string]any)["role"]; got != "last_frame" {
+		t.Fatalf("content[2].role=%v", got)
+	}
+	if got := content[3].(map[string]any)["role"]; got != "reference_image" {
+		t.Fatalf("content[3].role=%v", got)
 	}
 }

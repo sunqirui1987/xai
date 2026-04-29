@@ -21,6 +21,7 @@ func GenVideoFields() []xai.Field {
 		{Name: ParamText, Kind: types.String},
 		{Name: ParamPrompt, Kind: types.String},
 		{Name: ParamReferenceImageURLs, Kind: types.String},
+		{Name: ParamReferenceImages, Kind: types.List},
 		{Name: ParamReferenceVideoURLs, Kind: types.String},
 		{Name: ParamReferenceAudioURLs, Kind: types.String},
 		{Name: ParamDuration, Kind: types.Int},

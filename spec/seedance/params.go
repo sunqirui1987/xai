@@ -23,6 +23,7 @@ const (
 	ParamText               = "text"
 	ParamPrompt             = "prompt" // alias → first text block
 	ParamReferenceImageURLs = "reference_image_urls"
+	ParamReferenceImages    = "reference_images"
 	ParamReferenceVideoURLs = "reference_video_urls"
 	ParamReferenceAudioURLs = "reference_audio_urls"
 	ParamDuration           = "duration"
@@ -186,6 +187,62 @@ func sanitizeStrings(in []string) []string {
 		if s != "" {
 			out = append(out, s)
 		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+type ReferenceImage struct {
+	URL  string
+	Role string
+}
+
+func (p *Params) GetReferenceImages(name string) []ReferenceImage {
+	v, ok := p.m[name]
+	if !ok {
+		return nil
+	}
+	switch x := v.(type) {
+	case []map[string]any:
+		return parseReferenceImageMaps(x)
+	case []any:
+		out := make([]ReferenceImage, 0, len(x))
+		for _, item := range x {
+			m, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			url, _ := m["url"].(string)
+			role, _ := m["role"].(string)
+			url = strings.TrimSpace(url)
+			role = strings.TrimSpace(role)
+			if url == "" {
+				continue
+			}
+			out = append(out, ReferenceImage{URL: url, Role: role})
+		}
+		if len(out) == 0 {
+			return nil
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func parseReferenceImageMaps(items []map[string]any) []ReferenceImage {
+	out := make([]ReferenceImage, 0, len(items))
+	for _, item := range items {
+		url, _ := item["url"].(string)
+		role, _ := item["role"].(string)
+		url = strings.TrimSpace(url)
+		role = strings.TrimSpace(role)
+		if url == "" {
+			continue
+		}
+		out = append(out, ReferenceImage{URL: url, Role: role})
 	}
 	if len(out) == 0 {
 		return nil

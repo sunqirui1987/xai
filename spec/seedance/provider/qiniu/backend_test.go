@@ -144,3 +144,41 @@ func TestBuildTaskBodyUsesExplicitReferenceImageRoles(t *testing.T) {
 		t.Fatalf("content[3].role=%v", got)
 	}
 }
+
+func TestBuildTaskBodyIncludesReferenceVideoAndAudioURLs(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "@视频1 后面添加 @图像1")
+	p.Set(seedance.ParamReferenceImageURLs, []string{"https://example.com/image.png"})
+	p.Set(seedance.ParamReferenceVideoURLs, []string{"https://example.com/ref.mp4"})
+	p.Set(seedance.ParamReferenceAudioURLs, []string{"https://example.com/ref.mp3"})
+	body, err := buildTaskBody(seedance.ModelDoubaoSeedance20, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := body["content"].([]any)
+	if len(content) != 4 {
+		t.Fatalf("content_len=%d", len(content))
+	}
+	video := content[2].(map[string]any)
+	if got := video["type"]; got != "video_url" {
+		t.Fatalf("video.type=%v", got)
+	}
+	if got := video["role"]; got != "reference_video" {
+		t.Fatalf("video.role=%v", got)
+	}
+	videoURL, _ := video["video_url"].(map[string]any)
+	if got := videoURL["url"]; got != "https://example.com/ref.mp4" {
+		t.Fatalf("video.url=%v", got)
+	}
+	audio := content[3].(map[string]any)
+	if got := audio["type"]; got != "audio_url" {
+		t.Fatalf("audio.type=%v", got)
+	}
+	if got := audio["role"]; got != "reference_audio" {
+		t.Fatalf("audio.role=%v", got)
+	}
+	audioURL, _ := audio["audio_url"].(map[string]any)
+	if got := audioURL["url"]; got != "https://example.com/ref.mp3" {
+		t.Fatalf("audio.url=%v", got)
+	}
+}

@@ -149,6 +149,12 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 			content = append(content, imageURLContent(refURL, "reference_image"))
 		}
 	}
+	for _, refURL := range p.GetStringSlice(seedance.ParamReferenceVideoURLs) {
+		content = append(content, mediaURLContent("video_url", "video_url", refURL, "reference_video"))
+	}
+	for _, refURL := range p.GetStringSlice(seedance.ParamReferenceAudioURLs) {
+		content = append(content, mediaURLContent("audio_url", "audio_url", refURL, "reference_audio"))
+	}
 
 	body := map[string]any{
 		"model":   m,
@@ -185,9 +191,13 @@ func normalizeQiniuModel(model string) string {
 }
 
 func imageURLContent(u string, role string) map[string]any {
+	return mediaURLContent("image_url", "image_url", u, role)
+}
+
+func mediaURLContent(contentType string, field string, u string, role string) map[string]any {
 	return map[string]any{
-		"type": "image_url",
-		"image_url": map[string]any{
+		"type": contentType,
+		field: map[string]any{
 			"url": u,
 		},
 		"role": role,

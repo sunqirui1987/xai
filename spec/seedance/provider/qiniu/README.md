@@ -19,17 +19,20 @@
 `seedance.Params` 到 Qiniu 请求体的映射如下：
 
 - `text` / `prompt` -> `content[]` 的首个 `{type:"text"}`
+- provider 私有 `resolution` -> 根级 `resolution`
 - `ratio` -> 根级 `ratio`
 - `duration` -> 根级 `duration`
 - `generate_audio` -> 根级 `generate_audio`
-- `reference_image_urls` -> 若有第 1 张，则映射为 `first_frame`；若有第 2 张，则映射为 `last_frame`
+- `reference_image_urls` / `reference_images` -> `content[]` 的 `image_url`
+- `reference_video_urls` -> `content[]` 的 `video_url`
+- `reference_audio_urls` -> `content[]` 的 `audio_url`
 
 兼容行为：
 
-- `seedance` 规格层本身没有 `resolution`、`first_frame_image_url`、`last_frame_image_url` 这些字段，所以 qiniu 实现没有扩展 spec，只用现有参数做最小映射。
-- 因此当前 qiniu provider 不支持从通用 `seedance.Params` 显式传 `resolution`；如果后续要支持，建议放在 provider 私有层而不是改通用 spec。
+- `seedance` 规格层本身没有正式常量化的 `resolution` 字段，所以 qiniu 实现按 provider 私有参数读取 `Params["resolution"]` 并原样透传到请求体。
+- 参考媒体统一映射到 `content[]`，与 Qnagic 文档中的“多模态参考生视频”保持一致。
 
-当前 Qiniu Seedance 后端不会发送 `watermark`、`reference_video_urls`、`reference_audio_urls`，因为你给的 Qnagic Seedance 文档示例没有展示这些字段。
+当前 Qiniu Seedance 后端会按 `content[]` 形式发送图片、视频、音频参考；`watermark` 仍未在本 provider 中透传。
 
 模型名约定：
 
@@ -56,6 +59,7 @@ func main() {
     op, _ := svc.Operation(xai.Model(seedance.ModelDoubaoSeedance20), xai.GenVideo)
     op.Params().(*seedance.Params).
         Set(seedance.ParamPrompt, "夕阳下的城市街道，电影感镜头缓慢推进").
+        Set("resolution", "720p").
         Set(seedance.ParamRatio, "16:9").
         Set(seedance.ParamDuration, 5).
         Set(seedance.ParamGenerateAudio, true)

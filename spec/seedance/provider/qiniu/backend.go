@@ -167,6 +167,9 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 		}
 		body["duration"] = *d
 	}
+	if resolution := p.GetString("resolution"); resolution != "" {
+		body["resolution"] = resolution
+	}
 	if r := p.GetString(seedance.ParamRatio); r != "" {
 		body["ratio"] = r
 	}

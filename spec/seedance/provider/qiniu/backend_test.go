@@ -68,6 +68,7 @@ func TestBackendSubmitAndPollSuccess(t *testing.T) {
 func TestBuildTaskBodyTextToVideo(t *testing.T) {
 	p := seedance.NewParams()
 	p.Set(seedance.ParamPrompt, "夕阳下的城市街道")
+	p.Set("resolution", "720p")
 	p.Set(seedance.ParamRatio, "16:9")
 	p.Set(seedance.ParamDuration, 5)
 	p.Set(seedance.ParamGenerateAudio, true)
@@ -77,6 +78,9 @@ func TestBuildTaskBodyTextToVideo(t *testing.T) {
 	}
 	if got := body["model"]; got != "bytedance/doubao-seedance-2-0-260128" {
 		t.Fatalf("model=%v", got)
+	}
+	if got := body["resolution"]; got != "720p" {
+		t.Fatalf("resolution=%v", got)
 	}
 	content, ok := body["content"].([]any)
 	if !ok || len(content) != 1 {

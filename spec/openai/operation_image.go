@@ -44,6 +44,7 @@ var (
 	}
 	imageFields = []xai.Field{
 		{Name: ParamPrompt, Kind: types.String},
+		{Name: ParamSize, Kind: types.String},
 		{Name: ParamQuality, Kind: types.String},
 		{Name: ParamImage, Kind: types.String | types.Image},
 		{Name: ParamImages, Kind: types.List},
@@ -58,12 +59,14 @@ func (s imageInputSchema) Fields() []xai.Field {
 	if s.edit {
 		return []xai.Field{
 			{Name: ParamPrompt, Kind: types.String},
+			{Name: ParamSize, Kind: types.String},
 			{Name: ParamQuality, Kind: types.String},
 			{Name: ParamImages, Kind: types.List},
 		}
 	}
 	return []xai.Field{
 		{Name: ParamPrompt, Kind: types.String},
+		{Name: ParamSize, Kind: types.String},
 		{Name: ParamQuality, Kind: types.String},
 		{Name: ParamImage, Kind: types.String | types.Image},
 	}
@@ -112,6 +115,9 @@ func (p *genImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBui
 	if params.Quality != "" {
 		body["quality"] = params.Quality
 	}
+	if params.Size != "" {
+		body["size"] = params.Size
+	}
 	if params.Image != "" {
 		body["image"] = params.Image
 	}
@@ -158,6 +164,9 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBu
 	if params.Quality != "" {
 		body["quality"] = params.Quality
 	}
+	if params.Size != "" {
+		body["size"] = params.Size
+	}
 
 	baseURL := s.operationBaseURL(opts)
 	resp, err := s.postImageRequest(ctx, baseURL, imageEditsEndpoint, body)
@@ -169,6 +178,7 @@ func (p *editImage) Call(ctx context.Context, svc xai.Service, opts xai.OptionBu
 
 type imageParams struct {
 	Prompt  string
+	Size    string
 	Quality string
 	Image   string
 	Images  []string
@@ -178,6 +188,8 @@ func (p *imageParams) Set(name string, val any) xai.Params {
 	switch name {
 	case ParamPrompt:
 		p.Prompt = valueToString(val)
+	case ParamSize:
+		p.Size = valueToString(val)
 	case ParamQuality:
 		p.Quality = valueToString(val)
 	case ParamImage:

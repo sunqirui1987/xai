@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 The XGo Authors (xgo.dev). All rights reserved.
+ */
+
+package seedanceassets
+
+import (
+	"fmt"
+	"io"
+)
+
+const (
+	AssetTypeImage = "Image"
+	AssetTypeVideo = "Video"
+	AssetTypeAudio = "Audio"
+
+	AssetStatusProcessing = "Processing"
+	AssetStatusActive     = "Active"
+	AssetStatusFailed     = "Failed"
+)
+
+// UploadAssetRequest describes a single digital asset upload request.
+type UploadAssetRequest struct {
+	GroupID  string
+	Name     string
+	FileName string
+	File     io.Reader
+}
+
+func (r *UploadAssetRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("seedance_assets: nil upload asset request")
+	}
+	if r.GroupID == "" {
+		return fmt.Errorf("seedance_assets: group_id is required")
+	}
+	if r.File == nil {
+		return fmt.Errorf("seedance_assets: file is required")
+	}
+	if r.FileName == "" {
+		return fmt.Errorf("seedance_assets: file_name is required")
+	}
+	return nil
+}
+
+// AssetUploadResult is returned after an upload request is accepted.
+type AssetUploadResult struct {
+	Success   bool
+	AssetID   string
+	AssetType string
+	Status    string
+	TOSURL    string
+	FileName  string
+	FileSize  int64
+}
+
+// Asset is the normalized asset detail returned by provider asset libraries.
+type Asset struct {
+	ID         string
+	GroupID    string
+	Name       string
+	Type       string
+	Status     string
+	URL        string
+	CreateTime string
+}

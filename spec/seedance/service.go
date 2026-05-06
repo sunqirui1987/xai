@@ -140,7 +140,7 @@ func (p noopMsgBuilder) ToolUse(v xai.ToolUse) xai.MsgBuilder                   
 func (p noopMsgBuilder) ToolResult(v xai.ToolResult) xai.MsgBuilder                  { return p }
 func (p noopMsgBuilder) Compaction(data string) xai.MsgBuilder                       { return p }
 
-func (p *Service) UserMsg() xai.MsgBuilder        { return noopMsgBuilder{} }
+func (p *Service) UserMsg() xai.MsgBuilder      { return noopMsgBuilder{} }
 func (p *Service) AssistantMsg() xai.MsgBuilder { return noopMsgBuilder{} }
 
 type noopWebSearchTool struct{}

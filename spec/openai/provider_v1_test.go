@@ -116,7 +116,7 @@ func TestBuildV1StreamFinalResponseDefaultsMetadata(t *testing.T) {
 func TestApplyExplicitOptionsToJSONBodyThinkingDisabled(t *testing.T) {
 	body := []byte(`{"model":"deepseek/deepseek-v3.2-251201","messages":[{"role":"user","content":"hello"}]}`)
 	opts := &options{thinkingSet: true, thinkingEnabled: false}
-	got, err := applyExplicitOptionsToJSONBody(body, opts)
+	got, err := applyExplicitOptionsToJSONBody(body, "deepseek/deepseek-v3.2-251201", opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestApplyExplicitOptionsToJSONBodyThinkingDisabled(t *testing.T) {
 func TestApplyExplicitOptionsToJSONBodyThinkingEnabled(t *testing.T) {
 	body := []byte(`{"model":"deepseek/deepseek-v3.2-251201"}`)
 	opts := &options{thinkingSet: true, thinkingEnabled: true}
-	got, err := applyExplicitOptionsToJSONBody(body, opts)
+	got, err := applyExplicitOptionsToJSONBody(body, "deepseek/deepseek-v3.2-251201", opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,5 +150,38 @@ func TestApplyExplicitOptionsToJSONBodyThinkingEnabled(t *testing.T) {
 	}
 	if thinking["type"] != "enabled" {
 		t.Fatalf("thinking.type=%v body=%s", thinking["type"], string(got))
+	}
+}
+
+func TestApplyExplicitOptionsToJSONBodySuppressesThinkingForGemini3(t *testing.T) {
+	body := []byte(`{"model":"gemini-3.0-pro"}`)
+	opts := &options{thinkingSet: true, thinkingEnabled: true}
+	got, err := applyExplicitOptionsToJSONBody(body, "gemini-3.0-pro", opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(got, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := payload["thinking"]; ok {
+		t.Fatalf("thinking should be omitted for gemini-3 models: %s", string(got))
+	}
+}
+
+func TestSuppressThinkingForModel(t *testing.T) {
+	tests := []struct {
+		model string
+		want  bool
+	}{
+		{model: "gemini-3.0-pro", want: true},
+		{model: "qiniu/gemini-3.1-flash", want: true},
+		{model: "gemini-2.5-flash", want: false},
+		{model: "deepseek/deepseek-v3.2-251201", want: false},
+	}
+	for _, tt := range tests {
+		if got := suppressThinkingForModel(tt.model); got != tt.want {
+			t.Fatalf("suppressThinkingForModel(%q)=%v want=%v", tt.model, got, tt.want)
+		}
 	}
 }

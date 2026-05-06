@@ -67,21 +67,21 @@ func (p *v1Provider) Features() xai.Feature {
 func (p *v1Provider) Gen(ctx context.Context, req *genRequest, opts *options) (genResponse, error) {
 	params := p.buildParams(req)
 	if p.baseURL != "" && p.apiKey != "" {
-		return p.genWithExtendedParsing(ctx, params, opts)
+		return p.genWithExtendedParsing(ctx, req.Model, params, opts)
 	}
-	resp, err := p.chat.New(ctx, params, requestOptions(opts)...)
+	resp, err := p.chat.New(ctx, params, requestOptionsForModel(opts, req.Model)...)
 	if err != nil {
 		return nil, err
 	}
 	return &v1Response{msg: resp}, nil
 }
 
-func (p *v1Provider) genWithExtendedParsing(ctx context.Context, params openai.ChatCompletionNewParams, opts *options) (genResponse, error) {
+func (p *v1Provider) genWithExtendedParsing(ctx context.Context, model string, params openai.ChatCompletionNewParams, opts *options) (genResponse, error) {
 	body, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
-	body, err = applyExplicitOptionsToJSONBody(body, opts)
+	body, err = applyExplicitOptionsToJSONBody(body, model, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func mockExtendedChatCompletionResponse(body []byte) (genResponse, error) {
 
 func (p *v1Provider) GenStream(ctx context.Context, req *genRequest, opts *options) iter.Seq2[genResponse, error] {
 	params := p.buildParams(req)
-	stream := p.chat.NewStreaming(ctx, params, requestOptions(opts)...)
+	stream := p.chat.NewStreaming(ctx, params, requestOptionsForModel(opts, req.Model)...)
 	return p.buildRespIter(stream)
 }
 
@@ -193,11 +193,20 @@ func requestOptions(opts *options) []option.RequestOption {
 	if opts == nil {
 		return nil
 	}
-	return opts.opts
+	return append([]option.RequestOption(nil), opts.opts...)
 }
 
-func applyExplicitOptionsToJSONBody(body []byte, opts *options) ([]byte, error) {
-	if opts == nil || !opts.thinkingSet {
+func requestOptionsForModel(opts *options, model string) []option.RequestOption {
+	out := requestOptions(opts)
+	if thinking, ok := opts.thinkingJSON(model); ok {
+		out = append(out, option.WithJSONSet("thinking", thinking))
+	}
+	return out
+}
+
+func applyExplicitOptionsToJSONBody(body []byte, model string, opts *options) ([]byte, error) {
+	thinking, ok := opts.thinkingJSON(model)
+	if !ok {
 		return body, nil
 	}
 	var payload map[string]any
@@ -206,11 +215,7 @@ func applyExplicitOptionsToJSONBody(body []byte, opts *options) ([]byte, error) 
 	} else if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, err
 	}
-	typ := "disabled"
-	if opts.thinkingEnabled {
-		typ = "enabled"
-	}
-	payload["thinking"] = map[string]any{"type": typ}
+	payload["thinking"] = thinking
 	return json.Marshal(payload)
 }
 

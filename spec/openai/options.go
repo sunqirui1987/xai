@@ -69,11 +69,6 @@ func WithDebugCurl(ob xai.OptionBuilder, enabled bool) xai.OptionBuilder {
 func (p *options) withThinking(enabled bool) *options {
 	p.thinkingSet = true
 	p.thinkingEnabled = enabled
-	typ := "disabled"
-	if enabled {
-		typ = "enabled"
-	}
-	p.opts = append(p.opts, option.WithJSONSet("thinking", map[string]string{"type": typ}))
 	return p
 }
 
@@ -153,6 +148,25 @@ func baseURLOption(opts xai.OptionBuilder) string {
 		return p.baseURL
 	}
 	return ""
+}
+
+func (p *options) thinkingJSON(model string) (map[string]string, bool) {
+	if p == nil || !p.thinkingSet || suppressThinkingForModel(model) {
+		return nil, false
+	}
+	typ := "disabled"
+	if p.thinkingEnabled {
+		typ = "enabled"
+	}
+	return map[string]string{"type": typ}, true
+}
+
+func suppressThinkingForModel(model string) bool {
+	model = strings.ToLower(strings.TrimSpace(model))
+	if idx := strings.LastIndex(model, "/"); idx >= 0 {
+		model = model[idx+1:]
+	}
+	return strings.HasPrefix(model, "gemini-3")
 }
 
 // -----------------------------------------------------------------------------

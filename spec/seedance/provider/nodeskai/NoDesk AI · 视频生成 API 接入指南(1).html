@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoDesk AI · 视频生成 API 接入指南</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --blue:#3b82f6;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --purple:#8b5cf6;--purple-bg:#f5f3ff;--purple-border:#ddd6fe;
+  --amber:#f59e0b;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --emerald:#10b981;--emerald-bg:#ecfdf5;--emerald-border:#a7f3d0;
+  --rose:#f43f5e;--rose-bg:#fff1f2;--rose-border:#fecdd3;
+  --cyan:#06b6d4;--cyan-bg:#ecfeff;--cyan-border:#a5f3fc;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.07),0 4px 10px rgba(0,0,0,.04);
+}
+html{font-size:14px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans SC',sans-serif;line-height:1.7;min-height:100vh}
+.page{max-width:900px;margin:0 auto;padding:2.5rem 2rem 4rem}
+.header{text-align:center;margin-bottom:2.5rem}
+.header h1{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.3rem}
+.header p{color:var(--text2);font-size:.9rem}
+.header .ver{display:inline-block;margin-top:.6rem;padding:.25rem .8rem;border-radius:16px;background:var(--blue-bg);border:1px solid var(--blue-border);font-size:.7rem;font-weight:600;color:var(--blue)}
+
+.toc{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin-bottom:2.5rem}
+.toc a{padding:.3rem .7rem;border-radius:8px;font-size:.72rem;font-weight:600;text-decoration:none;border:1px solid var(--border);color:var(--text2);background:var(--card);transition:all .2s}
+.toc a:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+
+.section{margin-bottom:2.5rem}
+.section-title{font-size:1.1rem;font-weight:700;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:.5rem}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card h4{font-size:.9rem;font-weight:700;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem}
+
+.code-block{font-family:'JetBrains Mono','Fira Code','Menlo',monospace;font-size:.78rem;line-height:1.8;padding:.8rem 1rem;background:#1e293b;color:#e2e8f0;border-radius:10px;margin:.5rem 0;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.code-block .comment{color:#64748b}
+.code-block .str{color:#86efac}
+.code-block .key{color:#93c5fd}
+.code-block .val{color:#fbbf24}
+.code-block .url{color:#67e8f9}
+
+.inline-code{font-size:.76rem;background:var(--bg);padding:.12rem .4rem;border-radius:4px;font-family:'JetBrains Mono','Fira Code',monospace;border:1px solid var(--border)}
+
+table{width:100%;border-collapse:collapse;font-size:.8rem;margin:.6rem 0}
+table th{background:var(--bg);font-weight:600;text-align:left;padding:.55rem .65rem;border:1px solid var(--border);font-size:.72rem;color:var(--text2)}
+table td{padding:.5rem .65rem;border:1px solid var(--border);vertical-align:top}
+table tr:hover td{background:var(--blue-bg)}
+table code{font-size:.72rem;background:var(--bg);padding:.1rem .35rem;border-radius:4px;font-family:'JetBrains Mono','Fira Code',monospace}
+
+.note{padding:.7rem 1rem;border-radius:10px;font-size:.78rem;line-height:1.6;margin:.6rem 0}
+.note strong{font-weight:700}
+.note-blue{background:var(--blue-bg);border:1px solid var(--blue-border);color:#1e40af}
+.note-purple{background:var(--purple-bg);border:1px solid var(--purple-border);color:#5b21b6}
+.note-amber{background:var(--amber-bg);border:1px solid var(--amber-border);color:#92400e}
+.note-emerald{background:var(--emerald-bg);border:1px solid var(--emerald-border);color:#065f46}
+.note-rose{background:var(--rose-bg);border:1px solid var(--rose-border);color:#9f1239}
+
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:6px;font-size:.65rem;font-weight:600}
+.badge-get{background:#dbeafe;color:#1d4ed8}
+.badge-post{background:#dcfce7;color:#15803d}
+
+.flow-step{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:1rem}
+.flow-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;margin-top:.1rem}
+.flow-content{flex:1}
+.flow-content h5{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+.flow-content p{font-size:.78rem;color:var(--text2)}
+
+.json-block{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.75rem;line-height:1.7;padding:.8rem 1rem;background:#1e293b;color:#e2e8f0;border-radius:10px;margin:.5rem 0;overflow-x:auto}
+
+.info-tag{display:inline-block;padding:.2rem .6rem;background:var(--emerald-bg);border:1px solid var(--emerald-border);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--emerald)}
+
+@media(max-width:640px){
+  .page{padding:1.5rem 1rem 3rem}
+  .toc{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <h1>NoDesk AI · 视频生成 API</h1>
+  <p>基于豆包 Seedance 2.0 的 AI 视频生成服务 — 接入指南</p>
+  <div class="ver">v1.0 · 2026-04-13</div>
+</div>
+
+<div class="toc">
+  <a href="#overview">服务概览</a>
+  <a href="#auth">认证方式</a>
+  <a href="#quickstart">快速开始</a>
+  <a href="#api-submit">提交任务</a>
+  <a href="#api-query">查询结果</a>
+  <a href="#models">模型选择</a>
+  <a href="#params">参数详解</a>
+  <a href="#token-calc">Token 与计费</a>
+  <a href="#examples">完整示例</a>
+  <a href="#errors">错误处理</a>
+  <a href="#faq">常见问题</a>
+</div>
+
+<!-- ======================== 服务概览 ======================== -->
+<div class="section" id="overview">
+<div class="section-title">&#x1f3ac; 服务概览</div>
+
+<div class="card">
+  <p style="font-size:.85rem">NoDesk AI 视频生成 API 提供基于<strong>豆包 Seedance 2.0</strong> 的 AI 视频生成能力，支持：</p>
+  <ul style="margin:.6rem 0 0 1.2rem;font-size:.82rem;color:var(--text2)">
+    <li><strong>文生视频</strong> — 输入文字描述，生成对应视频</li>
+    <li><strong>图生视频</strong> — 提供参考图片 + 文字描述，让静态图片动起来</li>
+    <li><strong>多种参数</strong> — 自定义分辨率、时长、宽高比</li>
+    <li><strong>两种模型</strong> — 标准版（高画质）和快速版（低延迟）</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h4>&#x1f504; 调用流程</h4>
+  <div class="flow-step">
+    <div class="flow-num" style="background:var(--blue)">1</div>
+    <div class="flow-content">
+      <h5>提交生成任务</h5>
+      <p><span class="badge badge-post">POST</span> <code>/v1/video/generate</code> → 返回 <code>task_id</code></p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num" style="background:var(--amber)">2</div>
+    <div class="flow-content">
+      <h5>轮询等待结果</h5>
+      <p><span class="badge badge-get">GET</span> <code>/v1/video/generate/{task_id}</code> → 每 30-60 秒轮询一次</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num" style="background:var(--emerald)">3</div>
+    <div class="flow-content">
+      <h5>获取视频</h5>
+      <p>状态变为 <code>succeeded</code> 后，从响应中获取 <code>video_url</code> 下载视频</p>
+    </div>
+  </div>
+  <div class="note note-amber" style="margin-top:.3rem">
+    <strong>异步生成：</strong>视频生成是异步任务。快速版约 1-3 分钟，标准版约 3-10 分钟。请通过轮询获取结果，不要阻塞等待。
+  </div>
+</div>
+</div>
+
+<!-- ======================== 认证方式 ======================== -->
+<div class="section" id="auth">
+<div class="section-title">&#x1f511; 认证方式</div>
+
+<div class="card">
+  <p style="font-size:.82rem">所有 API 请求需要在 HTTP Header 中携带 API Key：</p>
+  <div class="code-block"><span class="comment"># 请求头</span>
+Authorization: Bearer <span class="val">{YOUR_API_KEY}</span></div>
+
+  <div class="note note-blue" style="margin-top:.6rem">
+    <strong>获取 API Key：</strong>请联系管理员创建项目和 API Key，并确保账户已充值。余额不足时 API 将返回 HTTP 402 错误。
+  </div>
+</div>
+</div>
+
+<!-- ======================== 快速开始 ======================== -->
+<div class="section" id="quickstart">
+<div class="section-title">&#x26a1; 快速开始（3 分钟跑通）</div>
+
+<div class="card">
+  <h4>Step 1 · 提交视频生成任务</h4>
+  <div class="code-block">curl -X POST https://llm-gateway-api.nodesk.tech/v1/video/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>" \
+  -d '{
+    "model": "doubao-seedance-2-0-fast-260128",
+    "content": [
+      {"type": "text", "text": "一只小猫在阳光下打盹，光影柔和"}
+    ]
+  }'</div>
+
+  <p style="font-size:.78rem;color:var(--text2);margin-top:.4rem">响应示例：</p>
+  <div class="json-block">{
+  <span style="color:#93c5fd">"id"</span>: <span style="color:#86efac">"cgt-20260413-xxxxx"</span>,
+  <span style="color:#93c5fd">"model"</span>: <span style="color:#86efac">"doubao-seedance-2-0-fast-260128"</span>,
+  <span style="color:#93c5fd">"status"</span>: <span style="color:#86efac">"running"</span>,
+  <span style="color:#93c5fd">"poll_url"</span>: <span style="color:#86efac">"/v1/video/generate/cgt-20260413-xxxxx"</span>
+}</div>
+</div>
+
+<div class="card">
+  <h4>Step 2 · 轮询任务状态（每 30-60 秒一次）</h4>
+  <div class="code-block">curl https://llm-gateway-api.nodesk.tech/v1/video/generate/<span class="val">{TASK_ID}</span> \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>"</div>
+
+  <p style="font-size:.78rem;color:var(--text2);margin-top:.4rem">生成完成后的响应：</p>
+  <div class="json-block">{
+  <span style="color:#93c5fd">"id"</span>: <span style="color:#86efac">"cgt-20260413-xxxxx"</span>,
+  <span style="color:#93c5fd">"model"</span>: <span style="color:#86efac">"doubao-seedance-2-0-fast-260128"</span>,
+  <span style="color:#93c5fd">"status"</span>: <span style="color:#fbbf24">"succeeded"</span>,
+  <span style="color:#93c5fd">"content"</span>: {
+    <span style="color:#93c5fd">"video_url"</span>: <span style="color:#86efac">"https://...signed-url..."</span>,
+    <span style="color:#93c5fd">"duration"</span>: <span style="color:#fbbf24">5</span>
+  },
+  <span style="color:#93c5fd">"usage"</span>: {
+    <span style="color:#93c5fd">"completion_tokens"</span>: <span style="color:#fbbf24">108900</span>,
+    <span style="color:#93c5fd">"total_tokens"</span>: <span style="color:#fbbf24">108900</span>
+  }
+}</div>
+</div>
+
+<div class="card">
+  <h4>Step 3 · 下载视频</h4>
+  <div class="code-block"><span class="comment"># 直接用浏览器打开 video_url，或用 curl 下载</span>
+curl -o output.mp4 "<span class="val">{video_url}</span>"</div>
+  <div class="note note-amber" style="margin-top:.4rem">
+    <strong>注意：</strong>video_url 签名有效期 <strong>24 小时</strong>，请及时下载。如果 URL 中包含 <code>\u0026</code>，需要替换为 <code>&amp;</code>。
+  </div>
+</div>
+</div>
+
+<!-- ======================== 提交任务 ======================== -->
+<div class="section" id="api-submit">
+<div class="section-title">&#x1f4e4; API：提交视频生成任务</div>
+
+<div class="card">
+  <h4><span class="badge badge-post">POST</span> &nbsp; /v1/video/generate</h4>
+  <p style="font-size:.82rem;color:var(--text2);margin-bottom:.6rem">提交一个异步视频生成任务，返回任务 ID 用于后续轮询。</p>
+
+  <table>
+  <tr><th>参数</th><th>类型</th><th>必填</th><th>默认值</th><th>说明</th></tr>
+  <tr>
+    <td><code>model</code></td><td>string</td><td>否</td><td><code>doubao-seedance-2-0-260128</code></td>
+    <td>模型 ID，详见<a href="#models">模型选择</a></td>
+  </tr>
+  <tr>
+    <td><code>content</code></td><td>array</td><td><strong>是</strong></td><td>—</td>
+    <td>输入内容数组，详见<a href="#params">参数详解</a></td>
+  </tr>
+  <tr>
+    <td><code>ratio</code></td><td>string</td><td>否</td><td><code>16:9</code></td>
+    <td>宽高比：<code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:3</code> / <code>3:4</code></td>
+  </tr>
+  <tr>
+    <td><code>duration</code></td><td>integer</td><td>否</td><td><code>5</code></td>
+    <td>视频时长，4-15 秒</td>
+  </tr>
+  <tr>
+    <td><code>resolution</code></td><td>string</td><td>否</td><td><code>720p</code></td>
+    <td>分辨率：<code>720p</code> / <code>1080p</code></td>
+  </tr>
+  </table>
+
+  <h4 style="margin-top:1rem">&#x1f4e6; 请求体示例</h4>
+  <div class="json-block">{
+  <span style="color:#93c5fd">"model"</span>: <span style="color:#86efac">"doubao-seedance-2-0-fast-260128"</span>,
+  <span style="color:#93c5fd">"ratio"</span>: <span style="color:#86efac">"16:9"</span>,
+  <span style="color:#93c5fd">"duration"</span>: <span style="color:#fbbf24">5</span>,
+  <span style="color:#93c5fd">"resolution"</span>: <span style="color:#86efac">"720p"</span>,
+  <span style="color:#93c5fd">"content"</span>: [
+    {<span style="color:#93c5fd">"type"</span>: <span style="color:#86efac">"text"</span>, <span style="color:#93c5fd">"text"</span>: <span style="color:#86efac">"海浪拍打礁石，日落时分金色光芒洒满海面"</span>}
+  ]
+}</div>
+
+  <h4 style="margin-top:1rem">&#x2705; 响应</h4>
+  <div class="json-block">{
+  <span style="color:#93c5fd">"id"</span>: <span style="color:#86efac">"cgt-20260413-xxxxx"</span>,
+  <span style="color:#93c5fd">"model"</span>: <span style="color:#86efac">"doubao-seedance-2-0-fast-260128"</span>,
+  <span style="color:#93c5fd">"status"</span>: <span style="color:#86efac">"running"</span>,
+  <span style="color:#93c5fd">"poll_url"</span>: <span style="color:#86efac">"/v1/video/generate/cgt-20260413-xxxxx"</span>
+}</div>
+</div>
+</div>
+
+<!-- ======================== 查询结果 ======================== -->
+<div class="section" id="api-query">
+<div class="section-title">&#x1f50d; API：查询任务结果</div>
+
+<div class="card">
+  <h4><span class="badge badge-get">GET</span> &nbsp; /v1/video/generate/{task_id}</h4>
+  <p style="font-size:.82rem;color:var(--text2);margin-bottom:.6rem">查询视频生成任务的状态和结果。建议每 <strong>30-60 秒</strong>轮询一次。</p>
+
+  <h4 style="margin-top:.8rem">&#x1f4cb; 响应字段说明</h4>
+  <table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><code>id</code></td><td>string</td><td>任务 ID</td></tr>
+  <tr><td><code>status</code></td><td>string</td><td><code>running</code>（生成中）/ <code>succeeded</code>（成功）/ <code>failed</code>（失败）</td></tr>
+  <tr><td><code>model</code></td><td>string</td><td>使用的模型 ID</td></tr>
+  <tr><td><code>content.video_url</code></td><td>string</td><td>视频下载 URL（成功时返回，签名有效期 24 小时）</td></tr>
+  <tr><td><code>content.duration</code></td><td>integer</td><td>视频实际时长（秒）</td></tr>
+  <tr><td><code>usage.completion_tokens</code></td><td>integer</td><td>输出 Token 消耗（用于计费）</td></tr>
+  <tr><td><code>usage.total_tokens</code></td><td>integer</td><td>总 Token 消耗</td></tr>
+  <tr><td><code>error.code</code></td><td>string</td><td>失败时的错误码</td></tr>
+  <tr><td><code>error.message</code></td><td>string</td><td>失败时的错误描述</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ======================== 模型选择 ======================== -->
+<div class="section" id="models">
+<div class="section-title">&#x1f3af; 模型选择</div>
+
+<div class="card">
+  <table>
+  <tr><th>对比项</th><th>标准版<br><code>doubao-seedance-2-0-260128</code></th><th>快速版<br><code>doubao-seedance-2-0-fast-260128</code></th></tr>
+  <tr><td>生成速度</td><td>3-10 分钟</td><td><strong>1-3 分钟</strong></td></tr>
+  <tr><td>画质</td><td><strong>更高</strong></td><td>略低</td></tr>
+  <tr><td>Token 消耗</td><td colspan="2" style="text-align:center">相同参数下 Token 消耗一致，具体费用以账单为准</td></tr>
+  <tr><td>支持的参数</td><td colspan="2" style="text-align:center">完全一致（ratio / duration / resolution / content 等）</td></tr>
+  <tr><td>推荐场景</td><td>最终交付、高画质需求</td><td><strong>日常使用、快速迭代、测试验证</strong></td></tr>
+  </table>
+
+  <div class="note note-emerald" style="margin-top:.6rem">
+    <strong>建议：</strong>日常使用和联调测试推荐快速版，速度更快。需要高画质交付时使用标准版。
+  </div>
+
+  <div class="note note-blue" style="margin-top:.4rem">
+    <strong>官方文档参考：</strong>
+    <a href="https://www.volcengine.com/docs/82379/1520757" target="_blank" style="color:inherit">Seedance 2.0 API 文档</a> ｜
+    <a href="https://www.volcengine.com/docs/82379/1544106" target="_blank" style="color:inherit">官方模型文档</a>
+  </div>
+</div>
+</div>
+
+<!-- ======================== 参数详解 ======================== -->
+<div class="section" id="params">
+<div class="section-title">&#x1f4dd; 参数详解</div>
+
+<div class="card">
+  <h4>content 数组 — 支持多模态输入</h4>
+  <p style="font-size:.8rem;color:var(--text2);margin-bottom:.5rem"><code>content</code> 是一个数组，每个元素描述一种输入。系统会根据包含的类型自动识别生成模式。</p>
+
+  <table>
+  <tr><th>type</th><th>用途</th><th>子字段</th><th>说明</th></tr>
+  <tr>
+    <td><code>text</code></td><td>文本提示词</td><td><code>text</code>: string</td>
+    <td>描述视频内容，支持中英文。建议详细描述场景、动作、光影</td>
+  </tr>
+  <tr>
+    <td><code>image_url</code></td><td>参考图片</td><td><code>image_url.url</code>: string</td>
+    <td>提供参考图片 URL，实现图生视频。支持 JPG/PNG/WebP</td>
+  </tr>
+  <tr>
+    <td><code>video_url</code></td><td>参考视频</td><td><code>video_url.url</code>: string</td>
+    <td>提供参考视频 URL，实现视频续写或风格迁移</td>
+  </tr>
+  </table>
+
+  <div class="note note-purple" style="margin-top:.6rem">
+    <strong>生成模式自动识别：</strong><br>
+    仅有 <code>text</code> → <strong>文生视频</strong><br>
+    <code>text</code> + <code>image_url</code> → <strong>图生视频</strong>（让图片动起来）<br>
+    包含 <code>video_url</code> → <strong>视频续写 / 风格迁移</strong>
+  </div>
+</div>
+
+<div class="card">
+  <h4>ratio（宽高比）可选值</h4>
+  <table>
+  <tr><th>值</th><th>说明</th><th>适用场景</th></tr>
+  <tr><td><code>16:9</code></td><td>横屏（默认）</td><td>PC 端、视频网站</td></tr>
+  <tr><td><code>9:16</code></td><td>竖屏</td><td>手机端、短视频平台</td></tr>
+  <tr><td><code>1:1</code></td><td>方形</td><td>社交媒体</td></tr>
+  <tr><td><code>4:3</code> / <code>3:4</code></td><td>传统比例</td><td>特殊场景</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>resolution（分辨率）</h4>
+  <table>
+  <tr><th>分辨率</th><th>说明</th><th>Token 消耗对比</th></tr>
+  <tr><td><code>720p</code>（默认）</td><td>高清</td><td>基准</td></tr>
+  <tr><td><code>1080p</code></td><td>全高清</td><td>约为 720p 的 <strong>2.3 倍</strong></td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ======================== Token 与计费 ======================== -->
+<div class="section" id="token-calc">
+<div class="section-title">&#x1f4ca; Token 消耗说明</div>
+
+<div class="card">
+  <h4>Token 计算逻辑</h4>
+  <p style="font-size:.82rem;color:var(--text2)">
+    视频生成的 Token 消耗与<strong>分辨率、帧率、时长</strong>成正比。系统会在 API 响应的 <code>usage.completion_tokens</code> 字段中返回实际消耗的 Token 数。
+  </p>
+
+  <h4 style="margin-top:.8rem">不同参数组合的 Token 参考</h4>
+  <table>
+  <tr><th>参数组合</th><th>分辨率</th><th>时长</th><th>预估 Token</th></tr>
+  <tr>
+    <td>默认参数</td><td>720p</td><td>5s</td>
+    <td><strong>~108,900</strong></td>
+  </tr>
+  <tr>
+    <td>长视频</td><td>720p</td><td>10s</td>
+    <td><strong>~221,184</strong></td>
+  </tr>
+  <tr>
+    <td>高清</td><td>1080p</td><td>5s</td>
+    <td><strong>~248,832</strong></td>
+  </tr>
+  <tr>
+    <td>高清长视频</td><td>1080p</td><td>10s</td>
+    <td><strong>~497,664</strong></td>
+  </tr>
+  </table>
+
+  <div class="note note-amber" style="margin-top:.4rem">
+    <strong>无需自行计算：</strong>API 响应中的 <code>usage.completion_tokens</code> 就是实际消耗量，具体费用以账单为准。
+  </div>
+</div>
+
+<div class="card">
+  <h4>&#x1f9ca; 预冻结机制</h4>
+  <p style="font-size:.82rem;color:var(--text2)">
+    提交任务时系统会<strong>预冻结一定额度</strong>的余额，视频生成完成后自动结算：解冻预冻金额 → 按实际 Token 消耗扣费。
+  </p>
+  <ul style="margin:.4rem 0 0 1.2rem;font-size:.8rem;color:var(--text2)">
+    <li><strong>生成成功</strong>：解冻预冻额度 → 扣除实际费用</li>
+    <li><strong>生成失败</strong>：全额解冻，不扣费</li>
+    <li>余额不足时提交任务会返回 <strong>HTTP 402</strong></li>
+  </ul>
+</div>
+</div>
+
+<!-- ======================== 完整示例 ======================== -->
+<div class="section" id="examples">
+<div class="section-title">&#x1f4bb; 完整调用示例</div>
+
+<div class="card">
+  <h4 style="color:var(--emerald)">&#x26a1; 示例 1：文生视频（快速版，推荐入门）</h4>
+  <div class="code-block">curl -X POST https://llm-gateway-api.nodesk.tech/v1/video/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>" \
+  -d '{
+    "model": "doubao-seedance-2-0-fast-260128",
+    "content": [{"type": "text", "text": "一只小猫在阳光下打盹"}]
+  }'</div>
+  <p style="font-size:.72rem;color:var(--text3);margin-top:.3rem">720p / 5s / 16:9 横屏，约 1-3 分钟出结果</p>
+</div>
+
+<div class="card">
+  <h4>&#x1f5bc; 示例 2：图生视频</h4>
+  <div class="code-block">curl -X POST https://llm-gateway-api.nodesk.tech/v1/video/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>" \
+  -d '{
+    "model": "doubao-seedance-2-0-fast-260128",
+    "content": [
+      {"type": "image_url", "image_url": {"url": "<span class="val">{YOUR_IMAGE_URL}</span>"}},
+      {"type": "text", "text": "让画面中的人物缓缓转头微笑"}
+    ]
+  }'</div>
+  <p style="font-size:.72rem;color:var(--text3);margin-top:.3rem">图片建议分辨率 ≥ 720p，支持 JPG/PNG/WebP</p>
+</div>
+
+<div class="card">
+  <h4>&#x1f4f1; 示例 3：竖屏短视频</h4>
+  <div class="code-block">curl -X POST https://llm-gateway-api.nodesk.tech/v1/video/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>" \
+  -d '{
+    "model": "doubao-seedance-2-0-fast-260128",
+    "ratio": "9:16",
+    "content": [{"type": "text", "text": "一个女孩在雨中撑伞行走，街灯朦胧"}]
+  }'</div>
+</div>
+
+<div class="card">
+  <h4>&#x1f3ac; 示例 4：10 秒长视频 + 标准版高画质</h4>
+  <div class="code-block">curl -X POST https://llm-gateway-api.nodesk.tech/v1/video/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <span class="val">{YOUR_API_KEY}</span>" \
+  -d '{
+    "model": "doubao-seedance-2-0-260128",
+    "duration": 10,
+    "content": [{"type": "text", "text": "海浪拍打礁石，日落时分金色光芒洒满海面"}]
+  }'</div>
+  <p style="font-size:.72rem;color:var(--text3);margin-top:.3rem">标准版 + 10 秒，约 5-10 分钟</p>
+</div>
+
+<div class="card">
+  <h4>&#x1f504; 示例 5：轮询 + 下载（完整脚本）</h4>
+  <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="comment"># 替换为你的 API Key 和 Task ID</span>
+API_KEY="<span class="val">{YOUR_API_KEY}</span>"
+TASK_ID="<span class="val">{TASK_ID}</span>"
+BASE="https://llm-gateway-api.nodesk.tech"
+
+<span class="comment"># 轮询直到完成</span>
+while true; do
+  RESP=$(curl -s "$BASE/v1/video/generate/$TASK_ID" \
+    -H "Authorization: Bearer $API_KEY")
+
+  STATUS=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))")
+
+  echo "状态: $STATUS"
+
+  if [ "$STATUS" = "succeeded" ]; then
+    VIDEO_URL=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['content']['video_url'])")
+    echo "视频 URL: $VIDEO_URL"
+    curl -o output.mp4 "$VIDEO_URL"
+    echo "视频已保存为 output.mp4"
+    break
+  elif [ "$STATUS" = "failed" ]; then
+    echo "生成失败"
+    echo "$RESP"
+    break
+  fi
+
+  echo "等待 30 秒后重试..."
+  sleep 30
+done</div>
+</div>
+</div>
+
+<!-- ======================== 错误处理 ======================== -->
+<div class="section" id="errors">
+<div class="section-title">&#x26a0; 错误处理</div>
+
+<div class="card">
+  <table>
+  <tr><th>HTTP 状态码</th><th>错误码</th><th>说明</th><th>处理建议</th></tr>
+  <tr>
+    <td><code>401</code></td><td>unauthorized</td>
+    <td>API Key 无效或未提供</td>
+    <td>检查 Authorization Header 格式</td>
+  </tr>
+  <tr>
+    <td><code>402</code></td><td>insufficient_balance</td>
+    <td>账户余额不足</td>
+    <td>联系管理员充值，确保余额充足</td>
+  </tr>
+  <tr>
+    <td><code>400</code></td><td>bad_request</td>
+    <td>请求参数有误</td>
+    <td>检查 content 数组是否为空、参数格式</td>
+  </tr>
+  <tr>
+    <td><code>500</code></td><td>internal_error</td>
+    <td>服务器内部错误</td>
+    <td>稍后重试，或联系技术支持</td>
+  </tr>
+  </table>
+
+  <div class="note note-rose" style="margin-top:.6rem">
+    <strong>任务失败时</strong>的响应中包含 <code>error.code</code> 和 <code>error.message</code> 字段，请查看错误信息进行排查。常见原因包括：图片 URL 无法访问、提示词违规等。
+  </div>
+</div>
+</div>
+
+<!-- ======================== 常见问题 ======================== -->
+<div class="section" id="faq">
+<div class="section-title">&#x2753; 常见问题</div>
+
+<div class="card">
+  <h4>Q: 视频生成需要多长时间？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">快速版约 1-3 分钟，标准版约 3-10 分钟。1080p 和长时长视频会更慢。</p>
+</div>
+
+<div class="card">
+  <h4>Q: 视频 URL 有效期多久？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">签名 URL 有效期 <strong>24 小时</strong>。请在生成成功后及时下载保存，过期后需重新生成。</p>
+</div>
+
+<div class="card">
+  <h4>Q: 生成失败会扣费吗？</h4>
+  <p style="font-size:.82rem;color:var(--text2)"><strong>不会</strong>。生成失败时预冻结的余额会全额退还，不产生任何费用。</p>
+</div>
+
+<div class="card">
+  <h4>Q: 如何估算消耗？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">
+    Token 消耗与分辨率、时长成正比。720p/5s 的视频约消耗 108,900 Token，1080p/10s 约 497,664 Token。
+    具体数值由 API 响应的 <code>completion_tokens</code> 字段返回，具体费用以账单为准。
+  </p>
+</div>
+
+<div class="card">
+  <h4>Q: 支持哪些图片格式？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">图生视频支持 <strong>JPG、PNG、WebP</strong> 格式，建议图片分辨率 ≥ 720p，图片 URL 需要可公开访问。</p>
+</div>
+
+<div class="card">
+  <h4>Q: 提交任务后没有轮询会怎样？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">预冻结的余额不会自动释放。<strong>必须通过轮询触发结算</strong>。建议在提交任务后立即开始轮询。</p>
+</div>
+
+<div class="card">
+  <h4>Q: 如何获取 API Key 和充值？</h4>
+  <p style="font-size:.82rem;color:var(--text2)">请联系管理员。管理员会为您创建项目、生成 API Key 并充值余额。</p>
+</div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+  <p style="font-size:.75rem;color:var(--text3)">
+    <strong>API 地址</strong>：<code>https://llm-gateway-api.nodesk.tech</code>
+  </p>
+  <p style="font-size:.65rem;color:var(--text3);margin-top:.3rem">
+    NoDesk AI · 视频生成 API 接入指南 · v1.0 · 2026-04-13
+  </p>
+</div>
+
+</div>
+</body>
+</html>

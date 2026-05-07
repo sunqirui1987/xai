@@ -9,21 +9,33 @@
 
 面向 Go 的统一 AI SDK，覆盖聊天、图片、视频、音频，以及多模型、多 provider 的接入场景。
 
-用一套 SDK，就能更快接入多模态生成、工具调用和长时间异步任务，不用每换一个模型就重写一层业务集成代码。
+它提供了一套统一的 Go 接口，用来处理多模态生成、工具调用和长时间异步任务。
 
 ## 为什么是 xai
 
-现在的大多数团队，已经不只用一个模型了。
+一个项目如果同时接多个模型，通常就要分别维护请求参数、轮询逻辑和结果处理代码。
 
-通常会是一个模型做 chat，一个做图片，一个做视频，后面还可能切 provider。真正麻烦的地方不是“调通一次”，而是每多接一个模型，就多出一套请求参数、轮询逻辑和结果处理代码。
-
-`xai` 想解决的就是这个问题：
+`xai` 主要做的是把这部分接口收敛起来：
 
 - 一套 SDK，同时覆盖 chat、多模态、image、video、audio
 - 一套接入方式，适配多个模型族和 provider
 - 原生支持异步生成任务：`TaskID`、轮询、恢复
-- 自带可运行 examples，缩短从评估到上线的路径
-- 更适合真实产品后端，而不只是临时 demo
+- 自带可运行 examples
+
+```go
+ctx := context.Background()
+svc := qiniu.NewService(os.Getenv("QINIU_API_KEY"))
+
+// chat
+resp, _ := svc.Gen(ctx, svc.Params().
+	Model("gemini-3.0-pro-preview").
+	Messages(svc.UserMsg().Text("hello")), nil)
+
+// video
+op, _ := svc.Operation("sora-2", xai.GenVideo)
+op.Params().Set("Prompt", "a cat running").Set("Seconds", "4")
+results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
+```
 
 ## 能力矩阵
 
@@ -304,16 +316,11 @@ func main() {
 }
 ```
 
-## 为什么它更适合真实产品
+## 说明
 
-AI 产品变化很快，但你的业务接入层不应该跟着频繁重写。
-
-有了 `xai`，团队可以：
-
-- 在评估多个模型时尽量少改应用代码
-- 用一个后端同时承载 chat、image、video、audio
-- 把异步生成任务真正纳入产品架构，而不是事后补救
-- 在 provider 和模型不断变化时，尽量减少集成漂移
+- 大多数图片和视频生成流程走 operation API，并且可能返回异步任务
+- 仓库中的 examples 默认以七牛接入为主
+- README 只保留通用入口，provider 细节放在 `spec/*` 和 `examples/*` 下
 
 ## 适合这些团队
 

@@ -9,21 +9,33 @@
 
 One Go SDK for chat, image, video, and audio across leading AI models and providers.
 
-Ship AI products faster with a stable integration layer for multimodal generation, tool calling, and long-running async jobs.
+It provides a common Go interface for multimodal generation, tool calling, and long-running async jobs.
 
 ## Why xai
 
-Most teams do not use just one model anymore.
+Projects that use multiple models usually end up maintaining separate request parameters, polling code, and result handling for each provider.
 
-They use one model for chat, another for image generation, another for video, and often need the freedom to switch providers later. That usually means duplicated request builders, duplicated polling logic, and messy integration code.
-
-`xai` gives you a cleaner path:
+`xai` tries to keep that surface smaller:
 
 - One SDK for chat, multimodal input, image, video, and audio
 - One integration surface across multiple model families and providers
 - First-class support for async generation with `TaskID`, polling, and resume
-- Runnable examples that shorten time from evaluation to production
-- A better fit for real product backends, not just isolated demos
+- Runnable examples
+
+```go
+ctx := context.Background()
+svc := qiniu.NewService(os.Getenv("QINIU_API_KEY"))
+
+// chat
+resp, _ := svc.Gen(ctx, svc.Params().
+	Model("gemini-3.0-pro-preview").
+	Messages(svc.UserMsg().Text("hello")), nil)
+
+// video
+op, _ := svc.Operation("sora-2", xai.GenVideo)
+op.Params().Set("Prompt", "a cat running").Set("Seconds", "4")
+results, _ := xai.Call(ctx, svc, op, svc.Options(), nil)
+```
 
 ## Capability matrix
 
@@ -301,16 +313,11 @@ func main() {
 }
 ```
 
-## Why this matters in production
+## Notes
 
-AI products change quickly, but your application integration layer should not have to change at the same pace.
-
-With `xai`, teams can:
-
-- evaluate multiple models without rewriting app code every time
-- keep one backend serving chat, image, video, and audio flows
-- treat async generation as part of the product architecture, not an afterthought
-- reduce integration drift as providers and model choices evolve
+- Most video and image generation flows use the operation API and may return async tasks
+- Examples in this repository use Qiniu by default
+- The README focuses on the common entry points; provider-specific details are documented under `spec/*` and `examples/*`
 
 ## Good fit for
 

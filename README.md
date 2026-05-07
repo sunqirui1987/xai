@@ -1,125 +1,193 @@
 # xai
 
-Unified Go SDK for AI chat, image generation, and video generation. Supports multiple providers (OpenAI-compatible, Gemini, Kling, Sora, Veo, Vidu) through a common API.
+[中文文档](./readme-zh.md)
 
-## Features
+Unified Go SDK for chat, image, video, and audio across leading AI models and providers.
 
-- **Chat Completions**: Text, image, video multimodal chat with streaming
-- **Function Calling**: Tool use round-trip with `tool_use` / `tool_result`
-- **Image Generation**: Text-to-image, image-to-image, image edit
-- **Video Generation**: Text-to-video, image-to-video, remix, keyframe
-- **Long-running Operations**: `CallSync` + `TaskID` + `GetTask` for async task persistence
+Build once, switch models when you need to, and handle long-running generation jobs without rebuilding your integration layer every time.
 
-## Prerequisites
+## Why teams use xai
 
-- Go 1.24+
-- `QINIU_API_KEY` for real API calls (omit for mock mode)
+- One Go SDK for chat, multimodal input, image, video, and audio
+- One integration surface across multiple model families and providers
+- Built for product workflows, not just one-off demos
+- First-class support for async generation with `TaskID`, polling, and resume
+- Runnable examples that shorten time from evaluation to production
 
-## Installation
+## Supported model families
+
+| Family | Typical capabilities |
+| --- | --- |
+| OpenAI-compatible | Chat, multimodal chat, tool calling, image and video input |
+| Gemini | Chat, tool calling, image generation, image editing, video |
+| Kling | Image generation, video generation |
+| Seedance | Video generation |
+| Sora | Video generation |
+| Veo | Video generation |
+| Vidu | Video generation |
+| Audio | ASR, TTS |
+
+## What you can build
+
+- Chat applications with text, image, and video input
+- Tool-calling workflows with request and result round-trips
+- Text-to-image and image editing pipelines
+- Text-to-video and image-to-video pipelines
+- First-frame, last-frame, multi-reference, and remix video workflows
+- Speech-to-text and text-to-speech services
+- Long-running generation flows that survive process restarts
+
+## Quick start
+
+### Install
 
 ```bash
 go get github.com/goplus/xai
 ```
 
-## Quick Start
+### Set credentials
 
 ```bash
-# Set API key for real calls
 export QINIU_API_KEY=your-key
+export ARK_API_KEY=your-ark-key
+export NODESKAI_ACCESS_TOKEN=your-token
+export NODESKAI_CLIENT_ID=your-client-id
+export NODESKAI_CLIENT_SECRET=your-client-secret
+```
 
-# OpenAI-compatible chat (text, image, video, function calling)
+### Run examples
+
+```bash
+# OpenAI-compatible chat
 go run ./examples/openai text
-go run ./examples/openai image video function-call
+go run ./examples/openai image
+go run ./examples/openai function-call
 
-# Gemini chat + image generation
-go run ./examples/gemini chat-text image-generate
+# Gemini
+go run ./examples/gemini chat-text
+go run ./examples/gemini image-generate
 
-# Kling image & video
+# Kling
 go run ./examples/kling/images kling-v2-1
 go run ./examples/kling/video kling-v2-6
 
-# Sora video
-go run ./examples/sora text-to-video image-to-video
+# Sora
+go run ./examples/sora text-to-video
 
-# Veo video
+# Veo
 go run ./examples/veo veo-3.0-generate-preview
 
-# Vidu video
+# Vidu
 go run ./examples/vidu/video q2-image-pro-audio
 
-# Seedance (Volc Ark)
-export ARK_API_KEY=your-ark-key
+# Seedance
 go run ./examples/seedance
-
-# Seedance (Qiniu/Qnagic)
-export QINIU_API_KEY=your-qiniu-key
 go run ./examples/seedance_qiniu
-
-# Same GenVideo flow, provider chosen from model (Seedance→Qiniu, fallback Ark; Kling→Qiniu)
-go run ./examples/videorouter doubao-seedance-2-0-260128
-go run ./examples/videorouter kling-v2-5-turbo
 ```
 
-## Examples Overview
+More runnable demos: [examples/README.md](./examples/README.md)
 
-| Example | Description |
-|---------|-------------|
-| [examples/openai](examples/openai) | OpenAI-compatible chat: text, image, video, multi-video, function calling, thinking mode |
-| [examples/gemini](examples/gemini) | Gemini chat + image generation / edit |
-| [examples/kling](examples/kling) | Kling image & video: text2image, image2image, text2video, img2video, keyframe |
-| [examples/sora](examples/sora) | Sora text-to-video, image-to-video, remix |
-| [examples/veo](examples/veo) | Veo text-to-video, image-to-video, first+last frame, reference images |
-| [examples/vidu](examples/vidu) | Vidu Q1/Q2/Q2 Pro/Turbo text-to-video, reference-to-video, image-to-video, audio-video |
-| [examples/seedance](examples/seedance) | Seedance 2.0 on [Volc Ark](https://www.volcengine.com/docs/82379/1520757?lang=zh): async GenVideo via `ARK_API_KEY` |
-| [examples/seedance_qiniu](examples/seedance_qiniu) | Seedance 2.0 on Qiniu/Qnagic: async GenVideo via `QINIU_API_KEY` |
-| [examples/videorouter](examples/videorouter) | GenVideo with [examples/shared/video_by_model.go](examples/shared/video_by_model.go): route by model to Qiniu Seedance / Volc Ark / Qiniu Kling |
+## Minimal examples
 
-## Backend Mode
-
-- **Mock** (default): No API key. Returns placeholder URLs. Works in CI.
-- **Real**: Set `QINIU_API_KEY` to call Qnagic API for Seedance/Kling; `ARK_API_KEY` is still supported for Volc Ark Seedance ([spec/seedance/provider/qiniu](spec/seedance/provider/qiniu/README.md), [spec/seedance/provider/volc](spec/seedance/provider/volc/README.md)).
-
-## Supported Models
-
-| Category | Models |
-|----------|--------|
-| Image | kling-v1, kling-v1-5, kling-v2, kling-v2-new, kling-v2-1, kling-image-o1 |
-| Video | kling-v2-1, kling-v2-5-turbo, kling-v2-6, kling-video-o1, kling-v3, kling-v3-omni |
-| Veo | veo-2.0-generate-001, veo-2.0-generate-exp, veo-3.0-generate-preview, veo-3.1-generate-preview, ... |
-| Sora | sora-2, sora-2-pro |
-| Vidu | vidu-q1, vidu-q2, viduq2-pro, viduq2-turbo |
-| Seedance (Qiniu / Volc Ark) | doubao-seedance-2-0-260128, other `doubao-seedance-*` ids |
-| Chat | gemini-3.0-pro-preview, deepseek-v3.2, etc. |
-
-## API Usage
+### Chat
 
 ```go
 package main
 
 import (
-    "context"
-    "os"
+	"context"
+	"fmt"
+	"os"
 
-    xai "github.com/goplus/xai/spec"
-    "github.com/goplus/xai/spec/openai/provider/qiniu"
+	"github.com/goplus/xai/spec/openai/provider/qiniu"
 )
 
 func main() {
-    svc := qiniu.NewService(os.Getenv("QINIU_API_KEY"))
-    ctx := context.Background()
+	ctx := context.Background()
+	svc := qiniu.NewService(os.Getenv("QINIU_API_KEY"))
 
-    // Chat (OpenAI-compatible)
-    resp, _ := svc.Gen(ctx, svc.Params().
-        Model(xai.Model("gemini-3.0-pro-preview")).
-        Messages(svc.UserMsg().Text("Hello")), svc.Options())
+	resp, err := svc.Gen(ctx, svc.Params().
+		Model("gemini-3.0-pro-preview").
+		Messages(svc.UserMsg().Text("What is the Sun?")), nil)
+	if err != nil {
+		panic(err)
+	}
 
-    // Video generation (Sora): CallSync + Wait for async polling
-    op, _ := svc.Operation(xai.Model("sora-2"), xai.GenVideo)
-    op.Params().Set("Prompt", "A cat walking on the beach").Set("Seconds", "4")
-    opResp, _ := xai.CallSync(ctx, svc, op, svc.Options())
-    results, _ := xai.Wait(ctx, svc, opResp, nil)
+	fmt.Println(resp.Len())
 }
 ```
+
+### Video generation
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	xai "github.com/goplus/xai/spec"
+	"github.com/goplus/xai/spec/openai/provider/qiniu"
+)
+
+func main() {
+	ctx := context.Background()
+	svc := qiniu.NewService(os.Getenv("QINIU_API_KEY"))
+
+	op, err := svc.Operation("sora-2", xai.GenVideo)
+	if err != nil {
+		panic(err)
+	}
+
+	op.Params().
+		Set("Prompt", "A cat walking on the beach at sunset").
+		Set("Seconds", "4")
+
+	resp, err := xai.CallSync(ctx, svc, op, svc.Options())
+	if err != nil {
+		panic(err)
+	}
+
+	results, err := xai.Wait(ctx, svc, resp, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(results.Len())
+}
+```
+
+## Why this is useful in real products
+
+Most AI SDKs are optimized for one modality or one provider. Product teams usually need more:
+
+- one model for chat
+- another for image generation
+- another for video generation
+- a reliable way to manage async jobs
+
+`xai` gives you a more stable integration layer so model choices can change without forcing your application architecture to change with them.
+
+## Good fit for
+
+- Go teams shipping AI features into existing products
+- Platform teams standardizing access to multiple model providers
+- Teams building image, video, and audio workflows in one backend
+- Teams that want a cleaner path from prototype to production
+
+## Example coverage
+
+- `examples/openai`: text, multimodal input, function calling, thinking
+- `examples/gemini`: chat, tool use, image generation, image editing
+- `examples/kling/images`: text-to-image and image-to-image
+- `examples/kling/video`: text-to-video and image-to-video
+- `examples/sora`: text-to-video, image-to-video, remix
+- `examples/veo`: multi-version video generation, first and last frame, multi-reference, video input
+- `examples/vidu/video`: Q1, Q2, Pro, and Turbo video workflows
+- `examples/audio`: ASR and TTS
+- `examples/seedance`: Seedance integrations
+- `examples/videorouter`: route video generation by model ID
 
 ## License
 

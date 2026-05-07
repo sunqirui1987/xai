@@ -8,12 +8,17 @@ import (
 
 type stubBackend struct {
 	createGroupFn func(context.Context, *CreateAssetGroupRequest) (*AssetGroup, error)
+	listGroupsFn  func(context.Context, *ListAssetGroupsRequest) (*AssetGroupList, error)
 	uploadAssetFn func(context.Context, *UploadAssetRequest) (*AssetUploadResult, error)
 	getAssetFn    func(context.Context, string) (*Asset, error)
 }
 
 func (b *stubBackend) CreateGroup(ctx context.Context, req *CreateAssetGroupRequest) (*AssetGroup, error) {
 	return b.createGroupFn(ctx, req)
+}
+
+func (b *stubBackend) ListGroups(ctx context.Context, req *ListAssetGroupsRequest) (*AssetGroupList, error) {
+	return b.listGroupsFn(ctx, req)
 }
 
 func (b *stubBackend) UploadAsset(ctx context.Context, req *UploadAssetRequest) (*AssetUploadResult, error) {
@@ -28,6 +33,7 @@ func TestAwaitAsset(t *testing.T) {
 	var calls int
 	svc := NewWithBackend(&stubBackend{
 		createGroupFn: func(context.Context, *CreateAssetGroupRequest) (*AssetGroup, error) { return nil, nil },
+		listGroupsFn:  func(context.Context, *ListAssetGroupsRequest) (*AssetGroupList, error) { return nil, nil },
 		uploadAssetFn: func(context.Context, *UploadAssetRequest) (*AssetUploadResult, error) { return nil, nil },
 		getAssetFn: func(context.Context, string) (*Asset, error) {
 			calls++

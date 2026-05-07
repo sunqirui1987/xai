@@ -59,6 +59,27 @@ func (r *CreateAssetGroupRequest) Validate() error {
 	return nil
 }
 
+// ListAssetGroupsRequest describes one asset-group listing request.
+type ListAssetGroupsRequest struct {
+	Name       string
+	PageNumber int
+	PageSize   int
+}
+
+func (r *ListAssetGroupsRequest) Normalize() *ListAssetGroupsRequest {
+	if r == nil {
+		return &ListAssetGroupsRequest{PageNumber: 1, PageSize: 20}
+	}
+	out := *r
+	if out.PageNumber <= 0 {
+		out.PageNumber = 1
+	}
+	if out.PageSize <= 0 {
+		out.PageSize = 20
+	}
+	return &out
+}
+
 // AssetUploadResult is returned after an upload request is accepted.
 type AssetUploadResult struct {
 	Success   bool
@@ -89,4 +110,12 @@ type AssetGroup struct {
 	Status      string
 	AssetCount  int
 	CreateTime  string
+}
+
+// AssetGroupList is one paged asset-group list result.
+type AssetGroupList struct {
+	Items      []*AssetGroup
+	TotalCount int
+	PageNumber int
+	PageSize   int
 }

@@ -25,6 +25,7 @@ import (
 
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/seedance"
+	seedanceassets "github.com/goplus/xai/spec/seedance_assets"
 )
 
 const pathGenerate = "/v1/video/generate"
@@ -39,17 +40,25 @@ const (
 	ParamTools                 = "tools"
 	ParamSafetyIdentifier      = "safety_identifier"
 	ParamSeed                  = "seed"
+	ParamAssetGroupID          = "asset_group_id"
 )
 
 // ErrTaskFailed is returned when NoDesk AI reports a terminal failure.
 var ErrTaskFailed = errors.New("nodeskai: task failed")
 
 type backend struct {
-	client *Client
+	client       *Client
+	assetClient  *Client
+	assetService *seedanceassets.Service
 }
 
 func newBackend(client *Client) *backend {
-	return &backend{client: client}
+	assetClient := newAssetPlatformClient(client)
+	return &backend{
+		client:       client,
+		assetClient:  assetClient,
+		assetService: newAssetService(assetClient),
+	}
 }
 
 // NewBackend returns a seedance.Backend backed by the NoDesk AI HTTP API.
@@ -66,7 +75,13 @@ func (b *backend) Submit(ctx context.Context, model xai.Model, params xai.Params
 	m := strings.TrimSpace(string(model))
 	b.client.LogDebug("Submit GenVideo model=%q", m)
 
-	body, err := buildTaskBody(m, p)
+	prepared, err := b.prepareParams(ctx, p)
+	if err != nil {
+		b.client.LogDebug("Submit prepareParams error: %v", err)
+		return nil, err
+	}
+
+	body, err := buildTaskBody(m, prepared)
 	if err != nil {
 		b.client.LogDebug("Submit buildTaskBody error: %v", err)
 		return nil, err

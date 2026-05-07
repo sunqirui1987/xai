@@ -2,6 +2,7 @@ package nodeskai
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -153,5 +154,88 @@ func TestParseTaskGetResponseFailure(t *testing.T) {
 	}
 	if failMsg != "invalid image" {
 		t.Fatalf("failMsg=%q", failMsg)
+	}
+}
+
+func TestSubmitUploadsReferenceImagesThroughAssets(t *testing.T) {
+	var uploaded bool
+	var awaited bool
+	var submittedURL string
+	var createdGroup bool
+
+	t.Setenv("NODESKAI_CLIENT_ID", "ndapp_asset")
+	t.Setenv("NODESKAI_CLIENT_SECRET", "asset_secret")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/source.png":
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write([]byte("png-bytes"))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/oauth/token":
+			_, _ = w.Write([]byte(`{"access_token":"asset-token","expires_in":3600}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/groups":
+			_, _ = w.Write([]byte(`{"success":true,"data":{"Items":[],"TotalCount":0,"PageNumber":1,"PageSize":20}}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/groups/create":
+			createdGroup = true
+			_, _ = w.Write([]byte(`{"success":true,"data":{"Id":"grp_test_123","Name":"默认素材组","Description":"Seedance 2.0 默认素材组","Status":"Active","AssetCount":0,"CreateTime":"2026-04-11T10:00:00Z"}}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/upload":
+			uploaded = true
+			if err := r.ParseMultipartForm(8 << 20); err != nil {
+				t.Fatal(err)
+			}
+			if got := r.FormValue("group_id"); got != "grp_test_123" {
+				t.Fatalf("group_id=%q", got)
+			}
+			_, _ = w.Write([]byte(`{"success":true,"asset_id":"asset_789xyz","asset_type":"Image","status":"Processing","tos_url":"https://tos.example.com/asset.png","file_name":"source.png","file_size":9}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/asset_789xyz":
+			awaited = true
+			_, _ = w.Write([]byte(`{"success":true,"data":{"Id":"asset_789xyz","GroupId":"grp_test_123","Name":"source.png","AssetType":"Image","Status":"Active","URL":"https://tos.example.com/asset.png","CreateTime":"2026-04-05T14:30:00Z"}}`))
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, pathGenerate):
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			content, _ := body["content"].([]any)
+			if len(content) < 2 {
+				t.Fatalf("content=%#v", body["content"])
+			}
+			item, _ := content[1].(map[string]any)
+			imageURL, _ := item["image_url"].(map[string]any)
+			submittedURL, _ = imageURL["url"].(string)
+			_, _ = w.Write([]byte(`{"id":"cgt-1","status":"running"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	cl := NewClient("video-key",
+		append([]ClientOption{
+			WithBaseURL(srv.URL),
+			WithPlatformBaseURL(srv.URL),
+			WithOAuthClientCredentials("ndapp_asset", "asset_secret"),
+		}, testClientOpts...)...,
+	)
+	b := newBackend(cl)
+	ctx := context.Background()
+
+	p := seedance.NewParams().
+		Set(seedance.ParamPrompt, "让图片动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{srv.URL + "/source.png"})
+	_, err := b.Submit(ctx, xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !createdGroup {
+		t.Fatal("expected default asset group creation")
+	}
+	if !uploaded {
+		t.Fatal("expected reference image upload before submit")
+	}
+	if !awaited {
+		t.Fatal("expected asset await before submit")
+	}
+	if submittedURL != "https://tos.example.com/asset.png" {
+		t.Fatalf("submittedURL=%q", submittedURL)
 	}
 }

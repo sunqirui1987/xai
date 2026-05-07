@@ -35,14 +35,16 @@ go run ./examples/seedance
 export QINIU_API_KEY=your-key
 go run ./examples/seedance_qiniu
 
-# Seedance (NoDesk AI, needs access token)
-export NODESKAI_ACCESS_TOKEN=your-access-token
+# Seedance (NoDesk AI, supports auto-uploading reference images through assets)
+export NODESKAI_API_KEY=your-video-api-key
+export NODESKAI_CLIENT_ID=ndapp_xxx
+export NODESKAI_CLIENT_SECRET=your-secret
 go run ./examples/seedance_nodeskai
 
 # Seedance digital assets (NoDesk AI)
 export NODESKAI_CLIENT_ID=ndapp_xxx
 export NODESKAI_CLIENT_SECRET=your-secret
-./examples/seedance_nodeskai_assets/main.sh grp_abc123
+./examples/seedance_nodeskai_assets/main.sh
 
 # Video: pick Qiniu Seedance / Volc Ark / Qiniu Kling from model id (see examples/shared/video_by_model.go)
 go run ./examples/videorouter doubao-seedance-2-0-260128

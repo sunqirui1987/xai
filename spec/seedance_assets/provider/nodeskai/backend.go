@@ -16,6 +16,7 @@ import (
 
 const (
 	pathCreateGroup = "/api/v1/digital-assets/groups/create"
+	pathListGroups  = "/api/v1/digital-assets/groups"
 	pathUploadAsset = "/api/v1/digital-assets/upload"
 	pathGetAsset    = "/api/v1/digital-assets/"
 )
@@ -82,6 +83,45 @@ func parseCreateGroupResponse(raw []byte) (*seedanceassets.AssetGroup, error) {
 	}, nil
 }
 
+func parseListGroupsResponse(raw []byte) (*seedanceassets.AssetGroupList, error) {
+	var v struct {
+		Success bool `json:"success"`
+		Data    struct {
+			Items []struct {
+				ID          string `json:"Id"`
+				Name        string `json:"Name"`
+				Description string `json:"Description"`
+				Status      string `json:"Status"`
+				AssetCount  int    `json:"AssetCount"`
+				CreateTime  string `json:"CreateTime"`
+			} `json:"Items"`
+			TotalCount int `json:"TotalCount"`
+			PageNumber int `json:"PageNumber"`
+			PageSize   int `json:"PageSize"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, fmt.Errorf("seedance_assets/nodeskai: parse list groups response: %w", err)
+	}
+	items := make([]*seedanceassets.AssetGroup, 0, len(v.Data.Items))
+	for _, item := range v.Data.Items {
+		items = append(items, &seedanceassets.AssetGroup{
+			ID:          strings.TrimSpace(item.ID),
+			Name:        strings.TrimSpace(item.Name),
+			Description: strings.TrimSpace(item.Description),
+			Status:      strings.TrimSpace(item.Status),
+			AssetCount:  item.AssetCount,
+			CreateTime:  strings.TrimSpace(item.CreateTime),
+		})
+	}
+	return &seedanceassets.AssetGroupList{
+		Items:      items,
+		TotalCount: v.Data.TotalCount,
+		PageNumber: v.Data.PageNumber,
+		PageSize:   v.Data.PageSize,
+	}, nil
+}
+
 func parseGetAssetResponse(raw []byte) (*seedanceassets.Asset, error) {
 	var v struct {
 		Success bool `json:"success"`
@@ -121,6 +161,10 @@ func parseGetAssetResponse(raw []byte) (*seedanceassets.Asset, error) {
 
 func (b *backend) CreateGroup(ctx context.Context, req *seedanceassets.CreateAssetGroupRequest) (*seedanceassets.AssetGroup, error) {
 	return createGroup(ctx, b.client, req)
+}
+
+func (b *backend) ListGroups(ctx context.Context, req *seedanceassets.ListAssetGroupsRequest) (*seedanceassets.AssetGroupList, error) {
+	return listGroups(ctx, b.client, req)
 }
 
 func (b *backend) UploadAsset(ctx context.Context, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {

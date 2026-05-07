@@ -109,6 +109,39 @@ func TestCreateGroup(t *testing.T) {
 	}
 }
 
+func TestListGroups(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method=%s", r.Method)
+		}
+		if r.URL.Path != pathListGroups {
+			t.Fatalf("path=%s", r.URL.Path)
+		}
+		if got := r.Header.Get("X-External-User-Id"); got != "ext-user-123" {
+			t.Fatalf("external_user_id=%q", got)
+		}
+		_, _ = w.Write([]byte(`{"success":true,"data":{"Items":[{"Id":"grp_default001","Name":"默认素材组","Description":"Seedance 2.0 默认素材组","Status":"Active","AssetCount":2,"CreateTime":"2026-04-11T10:00:00Z"}],"TotalCount":1,"PageNumber":1,"PageSize":20}}`))
+	}))
+	defer srv.Close()
+
+	b := newBackend(testClient(t, srv.URL))
+	got, err := b.ListGroups(context.Background(), &seedanceassets.ListAssetGroupsRequest{
+		Name: "默认素材组",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.TotalCount != 1 {
+		t.Fatalf("total=%d", got.TotalCount)
+	}
+	if len(got.Items) != 1 {
+		t.Fatalf("items=%d", len(got.Items))
+	}
+	if got.Items[0].ID != "grp_default001" {
+		t.Fatalf("id=%q", got.Items[0].ID)
+	}
+}
+
 func TestGetAsset(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

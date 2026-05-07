@@ -31,6 +31,19 @@ func createGroup(ctx context.Context, client *seedancenodeskai.Client, req *seed
 	return parseCreateGroupResponse(raw)
 }
 
+func listGroups(ctx context.Context, client *seedancenodeskai.Client, req *seedanceassets.ListAssetGroupsRequest) (*seedanceassets.AssetGroupList, error) {
+	norm := req.Normalize()
+	raw, err := client.PostPlatformJSON(ctx, pathListGroups, map[string]any{
+		"name":        strings.TrimSpace(norm.Name),
+		"page_number": norm.PageNumber,
+		"page_size":   norm.PageSize,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return parseListGroupsResponse(raw)
+}
+
 func uploadAsset(ctx context.Context, client *seedancenodeskai.Client, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err

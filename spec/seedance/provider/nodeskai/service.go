@@ -51,10 +51,11 @@ func NewService(apiKey string, opts ...ClientOption) *Service {
 
 // NewServiceWithClientCredentials constructs a Seedance service that obtains bearer
 // access tokens via OAuth2 client_credentials.
-func NewServiceWithClientCredentials(clientID, clientSecret string, opts ...ClientOption) *Service {
+func NewServiceWithClientCredentials(apiKey string, clientID, clientSecret string, opts ...ClientOption) *Service {
 	clientID = strings.TrimSpace(clientID)
 	clientSecret = strings.TrimSpace(clientSecret)
-	client := NewClient("", append(opts, WithOAuthClientCredentials(clientID, clientSecret))...)
+	apiKey = strings.TrimSpace(apiKey)
+	client := NewClient(apiKey, append(opts, WithOAuthClientCredentials(clientID, clientSecret))...)
 	return newServiceWithClient(client)
 }
 
@@ -73,7 +74,7 @@ func Register(apiKey string, opts ...ClientOption) {
 
 // RegisterWithClientCredentials registers seedance:// globally with a NoDesk AI-backed
 // service that uses OAuth2 client_credentials.
-func RegisterWithClientCredentials(clientID, clientSecret string, opts ...ClientOption) {
-	svc := NewServiceWithClientCredentials(clientID, clientSecret, opts...)
+func RegisterWithClientCredentials(apiKey string, clientID, clientSecret string, opts ...ClientOption) {
+	svc := NewServiceWithClientCredentials(apiKey, clientID, clientSecret, opts...)
 	seedance.Register(svc)
 }

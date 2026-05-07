@@ -33,6 +33,11 @@ func (s *Service) CreateGroup(ctx context.Context, req *CreateAssetGroupRequest)
 	return s.backend.CreateGroup(ctx, req)
 }
 
+// ListGroups lists asset groups in the provider-managed digital asset library.
+func (s *Service) ListGroups(ctx context.Context, req *ListAssetGroupsRequest) (*AssetGroupList, error) {
+	return s.backend.ListGroups(ctx, req)
+}
+
 // UploadAsset uploads one asset into the provider-managed digital asset library.
 func (s *Service) UploadAsset(ctx context.Context, req *UploadAssetRequest) (*AssetUploadResult, error) {
 	return s.backend.UploadAsset(ctx, req)

@@ -17,6 +17,20 @@ import (
 	seedanceassets "github.com/goplus/xai/spec/seedance_assets"
 )
 
+func createGroup(ctx context.Context, client *seedancenodeskai.Client, req *seedanceassets.CreateAssetGroupRequest) (*seedanceassets.AssetGroup, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	raw, err := client.PostPlatformJSON(ctx, pathCreateGroup, map[string]any{
+		"name":        strings.TrimSpace(req.Name),
+		"description": strings.TrimSpace(req.Description),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return parseCreateGroupResponse(raw)
+}
+
 func uploadAsset(ctx context.Context, client *seedancenodeskai.Client, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err

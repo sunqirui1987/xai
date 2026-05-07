@@ -50,6 +50,7 @@ type Client struct {
 	httpClient      *http.Client
 	baseURL         string
 	platformBaseURL string
+	externalUserID  string
 	apiKeyMu        sync.RWMutex
 	apiKey          string
 	clientID        string
@@ -81,6 +82,13 @@ func WithPlatformBaseURL(url string) ClientOption {
 		if s != "" {
 			c.platformBaseURL = s
 		}
+	}
+}
+
+// WithExternalUserID sets the X-External-User-Id header for platform digital-assets APIs.
+func WithExternalUserID(userID string) ClientOption {
+	return func(c *Client) {
+		c.externalUserID = strings.TrimSpace(userID)
 	}
 }
 
@@ -139,6 +147,7 @@ func NewClient(apiKey string, opts ...ClientOption) *Client {
 		httpClient:      &http.Client{Timeout: defaultHTTPTimeout},
 		baseURL:         DefaultBaseURL,
 		platformBaseURL: DefaultPlatformBaseURL,
+		externalUserID:  strings.TrimSpace(firstNonEmptyEnv("NODESKAI_EXTERNAL_USER_ID", "NODESK_EXTERNAL_USER_ID")),
 		apiKey:          apiKey,
 		maxRetries:      0,
 		baseRetryDelay:  DefaultBaseRetryDelay,
@@ -187,6 +196,11 @@ func (c *Client) PlatformBaseURL() string {
 	return c.platformBaseURL
 }
 
+// ExternalUserID returns the configured X-External-User-Id value for platform APIs.
+func (c *Client) ExternalUserID() string {
+	return c.externalUserID
+}
+
 // LogDebug writes a debug line when WithDebugLog(true) and logger is set.
 func (c *Client) LogDebug(format string, args ...any) {
 	if c.debugLog && c.logger != nil {
@@ -212,6 +226,13 @@ func (c *Client) buildCurlCommand(method, fullURL string, body []byte) string {
 	}
 	cmd.WriteString(fmt.Sprintf(" '%s'", fullURL))
 	return cmd.String()
+}
+
+func shellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 func (c *Client) ensureAccessToken(ctx context.Context) (string, error) {
@@ -272,6 +293,16 @@ func (c *Client) requestAccessToken(ctx context.Context) (token string, expiresI
 		"client_id":     {c.clientID},
 		"client_secret": {c.clientSecret},
 	}
+	oauthCurl := fmt.Sprintf(
+		"curl -X POST %s -H %s -d %s",
+		shellQuote(fullURL),
+		shellQuote("Content-Type: application/x-www-form-urlencoded"),
+		shellQuote(form.Encode()),
+	)
+	c.LogDebug("oauth curl command:\n%s", oauthCurl)
+	c.LogDebug("oauth request url=%s", fullURL)
+	c.LogDebug("oauth request content_type=application/x-www-form-urlencoded")
+	c.LogDebug("oauth request form=%q", form.Encode())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullURL, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -362,6 +393,9 @@ func (c *Client) doRequestToBase(ctx context.Context, method, baseURL, path stri
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")
+		if baseURL == c.platformBaseURL && c.externalUserID != "" {
+			req.Header.Set("X-External-User-Id", c.externalUserID)
+		}
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
@@ -467,6 +501,9 @@ func (c *Client) doRawRequestToBase(ctx context.Context, method, baseURL, path, 
 		req.Header.Set("Authorization", "Bearer "+token)
 		if contentType != "" {
 			req.Header.Set("Content-Type", contentType)
+		}
+		if baseURL == c.platformBaseURL && c.externalUserID != "" {
+			req.Header.Set("X-External-User-Id", c.externalUserID)
 		}
 
 		resp, err := c.httpClient.Do(req)

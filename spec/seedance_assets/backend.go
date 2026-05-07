@@ -8,6 +8,7 @@ import "context"
 
 // Backend is the pluggable transport for Seedance 2.0 digital asset services.
 type Backend interface {
+	CreateGroup(ctx context.Context, req *CreateAssetGroupRequest) (*AssetGroup, error)
 	UploadAsset(ctx context.Context, req *UploadAssetRequest) (*AssetUploadResult, error)
 	GetAsset(ctx context.Context, assetID string) (*Asset, error)
 }

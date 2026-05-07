@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	pathCreateGroup = "/api/v1/digital-assets/groups/create"
 	pathUploadAsset = "/api/v1/digital-assets/upload"
 	pathGetAsset    = "/api/v1/digital-assets/"
 )
@@ -56,6 +57,31 @@ func parseUploadAssetResponse(raw []byte) (*seedanceassets.AssetUploadResult, er
 	}, nil
 }
 
+func parseCreateGroupResponse(raw []byte) (*seedanceassets.AssetGroup, error) {
+	var v struct {
+		Success bool `json:"success"`
+		Data    struct {
+			ID          string `json:"Id"`
+			Name        string `json:"Name"`
+			Description string `json:"Description"`
+			Status      string `json:"Status"`
+			AssetCount  int    `json:"AssetCount"`
+			CreateTime  string `json:"CreateTime"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, fmt.Errorf("seedance_assets/nodeskai: parse create group response: %w", err)
+	}
+	return &seedanceassets.AssetGroup{
+		ID:          strings.TrimSpace(v.Data.ID),
+		Name:        strings.TrimSpace(v.Data.Name),
+		Description: strings.TrimSpace(v.Data.Description),
+		Status:      strings.TrimSpace(v.Data.Status),
+		AssetCount:  v.Data.AssetCount,
+		CreateTime:  strings.TrimSpace(v.Data.CreateTime),
+	}, nil
+}
+
 func parseGetAssetResponse(raw []byte) (*seedanceassets.Asset, error) {
 	var v struct {
 		Success bool `json:"success"`
@@ -64,23 +90,37 @@ func parseGetAssetResponse(raw []byte) (*seedanceassets.Asset, error) {
 			GroupID    string `json:"GroupId"`
 			Name       string `json:"Name"`
 			Type       string `json:"Type"`
+			AssetType  string `json:"AssetType"`
 			Status     string `json:"Status"`
 			URL        string `json:"Url"`
+			URLUpper   string `json:"URL"`
 			CreateTime string `json:"CreateTime"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return nil, fmt.Errorf("seedance_assets/nodeskai: parse get asset response: %w", err)
 	}
+	assetType := strings.TrimSpace(v.Data.Type)
+	if assetType == "" {
+		assetType = strings.TrimSpace(v.Data.AssetType)
+	}
+	assetURL := strings.TrimSpace(v.Data.URL)
+	if assetURL == "" {
+		assetURL = strings.TrimSpace(v.Data.URLUpper)
+	}
 	return &seedanceassets.Asset{
 		ID:         strings.TrimSpace(v.Data.ID),
 		GroupID:    strings.TrimSpace(v.Data.GroupID),
 		Name:       strings.TrimSpace(v.Data.Name),
-		Type:       strings.TrimSpace(v.Data.Type),
+		Type:       assetType,
 		Status:     strings.TrimSpace(v.Data.Status),
-		URL:        strings.TrimSpace(v.Data.URL),
+		URL:        assetURL,
 		CreateTime: strings.TrimSpace(v.Data.CreateTime),
 	}, nil
+}
+
+func (b *backend) CreateGroup(ctx context.Context, req *seedanceassets.CreateAssetGroupRequest) (*seedanceassets.AssetGroup, error) {
+	return createGroup(ctx, b.client, req)
 }
 
 func (b *backend) UploadAsset(ctx context.Context, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {

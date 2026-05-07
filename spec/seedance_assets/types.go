@@ -43,6 +43,22 @@ func (r *UploadAssetRequest) Validate() error {
 	return nil
 }
 
+// CreateAssetGroupRequest describes one asset-group creation request.
+type CreateAssetGroupRequest struct {
+	Name        string
+	Description string
+}
+
+func (r *CreateAssetGroupRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("seedance_assets: nil create asset group request")
+	}
+	if r.Name == "" {
+		return fmt.Errorf("seedance_assets: group name is required")
+	}
+	return nil
+}
+
 // AssetUploadResult is returned after an upload request is accepted.
 type AssetUploadResult struct {
 	Success   bool
@@ -63,4 +79,14 @@ type Asset struct {
 	Status     string
 	URL        string
 	CreateTime string
+}
+
+// AssetGroup is one provider-managed asset group.
+type AssetGroup struct {
+	ID          string
+	Name        string
+	Description string
+	Status      string
+	AssetCount  int
+	CreateTime  string
 }

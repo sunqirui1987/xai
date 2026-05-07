@@ -2,30 +2,167 @@
 
 [中文文档](./readme-zh.md)
 
-Unified Go SDK for chat, image, video, and audio across leading AI models and providers.
+[![Go Version](https://img.shields.io/badge/Go-1.24%2B-00ADD8?logo=go)](#quick-start)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+[![Examples](https://img.shields.io/badge/Examples-Runnable-success)](./examples/README.md)
+[![Models](https://img.shields.io/badge/Models-Chat%20%7C%20Image%20%7C%20Video%20%7C%20Audio-orange)](#capability-matrix)
 
-Build once, switch models when you need to, and handle long-running generation jobs without rebuilding your integration layer every time.
+One Go SDK for chat, image, video, and audio across leading AI models and providers.
 
-## Why teams use xai
+Ship AI products faster with a stable integration layer for multimodal generation, tool calling, and long-running async jobs.
 
-- One Go SDK for chat, multimodal input, image, video, and audio
+## Why xai
+
+Most teams do not use just one model anymore.
+
+They use one model for chat, another for image generation, another for video, and often need the freedom to switch providers later. That usually means duplicated request builders, duplicated polling logic, and messy integration code.
+
+`xai` gives you a cleaner path:
+
+- One SDK for chat, multimodal input, image, video, and audio
 - One integration surface across multiple model families and providers
-- Built for product workflows, not just one-off demos
 - First-class support for async generation with `TaskID`, polling, and resume
 - Runnable examples that shorten time from evaluation to production
+- A better fit for real product backends, not just isolated demos
 
-## Supported model families
+## Capability matrix
 
-| Family | Typical capabilities |
-| --- | --- |
-| OpenAI-compatible | Chat, multimodal chat, tool calling, image and video input |
-| Gemini | Chat, tool calling, image generation, image editing, video |
-| Kling | Image generation, video generation |
-| Seedance | Video generation |
-| Sora | Video generation |
-| Veo | Video generation |
-| Vidu | Video generation |
-| Audio | ASR, TTS |
+| Family | Chat | Image | Video | Audio | Async tasks |
+| --- | --- | --- | --- | --- | --- |
+| OpenAI-compatible | Yes | Input / related workflows | Input / related workflows | No | Partial |
+| Gemini | Yes | Yes | Yes | No | Yes |
+| Kling | No | Yes | Yes | No | Yes |
+| Seedance | No | No | Yes | No | Yes |
+| Sora | No | No | Yes | No | Yes |
+| Veo | No | No | Yes | No | Yes |
+| Vidu | No | No | Yes | No | Yes |
+| Audio | No | No | No | Yes | Yes |
+
+## Supported models and multimodal capabilities
+
+### OpenAI-compatible
+
+- Chat models: `gemini-3.0-pro-preview`, `deepseek/deepseek-v3.2-251201`, and other OpenAI-compatible chat models exposed by the provider
+- Multimodal input:
+  - text
+  - image URL input
+  - video URL input
+  - file-style video ID input such as `qfile-...`
+  - multiple video inputs in one conversation
+- Tool calling:
+  - `tool_use` -> local execution -> `tool_result`
+- Image operations:
+  - `openai/gpt-image-2` for generation and edit
+
+### Gemini
+
+- Chat and multimodal chat:
+  - text
+  - image input
+  - tool calling
+- Image models:
+  - `gemini-2.5-flash-image`
+  - `gemini-3.0-pro-image-preview`
+  - `gemini-3.1-flash-image-preview`
+- Image capabilities:
+  - text-to-image
+  - image edit
+- Video models through the Gemini provider:
+  - `veo-2.0-generate-001`
+  - `veo-2.0-generate-exp`
+  - `veo-2.0-generate-preview`
+  - `veo-3.0-generate-preview`
+  - `veo-3.0-fast-generate-preview`
+  - `veo-3.1-generate-preview`
+  - `veo-3.1-fast-generate-preview`
+
+### Veo multimodal video
+
+- Text-to-video
+- Image-to-video
+- First-frame + last-frame video
+- Video-to-video style input flow
+- Multi-reference images
+  - supported in `veo-2.0-generate-exp` and `veo-3.1-generate-preview`
+
+### Kling
+
+- Image models:
+  - `kling-v1`
+  - `kling-v1-5`
+  - `kling-v2`
+  - `kling-v2-new`
+  - `kling-v2-1`
+  - `kling-image-o1`
+- Image capabilities:
+  - text-to-image
+  - image-to-image
+  - reference image workflows
+- Video models:
+  - `kling-v2-1`
+  - `kling-v2-5-turbo`
+  - `kling-v2-6`
+  - `kling-v2-7`
+  - `kling-v2-8`
+  - `kling-v2-9`
+  - `kling-video-o1`
+  - `kling-v3`
+  - `kling-v3-omni`
+- Video capabilities:
+  - text-to-video
+  - image-to-video
+  - keyframe video with first and end frame
+  - multi-reference image and video inputs on selected models
+
+### Sora
+
+- Models:
+  - `sora-2`
+  - `sora-2-pro`
+- Video capabilities:
+  - text-to-video
+  - image-to-video
+  - remix from an existing source video
+
+### Seedance
+
+- Models:
+  - `doubao-seedance-2-0-260128`
+  - other `doubao-seedance-*` IDs recognized by the provider flow
+- Multimodal video inputs:
+  - text prompt
+  - reference images
+  - reference videos
+  - reference audio
+- Video capabilities:
+  - text-to-video
+  - prompt-guided video generation with multimodal references
+
+### Vidu
+
+- Models:
+  - `vidu-q1`
+  - `vidu-q2`
+  - `viduq2-turbo`
+  - `viduq2-pro`
+  - `viduq3-turbo`
+  - `viduq3-pro`
+- Video capabilities:
+  - text-to-video
+  - reference-to-video
+  - image-to-video
+  - start-end-to-video
+  - optional audio generation on supported flows
+
+### Audio
+
+- Models:
+  - `asr`
+  - `tts-v1`
+- Audio capabilities:
+  - speech-to-text
+  - text-to-speech
+  - voice listing with provider support
 
 ## What you can build
 
@@ -48,31 +185,37 @@ go get github.com/goplus/xai
 ### Set credentials
 
 ```bash
+# Qiniu API key
+# Get it from: https://portal.qiniu.com/ai-inference/api-key
 export QINIU_API_KEY=your-key
-export ARK_API_KEY=your-ark-key
-export NODESKAI_ACCESS_TOKEN=your-token
-export NODESKAI_CLIENT_ID=your-client-id
-export NODESKAI_CLIENT_SECRET=your-client-secret
 ```
 
-### Run examples
+### Try it in 30 seconds
 
 ```bash
 # OpenAI-compatible chat
 go run ./examples/openai text
+
+# Image generation
+go run ./examples/gemini image-generate
+
+# Video generation
+go run ./examples/sora text-to-video
+```
+
+### Explore more examples
+
+```bash
+# OpenAI-compatible chat
 go run ./examples/openai image
 go run ./examples/openai function-call
 
 # Gemini
 go run ./examples/gemini chat-text
-go run ./examples/gemini image-generate
 
 # Kling
 go run ./examples/kling/images kling-v2-1
 go run ./examples/kling/video kling-v2-6
-
-# Sora
-go run ./examples/sora text-to-video
 
 # Veo
 go run ./examples/veo veo-3.0-generate-preview
@@ -158,16 +301,16 @@ func main() {
 }
 ```
 
-## Why this is useful in real products
+## Why this matters in production
 
-Most AI SDKs are optimized for one modality or one provider. Product teams usually need more:
+AI products change quickly, but your application integration layer should not have to change at the same pace.
 
-- one model for chat
-- another for image generation
-- another for video generation
-- a reliable way to manage async jobs
+With `xai`, teams can:
 
-`xai` gives you a more stable integration layer so model choices can change without forcing your application architecture to change with them.
+- evaluate multiple models without rewriting app code every time
+- keep one backend serving chat, image, video, and audio flows
+- treat async generation as part of the product architecture, not an afterthought
+- reduce integration drift as providers and model choices evolve
 
 ## Good fit for
 

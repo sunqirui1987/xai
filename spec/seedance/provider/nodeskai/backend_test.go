@@ -235,7 +235,7 @@ func TestSubmitUploadsReferenceImagesThroughAssets(t *testing.T) {
 	if !awaited {
 		t.Fatal("expected asset await before submit")
 	}
-	if submittedURL != "https://tos.example.com/asset.png" {
+	if submittedURL != "asset://asset_789xyz" {
 		t.Fatalf("submittedURL=%q", submittedURL)
 	}
 }

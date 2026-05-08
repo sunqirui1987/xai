@@ -48,16 +48,13 @@ var ErrTaskFailed = errors.New("nodeskai: task failed")
 
 type backend struct {
 	client       *Client
-	assetClient  *Client
 	assetService *seedanceassets.Service
 }
 
 func newBackend(client *Client) *backend {
-	assetClient := newAssetPlatformClient(client)
 	return &backend{
 		client:       client,
-		assetClient:  assetClient,
-		assetService: newAssetService(assetClient),
+		assetService: newAssetService(newAssetPlatformClient(client)),
 	}
 }
 

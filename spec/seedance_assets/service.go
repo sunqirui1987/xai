@@ -73,6 +73,28 @@ func (s *Service) AwaitAsset(ctx context.Context, assetID string, interval time.
 	}
 }
 
+// UploadAndAwaitAsset uploads one asset, waits until it leaves Processing, and returns
+// a compact reference with both the asset URI and the resolved storage URL.
+func (s *Service) UploadAndAwaitAsset(ctx context.Context, req *UploadAssetRequest, interval time.Duration) (*AssetRef, error) {
+	uploaded, err := s.UploadAsset(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	asset, err := s.AwaitAsset(ctx, uploaded.AssetID, interval)
+	if err != nil {
+		return nil, err
+	}
+	assetID := strings.TrimSpace(asset.ID)
+	ref := &AssetRef{
+		URL:    strings.TrimSpace(asset.URL),
+		Status: strings.TrimSpace(asset.Status),
+	}
+	if assetID != "" {
+		ref.Asset = "asset://" + assetID
+	}
+	return ref, nil
+}
+
 func isAssetProcessing(status string) bool {
 	return strings.EqualFold(strings.TrimSpace(status), AssetStatusProcessing)
 }

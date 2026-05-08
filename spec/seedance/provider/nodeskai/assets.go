@@ -199,23 +199,19 @@ func (b *backend) ensureAssetURL(ctx context.Context, rawURL, groupID string) (s
 	if err != nil {
 		return "", err
 	}
-	upload, err := b.assetService.UploadAsset(ctx, &seedanceassets.UploadAssetRequest{
+	ref, err := b.assetService.UploadAndAwaitAsset(ctx, &seedanceassets.UploadAssetRequest{
 		GroupID:  groupID,
 		Name:     safeAssetName(fileName),
 		FileName: fileName,
 		File:     bytes.NewReader(body),
-	})
+	}, 2*time.Second)
 	if err != nil {
 		return "", err
 	}
-	asset, err := b.assetService.AwaitAsset(ctx, upload.AssetID, 2*time.Second)
-	if err != nil {
-		return "", err
+	if strings.TrimSpace(ref.Asset) == "" {
+		return "", fmt.Errorf("nodeskai: asset ref is empty after activation")
 	}
-	if strings.TrimSpace(asset.URL) == "" {
-		return "", fmt.Errorf("nodeskai: asset %q has empty url after activation", asset.ID)
-	}
-	return asset.URL, nil
+	return ref.Asset, nil
 }
 
 func (b *backend) downloadImage(ctx context.Context, rawURL string) (string, []byte, error) {

@@ -119,3 +119,10 @@ type AssetGroupList struct {
 	PageNumber int
 	PageSize   int
 }
+
+// AssetRef is a compact resolved asset reference for downstream model calls.
+type AssetRef struct {
+	Asset  string
+	URL    string
+	Status string
+}

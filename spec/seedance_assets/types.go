@@ -21,10 +21,11 @@ const (
 
 // UploadAssetRequest describes a single digital asset upload request.
 type UploadAssetRequest struct {
-	GroupID  string
-	Name     string
-	FileName string
-	File     io.Reader
+	GroupID   string
+	Name      string
+	AssetType string
+	FileName  string
+	File      io.Reader
 }
 
 func (r *UploadAssetRequest) Validate() error {

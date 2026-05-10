@@ -41,6 +41,9 @@ func TestUploadAsset(t *testing.T) {
 		if got := r.FormValue("group_id"); got != "grp_abc123" {
 			t.Fatalf("group_id=%q", got)
 		}
+		if got := r.FormValue("asset_type"); got != "Image" {
+			t.Fatalf("asset_type=%q", got)
+		}
 		file, fh, err := r.FormFile("file")
 		if err != nil {
 			t.Fatal(err)
@@ -55,10 +58,11 @@ func TestUploadAsset(t *testing.T) {
 
 	b := newBackend(testClient(t, srv.URL))
 	got, err := b.UploadAsset(context.Background(), &seedanceassets.UploadAssetRequest{
-		GroupID:  "grp_abc123",
-		Name:     "女性正脸-01",
-		FileName: "portrait.jpg",
-		File:     bytes.NewBufferString("jpg-bytes"),
+		GroupID:   "grp_abc123",
+		Name:      "女性正脸-01",
+		AssetType: seedanceassets.AssetTypeImage,
+		FileName:  "portrait.jpg",
+		File:      bytes.NewBufferString("jpg-bytes"),
 	})
 	if err != nil {
 		t.Fatal(err)

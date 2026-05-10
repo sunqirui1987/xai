@@ -191,8 +191,14 @@ func (b *backend) ensureAssetURL(ctx context.Context, rawURL, groupID string) (s
 	if rawURL == "" || groupID == "" {
 		return rawURL, nil
 	}
+	if isAssetURL(rawURL) {
+		return rawURL, nil
+	}
 	if b.assetService == nil {
 		return "", fmt.Errorf("nodeskai: image asset flow requires NODESKAI_CLIENT_ID and NODESKAI_CLIENT_SECRET")
+	}
+	if cached, ok := b.getCachedAssetURL(groupID, rawURL); ok {
+		return cached, nil
 	}
 
 	fileName, body, err := b.downloadImage(ctx, rawURL)
@@ -200,10 +206,11 @@ func (b *backend) ensureAssetURL(ctx context.Context, rawURL, groupID string) (s
 		return "", err
 	}
 	ref, err := b.assetService.UploadAndAwaitAsset(ctx, &seedanceassets.UploadAssetRequest{
-		GroupID:  groupID,
-		Name:     safeAssetName(fileName),
-		FileName: fileName,
-		File:     bytes.NewReader(body),
+		GroupID:   groupID,
+		Name:      safeAssetName(fileName),
+		AssetType: seedanceassets.AssetTypeImage,
+		FileName:  fileName,
+		File:      bytes.NewReader(body),
 	}, 2*time.Second)
 	if err != nil {
 		return "", err
@@ -211,7 +218,37 @@ func (b *backend) ensureAssetURL(ctx context.Context, rawURL, groupID string) (s
 	if strings.TrimSpace(ref.Asset) == "" {
 		return "", fmt.Errorf("nodeskai: asset ref is empty after activation")
 	}
+	b.cacheAssetURL(groupID, rawURL, ref.Asset)
 	return ref.Asset, nil
+}
+
+func isAssetURL(rawURL string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(rawURL)), "asset")
+}
+
+func (b *backend) getCachedAssetURL(groupID, rawURL string) (string, bool) {
+	if b == nil {
+		return "", false
+	}
+	key := assetURLCacheKey(groupID, rawURL)
+	b.assetURLMu.RLock()
+	defer b.assetURLMu.RUnlock()
+	cached, ok := b.assetURLMap[key]
+	return cached, ok
+}
+
+func (b *backend) cacheAssetURL(groupID, rawURL, assetURL string) {
+	if b == nil || strings.TrimSpace(assetURL) == "" {
+		return
+	}
+	key := assetURLCacheKey(groupID, rawURL)
+	b.assetURLMu.Lock()
+	defer b.assetURLMu.Unlock()
+	b.assetURLMap[key] = strings.TrimSpace(assetURL)
+}
+
+func assetURLCacheKey(groupID, rawURL string) string {
+	return strings.TrimSpace(groupID) + "\n" + strings.TrimSpace(rawURL)
 }
 
 func (b *backend) downloadImage(ctx context.Context, rawURL string) (string, []byte, error) {

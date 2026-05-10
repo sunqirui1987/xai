@@ -66,6 +66,11 @@ func uploadAsset(ctx context.Context, client *seedancenodeskai.Client, req *seed
 	if err := writer.WriteField("group_id", req.GroupID); err != nil {
 		return nil, fmt.Errorf("seedance_assets/nodeskai: write group_id: %w", err)
 	}
+	if assetType := strings.TrimSpace(req.AssetType); assetType != "" {
+		if err := writer.WriteField("asset_type", assetType); err != nil {
+			return nil, fmt.Errorf("seedance_assets/nodeskai: write asset_type: %w", err)
+		}
+	}
 	if name := strings.TrimSpace(req.Name); name != "" {
 		if err := writer.WriteField("name", name); err != nil {
 			return nil, fmt.Errorf("seedance_assets/nodeskai: write name: %w", err)

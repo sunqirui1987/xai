@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/seedance"
@@ -49,12 +50,15 @@ var ErrTaskFailed = errors.New("nodeskai: task failed")
 type backend struct {
 	client       *Client
 	assetService *seedanceassets.Service
+	assetURLMu   sync.RWMutex
+	assetURLMap  map[string]string
 }
 
 func newBackend(client *Client) *backend {
 	return &backend{
 		client:       client,
 		assetService: newAssetService(newAssetPlatformClient(client)),
+		assetURLMap:  make(map[string]string),
 	}
 }
 

@@ -137,6 +137,11 @@ func (b *assetBackend) UploadAsset(ctx context.Context, req *seedanceassets.Uplo
 	if err := writer.WriteField("group_id", req.GroupID); err != nil {
 		return nil, fmt.Errorf("nodeskai: write asset group_id: %w", err)
 	}
+	if assetType := strings.TrimSpace(req.AssetType); assetType != "" {
+		if err := writer.WriteField("asset_type", assetType); err != nil {
+			return nil, fmt.Errorf("nodeskai: write asset_type: %w", err)
+		}
+	}
 	if name := strings.TrimSpace(req.Name); name != "" {
 		if err := writer.WriteField("name", name); err != nil {
 			return nil, fmt.Errorf("nodeskai: write asset name: %w", err)
@@ -221,11 +226,37 @@ func newAssetPlatformClient(videoClient *Client) *Client {
 	if videoClient == nil {
 		return nil
 	}
-	clientID := strings.TrimSpace(firstNonEmptyEnv("NODESKAI_CLIENT_ID", "NODESK_CLIENT_ID"))
-	clientSecret := strings.TrimSpace(firstNonEmptyEnv("NODESKAI_CLIENT_SECRET", "NODESK_CLIENT_SECRET"))
+	videoClientID := strings.TrimSpace(videoClient.clientID)
+	videoClientSecret := strings.TrimSpace(videoClient.clientSecret)
+	envClientID := strings.TrimSpace(firstNonEmptyEnv("NODESKAI_CLIENT_ID", "NODESK_CLIENT_ID"))
+	envClientSecret := strings.TrimSpace(firstNonEmptyEnv("NODESKAI_CLIENT_SECRET", "NODESK_CLIENT_SECRET"))
+
+	videoClient.LogDebug("newAssetPlatformClient credential sources video_client_id=%v video_client_secret=%v env_client_id=%v env_client_secret=%v",
+		videoClientID != "",
+		videoClientSecret != "",
+		envClientID != "",
+		envClientSecret != "",
+	)
+
+	clientID := videoClientID
+	if clientID == "" {
+		clientID = envClientID
+	}
+	clientSecret := videoClientSecret
+	if clientSecret == "" {
+		clientSecret = envClientSecret
+	}
 	if clientID == "" || clientSecret == "" {
+		videoClient.LogDebug("newAssetPlatformClient missing credentials after merge client_id=%v client_secret=%v",
+			clientID != "",
+			clientSecret != "",
+		)
 		return nil
 	}
+	videoClient.LogDebug("newAssetPlatformClient ready client_id=%v client_secret=%v",
+		clientID != "",
+		clientSecret != "",
+	)
 	return &Client{
 		httpClient:      videoClient.httpClient,
 		baseURL:         videoClient.baseURL,

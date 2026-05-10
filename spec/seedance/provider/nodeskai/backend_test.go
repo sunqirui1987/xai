@@ -239,3 +239,114 @@ func TestSubmitUploadsReferenceImagesThroughAssets(t *testing.T) {
 		t.Fatalf("submittedURL=%q", submittedURL)
 	}
 }
+
+func TestSubmitSkipsUploadForAssetReferenceImage(t *testing.T) {
+	var uploaded bool
+	var submittedURL string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/upload":
+			uploaded = true
+			t.Fatal("unexpected asset upload")
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, pathGenerate):
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			content, _ := body["content"].([]any)
+			if len(content) < 2 {
+				t.Fatalf("content=%#v", body["content"])
+			}
+			item, _ := content[1].(map[string]any)
+			imageURL, _ := item["image_url"].(map[string]any)
+			submittedURL, _ = imageURL["url"].(string)
+			_, _ = w.Write([]byte(`{"id":"cgt-1","status":"running"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	cl := NewClient("video-key", append([]ClientOption{WithBaseURL(srv.URL)}, testClientOpts...)...)
+	b := newBackend(cl)
+	ctx := context.Background()
+
+	p := seedance.NewParams().
+		Set(ParamAssetGroupID, "grp_test_123").
+		Set(seedance.ParamPrompt, "让 asset 参考图动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{"asset://asset_789xyz"})
+	_, err := b.Submit(ctx, xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if uploaded {
+		t.Fatal("expected asset reference URL to skip upload")
+	}
+	if submittedURL != "asset://asset_789xyz" {
+		t.Fatalf("submittedURL=%q", submittedURL)
+	}
+}
+
+func TestSubmitCachesUploadedReferenceImages(t *testing.T) {
+	var uploadCount int
+	var awaitCount int
+
+	t.Setenv("NODESKAI_CLIENT_ID", "ndapp_asset")
+	t.Setenv("NODESKAI_CLIENT_SECRET", "asset_secret")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/source.png":
+			w.Header().Set("Content-Type", "image/png")
+			_, _ = w.Write([]byte("png-bytes"))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/oauth/token":
+			_, _ = w.Write([]byte(`{"access_token":"asset-token","expires_in":3600}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/upload":
+			uploadCount++
+			if err := r.ParseMultipartForm(8 << 20); err != nil {
+				t.Fatal(err)
+			}
+			_, _ = w.Write([]byte(`{"success":true,"asset_id":"asset_cached","asset_type":"Image","status":"Processing","tos_url":"https://tos.example.com/asset.png","file_name":"source.png","file_size":9}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/digital-assets/asset_cached":
+			awaitCount++
+			_, _ = w.Write([]byte(`{"success":true,"data":{"Id":"asset_cached","GroupId":"grp_test_123","Name":"source.png","AssetType":"Image","Status":"Active","URL":"https://tos.example.com/asset.png","CreateTime":"2026-04-05T14:30:00Z"}}`))
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, pathGenerate):
+			_, _ = w.Write([]byte(`{"id":"cgt-1","status":"running"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	cl := NewClient("video-key",
+		append([]ClientOption{
+			WithBaseURL(srv.URL),
+			WithPlatformBaseURL(srv.URL),
+			WithOAuthClientCredentials("ndapp_asset", "asset_secret"),
+		}, testClientOpts...)...,
+	)
+	b := newBackend(cl)
+	ctx := context.Background()
+
+	p := seedance.NewParams().
+		Set(ParamAssetGroupID, "grp_test_123").
+		Set(seedance.ParamPrompt, "让图片动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{srv.URL + "/source.png", srv.URL + "/source.png"})
+	_, err := b.Submit(ctx, xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = b.Submit(ctx, xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if uploadCount != 1 {
+		t.Fatalf("uploadCount=%d", uploadCount)
+	}
+	if awaitCount != 1 {
+		t.Fatalf("awaitCount=%d", awaitCount)
+	}
+}

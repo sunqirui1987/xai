@@ -23,6 +23,11 @@ go run ./examples/veo all
 go run ./examples/sora
 go run ./examples/sora all
 
+# Run APIMart GPT-Image-2 examples
+export APIMART_API_KEY=your-key
+go run ./examples/apimart
+go run ./examples/apimart generate
+
 # Run Vidu examples
 go run ./examples/vidu/video
 go run ./examples/vidu/video all
@@ -78,6 +83,9 @@ examples/
 │   ├── asr.go
 │   ├── tts.go
 │   └── list_voices.go
+├── apimart/
+│   ├── README.md
+│   └── main.go
 ├── vidu/
 │   ├── README.md
 │   ├── output/

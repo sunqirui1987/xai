@@ -241,6 +241,7 @@ go run ./examples/vidu/video q2-image-pro-audio
 # Seedance
 go run ./examples/seedance
 go run ./examples/seedance_qiniu
+go run ./examples/seedance_yunshi
 ```
 
 更多可运行示例见 [examples/README.md](./examples/README.md)。

@@ -37,10 +37,13 @@ import (
 // Scheme is the URI scheme for Seedance (Volc Ark): "seedance".
 const Scheme = "seedance"
 
-// Default video model (Seedance 2.0 on Volc Ark).
-const ModelDoubaoSeedance20 = "doubao-seedance-2-0-260128"
+// Default video models (Seedance 2.0 on Volc Ark).
+const (
+	ModelDoubaoSeedance20     = "doubao-seedance-2-0-260128"
+	ModelDoubaoSeedance20Fast = "doubao-seedance-2-0-fast-260128"
+)
 
-var defaultVideoModels = []string{ModelDoubaoSeedance20}
+var defaultVideoModels = []string{ModelDoubaoSeedance20, ModelDoubaoSeedance20Fast}
 
 // IsVideoModel reports whether the model id is supported for GenVideo on this spec.
 // Known IDs are listed in VideoModels; any model id with prefix "doubao-seedance-" is also accepted.

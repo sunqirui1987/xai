@@ -238,6 +238,7 @@ go run ./examples/vidu/video q2-image-pro-audio
 # Seedance
 go run ./examples/seedance
 go run ./examples/seedance_qiniu
+go run ./examples/seedance_yunshi
 ```
 
 More runnable demos: [examples/README.md](./examples/README.md)

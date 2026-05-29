@@ -90,11 +90,21 @@ func (s *Service) UploadAndAwaitAsset(ctx context.Context, req *UploadAssetReque
 		Status: strings.TrimSpace(asset.Status),
 	}
 	if assetID != "" {
-		ref.Asset = "asset://" + assetID
+		ref.Asset = assetScheme(assetID) + assetID
 	}
 	return ref, nil
 }
 
 func isAssetProcessing(status string) bool {
-	return strings.EqualFold(strings.TrimSpace(status), AssetStatusProcessing)
+	st := strings.TrimSpace(status)
+	return strings.EqualFold(st, AssetStatusProcessing) ||
+		strings.EqualFold(st, AssetStatusPending) ||
+		strings.EqualFold(st, AssetStatusReviewing)
+}
+
+func assetScheme(assetID string) string {
+	if strings.HasPrefix(strings.TrimSpace(assetID), "qasset-") {
+		return "qasset://"
+	}
+	return "asset://"
 }

@@ -40,6 +40,11 @@ go run ./examples/seedance
 export QINIU_API_KEY=your-key
 go run ./examples/seedance_qiniu
 
+# Seedance assets review (Qiniu, needs QINIU_API_KEY)
+go run ./examples/seedance_qiniu_assets create-group "我的虚拟人像分组" "用于存放公司形象虚拟人像素材"
+go run ./examples/seedance_qiniu_assets create https://example.com/portrait.jpg "年轻男人"
+go run ./examples/seedance_qiniu_assets await qasset-xxx
+
 # Seedance (NoDesk AI, supports auto-uploading reference images through assets)
 export NODESKAI_API_KEY=your-video-api-key
 export NODESKAI_CLIENT_ID=ndapp_xxx
@@ -126,6 +131,8 @@ examples/
 │   └── main.go             # Volc Ark Seedance GenVideo
 ├── seedance_qiniu/
 │   └── main.go             # Qiniu Seedance GenVideo
+├── seedance_qiniu_assets/
+│   └── main.go             # Qiniu Seedance assets review
 ├── seedance_nodeskai/
 │   └── main.go             # NoDesk AI Seedance GenVideo
 ├── seedance_nodeskai_assets/

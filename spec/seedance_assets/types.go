@@ -17,6 +17,10 @@ const (
 	AssetStatusProcessing = "Processing"
 	AssetStatusActive     = "Active"
 	AssetStatusFailed     = "Failed"
+
+	AssetStatusPending   = "pending"
+	AssetStatusReviewing = "reviewing"
+	AssetStatusApproved  = "approved"
 )
 
 // UploadAssetRequest describes a single digital asset upload request.
@@ -24,6 +28,8 @@ type UploadAssetRequest struct {
 	GroupID   string
 	Name      string
 	AssetType string
+	URL       string
+	Model     string
 	FileName  string
 	File      io.Reader
 }
@@ -48,6 +54,8 @@ func (r *UploadAssetRequest) Validate() error {
 type CreateAssetGroupRequest struct {
 	Name        string
 	Description string
+	Type        string
+	Model       string
 }
 
 func (r *CreateAssetGroupRequest) Validate() error {
@@ -83,13 +91,19 @@ func (r *ListAssetGroupsRequest) Normalize() *ListAssetGroupsRequest {
 
 // AssetUploadResult is returned after an upload request is accepted.
 type AssetUploadResult struct {
-	Success   bool
-	AssetID   string
-	AssetType string
-	Status    string
-	TOSURL    string
-	FileName  string
-	FileSize  int64
+	Success    bool
+	AssetID    string
+	AssetType  string
+	Name       string
+	Model      string
+	Status     string
+	GroupID    string
+	TOSURL     string
+	FileName   string
+	FileSize   int64
+	FailReason string
+	CreatedAt  int64
+	UpdatedAt  int64
 }
 
 // Asset is the normalized asset detail returned by provider asset libraries.
@@ -98,19 +112,29 @@ type Asset struct {
 	GroupID    string
 	Name       string
 	Type       string
+	Model      string
 	Status     string
 	URL        string
+	FailReason string
 	CreateTime string
+	CreatedAt  int64
+	UpdatedAt  int64
 }
 
 // AssetGroup is one provider-managed asset group.
 type AssetGroup struct {
 	ID          string
+	Type        string
 	Name        string
 	Description string
+	Model       string
 	Status      string
+	IsDefault   bool
 	AssetCount  int
+	FailReason  string
 	CreateTime  string
+	CreatedAt   int64
+	UpdatedAt   int64
 }
 
 // AssetGroupList is one paged asset-group list result.

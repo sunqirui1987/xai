@@ -9,9 +9,8 @@
 //	export QINIU_API_KEY=your-qiniu-api-key
 //	go run ./examples/seedance_qiniu
 //
-// Note:
-//   - This demo uses the current generic seedance spec only.
-//   - The qiniu provider maps `reference_image_urls` to first/last frame when 1-2 images are provided.
+// This example includes a real-person reference image by default, matching the
+// Yunshi example. The Qiniu provider sends it as `reference_image_urls`.
 package main
 
 import (
@@ -23,6 +22,8 @@ import (
 	"github.com/goplus/xai/spec/seedance"
 	"github.com/goplus/xai/spec/seedance/provider/qiniu"
 )
+
+const realPortraitURL = "https://aitoken-public.qnaigc.com/example/generate-image/smile-woman.png"
 
 func main() {
 	if os.Getenv("QINIU_API_KEY") == "" {
@@ -46,7 +47,8 @@ func main() {
 	}
 
 	op.Params().(*seedance.Params).
-		Set(seedance.ParamPrompt, "夕阳下的城市街道，电影感镜头缓慢推进").
+		Set(seedance.ParamPrompt, "一位真实女性站在海边栈道上，微风吹动头发，镜头缓慢向前推进，夕阳金色光影洒在她脸上与海面上，人物保持自然表情和真实质感。").
+		Set(seedance.ParamReferenceImageURLs, []string{realPortraitURL}).
 		Set(seedance.ParamRatio, "16:9").
 		Set(seedance.ParamDuration, 5).
 		Set(seedance.ParamGenerateAudio, true)
@@ -64,7 +66,7 @@ func main() {
 
 	results, err := xai.Wait(ctx, svc, resp, func(r xai.OperationResponse) {
 		if !r.Done() {
-			fmt.Println("polling…", r.TaskID())
+			fmt.Println("polling...", r.TaskID())
 		}
 	})
 	if err != nil {

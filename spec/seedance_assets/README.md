@@ -23,13 +23,31 @@ import (
     "context"
     seedanceassets "github.com/goplus/xai/spec/seedance_assets"
     assetsnodeskai "github.com/goplus/xai/spec/seedance_assets/provider/nodeskai"
+    assetsqiniu "github.com/goplus/xai/spec/seedance_assets/provider/qiniu"
 )
 
 func main() {
     svc := assetsnodeskai.NewServiceWithClientCredentials(clientID, clientSecret)
     _, _ = svc.UploadAsset(context.Background(), &seedanceassets.UploadAssetRequest{})
+
+    qiniuSvc := assetsqiniu.NewService(apiKey)
+    _, _ = qiniuSvc.UploadAsset(context.Background(), &seedanceassets.UploadAssetRequest{
+        AssetType: "image",
+        URL: "https://example.com/portrait.jpg",
+        Name: "年轻男人",
+        Model: "bytedance/doubao-seedance-2-0-260128",
+    })
 }
 ```
+
+## Qiniu 对接补充
+
+- 创建素材组：`POST /v1/asset-groups`
+- 创建素材审核任务：`POST /v1/assets`
+- 查询素材审核状态：`GET /v1/assets/{qassetid}`
+- 国内默认端点：`https://openai.qiniu.com`
+- 海外端点：`https://openai.sufy.com`，通过 `assetsqiniu.WithBaseURL(assetsqiniu.OverseasBaseURL)` 使用
+- 素材 URL 必须公网可访问；返回 `approved` 后可使用 `qasset://{qassetid}` 引用
 
 ## NoDesk AI 对接补充
 

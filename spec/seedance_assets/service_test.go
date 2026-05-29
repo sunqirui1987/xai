@@ -88,3 +88,40 @@ func TestUploadAndAwaitAsset(t *testing.T) {
 		t.Fatalf("status=%q", got.Status)
 	}
 }
+
+func TestUploadAndAwaitQiniuAsset(t *testing.T) {
+	var calls int
+	svc := NewWithBackend(&stubBackend{
+		createGroupFn: func(context.Context, *CreateAssetGroupRequest) (*AssetGroup, error) { return nil, nil },
+		listGroupsFn:  func(context.Context, *ListAssetGroupsRequest) (*AssetGroupList, error) { return nil, nil },
+		uploadAssetFn: func(context.Context, *UploadAssetRequest) (*AssetUploadResult, error) {
+			return &AssetUploadResult{AssetID: "qasset-uid001-1716100100000000000", Status: AssetStatusPending}, nil
+		},
+		getAssetFn: func(context.Context, string) (*Asset, error) {
+			calls++
+			if calls == 1 {
+				return &Asset{ID: "qasset-uid001-1716100100000000000", Status: AssetStatusReviewing}, nil
+			}
+			return &Asset{ID: "qasset-uid001-1716100100000000000", Status: AssetStatusApproved}, nil
+		},
+	})
+
+	got, err := svc.UploadAndAwaitAsset(context.Background(), &UploadAssetRequest{
+		Name:      "年轻男人",
+		AssetType: "image",
+		URL:       "https://example.com/a.jpg",
+		Model:     "bytedance/doubao-seedance-2-0-260128",
+	}, time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Asset != "qasset://qasset-uid001-1716100100000000000" {
+		t.Fatalf("asset=%q", got.Asset)
+	}
+	if got.Status != AssetStatusApproved {
+		t.Fatalf("status=%q", got.Status)
+	}
+	if calls != 2 {
+		t.Fatalf("calls=%d", calls)
+	}
+}

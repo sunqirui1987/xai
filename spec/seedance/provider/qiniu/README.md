@@ -34,6 +34,23 @@
 
 当前 Qiniu Seedance 后端会按 `content[]` 形式发送图片、视频、音频参考；`watermark` 仍未在本 provider 中透传。
 
+## 素材审查
+
+当请求包含 `reference_image_urls` / `reference_images` / `reference_video_urls` / `reference_audio_urls` 时，本 provider 默认会先调用 Qiniu 素材审查接口：
+
+1. `POST https://openai.qiniu.com/v1/assets`
+2. 轮询 `GET https://openai.qiniu.com/v1/assets/{qassetid}`
+3. `approved` 后把原始 URL 替换为 `qasset://{qassetid}` 再提交视频任务
+
+可选配置：
+
+- `QINIU_ASSETS_BASE_URL`：覆盖素材审查端点，例如 `https://openai.sufy.com`
+- `QINIU_ASSET_GROUP_ID`：指定素材分组；不设置时由平台选择默认分组或自动创建
+- `qiniu.ParamAssetGroupID`：通过 params 指定素材分组
+- `qiniu.ParamAssetAutoReview=false`：关闭自动素材审查，直接提交原始 URL
+- `qiniu.ParamAssetPollInterval`：素材轮询间隔，单位毫秒
+- `qiniu.ParamAssetPollAttempts`：素材轮询次数
+
 模型名约定：
 
 - Qiniu 实际请求使用 `bytedance/doubao-seedance-2-0-260128`

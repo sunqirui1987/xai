@@ -25,12 +25,16 @@ import (
 // Service wraps seedance.Service and holds the Qiniu HTTP client for SetApiKey.
 type Service struct {
 	*seedance.Service
-	client *Client
+	client  *Client
+	backend *backend
 }
 
 // SetApiKey updates the Qiniu API key on the underlying client.
 func (s *Service) SetApiKey(apiKey string) {
 	s.client.SetApiKey(apiKey)
+	if s.backend != nil && s.backend.assetClient != nil {
+		s.backend.assetClient.SetApiKey(apiKey)
+	}
 }
 
 // SeedanceService returns the embedded *seedance.Service for GenVideo Operation.Call.
@@ -42,9 +46,11 @@ func NewService(apiKey string, opts ...ClientOption) *Service {
 		apiKey = os.Getenv("QINIU_API_KEY")
 	}
 	client := NewClient(apiKey, opts...)
+	backend := newBackend(client)
 	return &Service{
-		Service: seedance.NewWithBackend(newBackend(client)),
+		Service: seedance.NewWithBackend(backend),
 		client:  client,
+		backend: backend,
 	}
 }
 

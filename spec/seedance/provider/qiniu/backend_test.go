@@ -2,6 +2,7 @@ package qiniu
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -184,5 +185,110 @@ func TestBuildTaskBodyIncludesReferenceVideoAndAudioURLs(t *testing.T) {
 	audioURL, _ := audio["audio_url"].(map[string]any)
 	if got := audioURL["url"]; got != "https://example.com/ref.mp3" {
 		t.Fatalf("audio.url=%v", got)
+	}
+}
+
+func TestSubmitAutoReviewsReferenceImage(t *testing.T) {
+	var createdAsset bool
+	var submittedURL string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/assets":
+			createdAsset = true
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if got := body["type"]; got != "image" {
+				t.Fatalf("asset type=%v", got)
+			}
+			if got := body["url"]; got != "https://example.com/actor.png" {
+				t.Fatalf("asset url=%v", got)
+			}
+			if got := body["model"]; got != "bytedance/doubao-seedance-2-0-260128" {
+				t.Fatalf("asset model=%v", got)
+			}
+			_, _ = w.Write([]byte(`{"qassetid":"qasset-1","type":"image","name":"参考图","model":"bytedance/doubao-seedance-2-0-260128","status":"pending","created_at":1,"updated_at":1}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/assets/qasset-1":
+			_, _ = w.Write([]byte(`{"qassetid":"qasset-1","type":"image","name":"参考图","model":"bytedance/doubao-seedance-2-0-260128","status":"approved","created_at":1,"updated_at":2}`))
+		case r.Method == http.MethodPost && r.URL.Path == pathCreateTask:
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			content := body["content"].([]any)
+			image := content[1].(map[string]any)
+			imageURL := image["image_url"].(map[string]any)
+			submittedURL, _ = imageURL["url"].(string)
+			_, _ = w.Write([]byte(`{"id":"qvideo-1"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	t.Setenv("QINIU_ASSETS_BASE_URL", srv.URL)
+	cl := NewClient("test-key", append([]ClientOption{WithBaseURL(srv.URL)}, testClientOpts...)...)
+	b := newBackend(cl)
+	p := seedance.NewParams().
+		Set(seedance.ParamPrompt, "真人动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{"https://example.com/actor.png"}).
+		Set(ParamAssetPollInterval, 1).
+		Set(ParamAssetPollAttempts, 1)
+
+	_, err := b.Submit(context.Background(), xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !createdAsset {
+		t.Fatal("expected reference image to be submitted for asset review")
+	}
+	if submittedURL != "qasset://qasset-1" {
+		t.Fatalf("submitted image url=%q", submittedURL)
+	}
+}
+
+func TestSubmitCanDisableAssetAutoReview(t *testing.T) {
+	var assetCalled bool
+	var submittedURL string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/assets":
+			assetCalled = true
+			http.NotFound(w, r)
+		case r.Method == http.MethodPost && r.URL.Path == pathCreateTask:
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			content := body["content"].([]any)
+			image := content[1].(map[string]any)
+			imageURL := image["image_url"].(map[string]any)
+			submittedURL, _ = imageURL["url"].(string)
+			_, _ = w.Write([]byte(`{"id":"qvideo-1"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	t.Setenv("QINIU_ASSETS_BASE_URL", srv.URL)
+	cl := NewClient("test-key", append([]ClientOption{WithBaseURL(srv.URL)}, testClientOpts...)...)
+	b := newBackend(cl)
+	disable := false
+	p := seedance.NewParams().
+		Set(seedance.ParamPrompt, "真人动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{"https://example.com/actor.png"}).
+		Set(ParamAssetAutoReview, disable)
+
+	_, err := b.Submit(context.Background(), xai.Model(seedance.ModelDoubaoSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if assetCalled {
+		t.Fatal("asset review should be disabled")
+	}
+	if submittedURL != "https://example.com/actor.png" {
+		t.Fatalf("submitted image url=%q", submittedURL)
 	}
 }

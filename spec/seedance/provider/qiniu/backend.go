@@ -21,24 +21,41 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	xai "github.com/goplus/xai/spec"
 	"github.com/goplus/xai/spec/seedance"
+	seedanceassets "github.com/goplus/xai/spec/seedance_assets"
 )
 
 const pathCreateTask = "/v3/contents/generations/tasks"
+
+const (
+	defaultAssetsBaseURL = "https://openai.qiniu.com"
+
+	ParamAssetGroupID      = "asset_group_id"
+	ParamAssetAutoReview   = "asset_auto_review"
+	ParamAssetPollInterval = "asset_poll_interval"
+	ParamAssetPollAttempts = "asset_poll_attempts"
+)
 
 // ErrTaskFailed is returned when Qiniu reports a terminal failure.
 var ErrTaskFailed = errors.New("qiniu-seedance: task failed")
 
 type backend struct {
-	client *Client
+	client      *Client
+	assetClient *Client
 }
 
 func newBackend(client *Client) *backend {
-	return &backend{client: client}
+	return &backend{
+		client:      client,
+		assetClient: newAssetClient(client),
+	}
 }
 
 // NewBackend returns a seedance.Backend backed by the Qiniu/Qnagic HTTP API.
@@ -55,7 +72,7 @@ func (b *backend) Submit(ctx context.Context, model xai.Model, params xai.Params
 	m := strings.TrimSpace(string(model))
 	b.client.LogDebug("Submit GenVideo model=%q", m)
 
-	body, err := buildTaskBody(m, p)
+	body, err := b.buildTaskBody(ctx, m, p)
 	if err != nil {
 		b.client.LogDebug("Submit buildTaskBody error: %v", err)
 		return nil, err
@@ -117,7 +134,7 @@ func (b *backend) getTaskJSON(ctx context.Context, taskID string) ([]byte, error
 	return b.client.GetJSON(ctx, path)
 }
 
-func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
+func (b *backend) buildTaskBody(ctx context.Context, model string, p *seedance.Params) (map[string]any, error) {
 	m := normalizeQiniuModel(model)
 	if m == "" {
 		return nil, fmt.Errorf("qiniu-seedance: empty model")
@@ -142,18 +159,34 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 			if role == "" {
 				role = "reference_image"
 			}
-			content = append(content, imageURLContent(ref.URL, role))
+			u, err := b.prepareAssetURL(ctx, p, ref.URL, "image", "参考图", m)
+			if err != nil {
+				return nil, err
+			}
+			content = append(content, imageURLContent(u, role))
 		}
 	} else {
 		for _, refURL := range p.GetStringSlice(seedance.ParamReferenceImageURLs) {
-			content = append(content, imageURLContent(refURL, "reference_image"))
+			u, err := b.prepareAssetURL(ctx, p, refURL, "image", "参考图", m)
+			if err != nil {
+				return nil, err
+			}
+			content = append(content, imageURLContent(u, "reference_image"))
 		}
 	}
 	for _, refURL := range p.GetStringSlice(seedance.ParamReferenceVideoURLs) {
-		content = append(content, mediaURLContent("video_url", "video_url", refURL, "reference_video"))
+		u, err := b.prepareAssetURL(ctx, p, refURL, "video", "参考视频", m)
+		if err != nil {
+			return nil, err
+		}
+		content = append(content, mediaURLContent("video_url", "video_url", u, "reference_video"))
 	}
 	for _, refURL := range p.GetStringSlice(seedance.ParamReferenceAudioURLs) {
-		content = append(content, mediaURLContent("audio_url", "audio_url", refURL, "reference_audio"))
+		u, err := b.prepareAssetURL(ctx, p, refURL, "audio", "参考音频", m)
+		if err != nil {
+			return nil, err
+		}
+		content = append(content, mediaURLContent("audio_url", "audio_url", u, "reference_audio"))
 	}
 
 	body := map[string]any{
@@ -177,6 +210,208 @@ func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
 		body["generate_audio"] = *ga
 	}
 	return body, nil
+}
+
+func buildTaskBody(model string, p *seedance.Params) (map[string]any, error) {
+	return (&backend{}).buildTaskBody(context.Background(), model, p)
+}
+
+func (b *backend) prepareAssetURL(ctx context.Context, p *seedance.Params, rawURL, typ, name, model string) (string, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" || strings.HasPrefix(strings.ToLower(rawURL), "qasset://") {
+		return rawURL, nil
+	}
+	if v := p.GetBool(ParamAssetAutoReview); v != nil && !*v {
+		return rawURL, nil
+	}
+	if b == nil || b.assetClient == nil {
+		return rawURL, nil
+	}
+
+	ret, err := b.createAsset(ctx, &seedanceassets.UploadAssetRequest{
+		GroupID:   assetGroupID(p),
+		Name:      name,
+		AssetType: typ,
+		URL:       rawURL,
+		Model:     model,
+	})
+	if err != nil {
+		return "", err
+	}
+	asset, err := b.awaitAsset(ctx, ret.AssetID, assetPollInterval(p), assetPollAttempts(p))
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(asset.ID) == "" {
+		return "", fmt.Errorf("qiniu-seedance: asset id is empty after review")
+	}
+	return "qasset://" + strings.TrimSpace(asset.ID), nil
+}
+
+func (b *backend) createAsset(ctx context.Context, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {
+	body := map[string]any{
+		"type":  normalizeAssetType(req.AssetType),
+		"url":   strings.TrimSpace(req.URL),
+		"name":  strings.TrimSpace(req.Name),
+		"model": strings.TrimSpace(req.Model),
+	}
+	if groupID := strings.TrimSpace(req.GroupID); groupID != "" {
+		body["group_id"] = groupID
+	}
+	raw, err := b.assetClient.PostJSON(ctx, "/v1/assets", body)
+	if err != nil {
+		return nil, err
+	}
+	var v struct {
+		ID         string `json:"qassetid"`
+		Type       string `json:"type"`
+		Name       string `json:"name"`
+		Model      string `json:"model"`
+		Status     string `json:"status"`
+		GroupID    string `json:"group_id"`
+		FailReason string `json:"fail_reason"`
+		CreatedAt  int64  `json:"created_at"`
+		UpdatedAt  int64  `json:"updated_at"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, fmt.Errorf("qiniu-seedance: parse create asset response: %w", err)
+	}
+	return &seedanceassets.AssetUploadResult{
+		AssetID:    strings.TrimSpace(v.ID),
+		AssetType:  strings.TrimSpace(v.Type),
+		Name:       strings.TrimSpace(v.Name),
+		Model:      strings.TrimSpace(v.Model),
+		Status:     strings.TrimSpace(v.Status),
+		GroupID:    strings.TrimSpace(v.GroupID),
+		FailReason: strings.TrimSpace(v.FailReason),
+		CreatedAt:  v.CreatedAt,
+		UpdatedAt:  v.UpdatedAt,
+	}, nil
+}
+
+func (b *backend) getAsset(ctx context.Context, assetID string) (*seedanceassets.Asset, error) {
+	assetID = strings.TrimSpace(assetID)
+	if assetID == "" {
+		return nil, fmt.Errorf("qiniu-seedance: qassetid is required")
+	}
+	raw, err := b.assetClient.GetJSON(ctx, "/v1/assets/"+url.PathEscape(assetID))
+	if err != nil {
+		return nil, err
+	}
+	var v struct {
+		ID         string `json:"qassetid"`
+		Type       string `json:"type"`
+		Name       string `json:"name"`
+		Model      string `json:"model"`
+		Status     string `json:"status"`
+		GroupID    string `json:"group_id"`
+		FailReason string `json:"fail_reason"`
+		CreatedAt  int64  `json:"created_at"`
+		UpdatedAt  int64  `json:"updated_at"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return nil, fmt.Errorf("qiniu-seedance: parse get asset response: %w", err)
+	}
+	return &seedanceassets.Asset{
+		ID:         strings.TrimSpace(v.ID),
+		GroupID:    strings.TrimSpace(v.GroupID),
+		Name:       strings.TrimSpace(v.Name),
+		Type:       strings.TrimSpace(v.Type),
+		Model:      strings.TrimSpace(v.Model),
+		Status:     strings.TrimSpace(v.Status),
+		FailReason: strings.TrimSpace(v.FailReason),
+		CreatedAt:  v.CreatedAt,
+		UpdatedAt:  v.UpdatedAt,
+	}, nil
+}
+
+func (b *backend) awaitAsset(ctx context.Context, assetID string, interval time.Duration, attempts int) (*seedanceassets.Asset, error) {
+	if interval <= 0 {
+		interval = 2 * time.Second
+	}
+	if attempts <= 0 {
+		attempts = 40
+	}
+	for i := 0; i < attempts; i++ {
+		asset, err := b.getAsset(ctx, assetID)
+		if err != nil {
+			return nil, err
+		}
+		status := strings.ToLower(strings.TrimSpace(asset.Status))
+		b.client.LogDebug("asset review qassetid=%q status=%q", asset.ID, asset.Status)
+		switch status {
+		case "approved":
+			return asset, nil
+		case "failed":
+			reason := strings.TrimSpace(asset.FailReason)
+			if reason == "" {
+				reason = "unknown error"
+			}
+			return nil, fmt.Errorf("qiniu-seedance: asset review failed: %s", reason)
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(interval):
+		}
+	}
+	return nil, fmt.Errorf("qiniu-seedance: asset review timeout: %s", assetID)
+}
+
+func assetGroupID(p *seedance.Params) string {
+	if p != nil {
+		if groupID := strings.TrimSpace(p.GetString(ParamAssetGroupID)); groupID != "" {
+			return groupID
+		}
+	}
+	return strings.TrimSpace(os.Getenv("QINIU_ASSET_GROUP_ID"))
+}
+
+func assetPollInterval(p *seedance.Params) time.Duration {
+	if p != nil {
+		if ms := p.GetInt(ParamAssetPollInterval); ms != nil && *ms > 0 {
+			return time.Duration(*ms) * time.Millisecond
+		}
+	}
+	return 2 * time.Second
+}
+
+func assetPollAttempts(p *seedance.Params) int {
+	if p != nil {
+		if n := p.GetInt(ParamAssetPollAttempts); n != nil && *n > 0 {
+			return *n
+		}
+	}
+	return 40
+}
+
+func normalizeAssetType(typ string) string {
+	switch strings.ToLower(strings.TrimSpace(typ)) {
+	case "image":
+		return "image"
+	case "video":
+		return "video"
+	case "audio":
+		return "audio"
+	default:
+		return strings.TrimSpace(typ)
+	}
+}
+
+func newAssetClient(client *Client) *Client {
+	apiKey := ""
+	debugLog := true
+	logger := log.Default()
+	if client != nil {
+		apiKey = client.ApiKey()
+		debugLog = client.debugLog
+		logger = client.logger
+	}
+	baseURL := strings.TrimSpace(os.Getenv("QINIU_ASSETS_BASE_URL"))
+	if baseURL == "" {
+		baseURL = defaultAssetsBaseURL
+	}
+	return NewClient(apiKey, WithBaseURL(baseURL), WithDebugLog(debugLog), WithLogger(logger))
 }
 
 func normalizeQiniuModel(model string) string {

@@ -37,10 +37,11 @@ const pathCreateTask = "/v3/contents/generations/tasks"
 const (
 	defaultAssetsBaseURL = "https://openai.qiniu.com"
 
-	ParamAssetGroupID      = "asset_group_id"
-	ParamAssetAutoReview   = "asset_auto_review"
-	ParamAssetPollInterval = "asset_poll_interval"
-	ParamAssetPollAttempts = "asset_poll_attempts"
+	ParamAssetGroupID       = "asset_group_id"
+	ParamAssetAutoReview    = "asset_auto_review"
+	ParamAssetPollInterval  = "asset_poll_interval"
+	ParamAssetPollAttempts  = "asset_poll_attempts"
+	ParamAssetReviewRetries = "asset_review_retries"
 )
 
 // ErrTaskFailed is returned when Qiniu reports a terminal failure.
@@ -228,24 +229,46 @@ func (b *backend) prepareAssetURL(ctx context.Context, p *seedance.Params, rawUR
 		return rawURL, nil
 	}
 
-	ret, err := b.createAsset(ctx, &seedanceassets.UploadAssetRequest{
+	req := &seedanceassets.UploadAssetRequest{
 		GroupID:   assetGroupID(p),
 		Name:      name,
 		AssetType: typ,
 		URL:       rawURL,
 		Model:     model,
-	})
+	}
+
+	retries := assetReviewRetries(p)
+	var lastErr error
+	for attempt := 0; attempt <= retries; attempt++ {
+		if attempt > 0 {
+			b.client.LogDebug("retry asset review url=%q attempt=%d/%d after error: %v", rawURL, attempt+1, retries+1, lastErr)
+		}
+		asset, err := b.createAndAwaitAsset(ctx, req, assetPollInterval(p), assetPollAttempts(p))
+		if err == nil {
+			if strings.TrimSpace(asset.ID) == "" {
+				return "", fmt.Errorf("qiniu-seedance: asset id is empty after review")
+			}
+			return "qasset://" + strings.TrimSpace(asset.ID), nil
+		}
+		lastErr = err
+		if attempt >= retries || !isRetryableAssetReviewError(err) {
+			return "", err
+		}
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case <-time.After(assetPollInterval(p)):
+		}
+	}
+	return "", lastErr
+}
+
+func (b *backend) createAndAwaitAsset(ctx context.Context, req *seedanceassets.UploadAssetRequest, interval time.Duration, attempts int) (*seedanceassets.Asset, error) {
+	ret, err := b.createAsset(ctx, req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	asset, err := b.awaitAsset(ctx, ret.AssetID, assetPollInterval(p), assetPollAttempts(p))
-	if err != nil {
-		return "", err
-	}
-	if strings.TrimSpace(asset.ID) == "" {
-		return "", fmt.Errorf("qiniu-seedance: asset id is empty after review")
-	}
-	return "qasset://" + strings.TrimSpace(asset.ID), nil
+	return b.awaitAsset(ctx, ret.AssetID, interval, attempts)
 }
 
 func (b *backend) createAsset(ctx context.Context, req *seedanceassets.UploadAssetRequest) (*seedanceassets.AssetUploadResult, error) {
@@ -383,6 +406,41 @@ func assetPollAttempts(p *seedance.Params) int {
 		}
 	}
 	return 40
+}
+
+func assetReviewRetries(p *seedance.Params) int {
+	if p != nil {
+		if n := p.GetInt(ParamAssetReviewRetries); n != nil && *n >= 0 {
+			return *n
+		}
+	}
+	return 2
+}
+
+func isRetryableAssetReviewError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, marker := range []string{
+		"infra",
+		"asset api",
+		"timeout",
+		"temporary",
+		"temporarily",
+		"connection",
+		"request failed",
+		"http 429",
+		"http 500",
+		"http 502",
+		"http 503",
+		"http 504",
+	} {
+		if strings.Contains(msg, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeAssetType(typ string) string {

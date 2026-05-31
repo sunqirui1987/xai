@@ -50,6 +50,7 @@
 - `qiniu.ParamAssetAutoReview=false`：关闭自动素材审查，直接提交原始 URL
 - `qiniu.ParamAssetPollInterval`：素材轮询间隔，单位毫秒
 - `qiniu.ParamAssetPollAttempts`：素材轮询次数
+- `qiniu.ParamAssetReviewRetries`：素材审查可重试次数，默认 `2`。仅对基础设施、网络、超时、429/5xx、`[INFRA ASSET API ERROR]` / `Asset API` 等临时错误重试；内容审核拒绝不会重试
 
 模型名约定：
 

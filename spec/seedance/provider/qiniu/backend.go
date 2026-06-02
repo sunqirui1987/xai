@@ -222,6 +222,9 @@ func (b *backend) prepareAssetURL(ctx context.Context, p *seedance.Params, rawUR
 	if rawURL == "" || strings.HasPrefix(strings.ToLower(rawURL), "qasset://") {
 		return rawURL, nil
 	}
+	if isQiniuModelWithoutAssets(model) {
+		return rawURL, nil
+	}
 	if v := p.GetBool(ParamAssetAutoReview); v != nil && !*v {
 		return rawURL, nil
 	}
@@ -477,6 +480,9 @@ func normalizeQiniuModel(model string) string {
 	if m == "" {
 		return ""
 	}
+	if isQiniuModelWithoutAssets(m) {
+		return m
+	}
 	if strings.Contains(m, "/") {
 		return m
 	}
@@ -484,6 +490,10 @@ func normalizeQiniuModel(model string) string {
 		return "bytedance/" + m
 	}
 	return m
+}
+
+func isQiniuModelWithoutAssets(model string) bool {
+	return strings.EqualFold(strings.TrimSpace(model), seedance.ModelByteplusDreaminaSeedance20)
 }
 
 func imageURLContent(u string, role string) map[string]any {

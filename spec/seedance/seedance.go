@@ -41,9 +41,11 @@ const Scheme = "seedance"
 const (
 	ModelDoubaoSeedance20     = "doubao-seedance-2-0-260128"
 	ModelDoubaoSeedance20Fast = "doubao-seedance-2-0-fast-260128"
+
+	ModelByteplusDreaminaSeedance20 = "byteplus/dreamina-seedance-2-0-260128"
 )
 
-var defaultVideoModels = []string{ModelDoubaoSeedance20, ModelDoubaoSeedance20Fast}
+var defaultVideoModels = []string{ModelDoubaoSeedance20, ModelDoubaoSeedance20Fast, ModelByteplusDreaminaSeedance20}
 
 // IsVideoModel reports whether the model id is supported for GenVideo on this spec.
 // Known IDs are listed in VideoModels; any model id with prefix "doubao-seedance-" is also accepted.

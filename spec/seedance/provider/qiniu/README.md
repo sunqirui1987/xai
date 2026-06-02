@@ -42,6 +42,8 @@
 2. 轮询 `GET https://openai.qiniu.com/v1/assets/{qassetid}`
 3. `approved` 后把原始 URL 替换为 `qasset://{qassetid}` 再提交视频任务
 
+例外：`byteplus/dreamina-seedance-2-0-260128` 不支持素材审查，本 provider 会直接提交原始参考 URL。
+
 可选配置：
 
 - `QINIU_ASSETS_BASE_URL`：覆盖素材审查端点，例如 `https://openai.sufy.com`
@@ -55,6 +57,7 @@
 模型名约定：
 
 - Qiniu 实际请求使用 `bytedance/doubao-seedance-2-0-260128`
+- 海外 Dreamina 模型可直接使用 `byteplus/dreamina-seedance-2-0-260128`
 - 为了不改通用 `spec/seedance`，provider 内部会把 `doubao-seedance-2-0-260128` 自动补成带 `bytedance/` 前缀的模型名
 
 ## 使用

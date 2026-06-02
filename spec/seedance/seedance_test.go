@@ -9,6 +9,9 @@ func TestIsVideoModel(t *testing.T) {
 	if !IsVideoModel("doubao-seedance-2-0-999999") {
 		t.Fatal("doubao-seedance-* prefix should be accepted")
 	}
+	if !IsVideoModel(ModelByteplusDreaminaSeedance20) {
+		t.Fatal("byteplus dreamina seedance should be accepted")
+	}
 	if IsVideoModel("") || IsVideoModel("other-model") {
 		t.Fatal("unexpected video model")
 	}

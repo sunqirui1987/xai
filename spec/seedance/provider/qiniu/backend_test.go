@@ -102,6 +102,18 @@ func TestBuildTaskBodyKeepsExplicitQiniuModel(t *testing.T) {
 	}
 }
 
+func TestBuildTaskBodyKeepsByteplusDreaminaModel(t *testing.T) {
+	p := seedance.NewParams()
+	p.Set(seedance.ParamPrompt, "test")
+	body, err := buildTaskBody(seedance.ModelByteplusDreaminaSeedance20, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := body["model"]; got != seedance.ModelByteplusDreaminaSeedance20 {
+		t.Fatalf("model=%v", got)
+	}
+}
+
 func TestBuildTaskBodyReferenceImageURLsDefaultToReferenceImage(t *testing.T) {
 	p := seedance.NewParams()
 	p.Set(seedance.ParamPrompt, "从首帧自然过渡到尾帧")
@@ -288,6 +300,54 @@ func TestSubmitCanDisableAssetAutoReview(t *testing.T) {
 	}
 	if assetCalled {
 		t.Fatal("asset review should be disabled")
+	}
+	if submittedURL != "https://example.com/actor.png" {
+		t.Fatalf("submitted image url=%q", submittedURL)
+	}
+}
+
+func TestSubmitByteplusDreaminaSkipsAssetReview(t *testing.T) {
+	var assetCalled bool
+	var submittedModel string
+	var submittedURL string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/assets":
+			assetCalled = true
+			http.NotFound(w, r)
+		case r.Method == http.MethodPost && r.URL.Path == pathCreateTask:
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			submittedModel, _ = body["model"].(string)
+			content := body["content"].([]any)
+			image := content[1].(map[string]any)
+			imageURL := image["image_url"].(map[string]any)
+			submittedURL, _ = imageURL["url"].(string)
+			_, _ = w.Write([]byte(`{"id":"qvideo-1"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	t.Setenv("QINIU_ASSETS_BASE_URL", srv.URL)
+	cl := NewClient("test-key", append([]ClientOption{WithBaseURL(srv.URL)}, testClientOpts...)...)
+	b := newBackend(cl)
+	p := seedance.NewParams().
+		Set(seedance.ParamPrompt, "真人动起来").
+		Set(seedance.ParamReferenceImageURLs, []string{"https://example.com/actor.png"})
+
+	_, err := b.Submit(context.Background(), xai.Model(seedance.ModelByteplusDreaminaSeedance20), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if assetCalled {
+		t.Fatal("byteplus dreamina model should not use asset review")
+	}
+	if submittedModel != seedance.ModelByteplusDreaminaSeedance20 {
+		t.Fatalf("submitted model=%q", submittedModel)
 	}
 	if submittedURL != "https://example.com/actor.png" {
 		t.Fatalf("submitted image url=%q", submittedURL)

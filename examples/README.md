@@ -40,6 +40,9 @@ go run ./examples/seedance
 export QINIU_API_KEY=your-key
 go run ./examples/seedance_qiniu
 
+# Seedance overseas (Qiniu/Qnagic BytePlus Dreamina, no asset review)
+go run ./examples/seedance_qiniu_overseas
+
 # Seedance assets review (Qiniu, needs QINIU_API_KEY)
 go run ./examples/seedance_qiniu_assets create-group "我的虚拟人像分组" "用于存放公司形象虚拟人像素材"
 go run ./examples/seedance_qiniu_assets create https://example.com/portrait.jpg "年轻男人"
@@ -131,6 +134,8 @@ examples/
 │   └── main.go             # Volc Ark Seedance GenVideo
 ├── seedance_qiniu/
 │   └── main.go             # Qiniu Seedance GenVideo
+├── seedance_qiniu_overseas/
+│   └── main.go             # Qiniu BytePlus Dreamina Seedance GenVideo
 ├── seedance_qiniu_assets/
 │   └── main.go             # Qiniu Seedance assets review
 ├── seedance_nodeskai/

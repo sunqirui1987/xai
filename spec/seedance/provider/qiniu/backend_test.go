@@ -235,7 +235,7 @@ func TestSubmitAutoReviewsReferenceImage(t *testing.T) {
 			submittedURL, _ = imageURL["url"].(string)
 			_, _ = w.Write([]byte(`{"id":"qvideo-1"}`))
 		default:
-			http.NotFound(w, r)
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 	}))
 	defer srv.Close()
@@ -280,7 +280,7 @@ func TestSubmitCanDisableAssetAutoReview(t *testing.T) {
 			submittedURL, _ = imageURL["url"].(string)
 			_, _ = w.Write([]byte(`{"id":"qvideo-1"}`))
 		default:
-			http.NotFound(w, r)
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 	}))
 	defer srv.Close()

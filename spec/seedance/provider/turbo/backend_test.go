@@ -125,6 +125,76 @@ func TestParseTaskGetResponseFailure(t *testing.T) {
 	}
 }
 
+func TestParseTaskGetResponseTurboSuccessResultURL(t *testing.T) {
+	raw := []byte(`{
+		"code":"success",
+		"message":"",
+		"data":{
+			"task_id":"task_1",
+			"status":"SUCCESS",
+			"fail_reason":"",
+			"result_url":"https://model.service-inference.ai/v1/video/files/mvt-result",
+			"data":{
+				"task":{
+					"outputs":["https://model.service-inference.ai/v1/video/files/mvt-output"],
+					"status":"completed"
+				}
+			}
+		}
+	}`)
+	status, videoURL, failMsg, err := parseTaskGetResponse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != "SUCCESS" {
+		t.Fatalf("status=%q", status)
+	}
+	if videoURL != "https://model.service-inference.ai/v1/video/files/mvt-result" {
+		t.Fatalf("videoURL=%q", videoURL)
+	}
+	if failMsg != "" {
+		t.Fatalf("failMsg=%q", failMsg)
+	}
+}
+
+func TestParseTaskGetResponsePrefersTurboResultURL(t *testing.T) {
+	raw := []byte(`{
+		"video_url":"https://example.com/legacy.mp4",
+		"data":{
+			"status":"SUCCESS",
+			"result_url":"https://model.service-inference.ai/v1/video/files/mvt-result"
+		}
+	}`)
+	_, videoURL, _, err := parseTaskGetResponse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if videoURL != "https://model.service-inference.ai/v1/video/files/mvt-result" {
+		t.Fatalf("videoURL=%q", videoURL)
+	}
+}
+
+func TestParseTaskGetResponseTurboSuccessOutputsFallback(t *testing.T) {
+	raw := []byte(`{
+		"data":{
+			"status":"SUCCESS",
+			"data":{
+				"task":{
+					"outputs":["https://model.service-inference.ai/v1/video/files/mvt-output"],
+					"status":"completed"
+				}
+			}
+		}
+	}`)
+	_, videoURL, _, err := parseTaskGetResponse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if videoURL != "https://model.service-inference.ai/v1/video/files/mvt-output" {
+		t.Fatalf("videoURL=%q", videoURL)
+	}
+}
+
 func TestSubmitUploadsExternalReferenceVideoThroughAssets(t *testing.T) {
 	var createdAsset bool
 	var submittedURL string

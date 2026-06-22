@@ -270,21 +270,18 @@ func parseTaskGetResponse(raw []byte) (status, videoURL, failMsg string, err err
 		return "", "", "", fmt.Errorf("turbo-seedance: parse get task response: %w", err)
 	}
 	status = firstStatus(v)
-	videoURL = findVideoURL(v)
 	failMsg = firstErrorMessage(v)
 	if d, ok := v["data"].(map[string]any); ok {
 		if status == "" {
 			status = firstStatus(d)
 		}
-		if videoURL == "" {
-			videoURL = findVideoURL(d)
-		}
 		if failMsg == "" {
 			failMsg = firstErrorMessage(d)
 		}
-		if out, ok := d["output"].(map[string]any); ok && videoURL == "" {
-			videoURL = stringVal(out, "video_url")
-		}
+	}
+	videoURL = findTurboResultURL(v)
+	if videoURL == "" {
+		videoURL = findVideoURL(v)
 	}
 	return status, videoURL, failMsg, nil
 }
@@ -295,6 +292,9 @@ func firstStatus(m map[string]any) string {
 
 func firstErrorMessage(m map[string]any) string {
 	if s := stringVal(m, "message"); s != "" {
+		return s
+	}
+	if s := stringVal(m, "fail_reason"); s != "" {
 		return s
 	}
 	if em, ok := m["error"].(map[string]any); ok {
@@ -338,6 +338,65 @@ func findVideoURL(m map[string]any) string {
 				if s := stringVal(nested, "url"); s != "" {
 					return s
 				}
+			}
+		}
+	}
+	for _, key := range []string{"data", "output", "task", "result"} {
+		if nested, ok := m[key].(map[string]any); ok {
+			if s := findVideoURL(nested); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
+func findTurboResultURL(m map[string]any) string {
+	if d, ok := m["data"].(map[string]any); ok {
+		if s := stringVal(d, "result_url"); s != "" {
+			return s
+		}
+		if s := firstTaskOutputURL(d); s != "" {
+			return s
+		}
+	}
+	if s := stringVal(m, "result_url"); s != "" {
+		return s
+	}
+	return firstTaskOutputURL(m)
+}
+
+func firstTaskOutputURL(m map[string]any) string {
+	if s := firstStringInArray(m, "outputs"); s != "" {
+		return s
+	}
+	if d, ok := m["data"].(map[string]any); ok {
+		if s := firstTaskOutputURL(d); s != "" {
+			return s
+		}
+	}
+	if task, ok := m["task"].(map[string]any); ok {
+		if s := firstTaskOutputURL(task); s != "" {
+			return s
+		}
+	}
+	if out, ok := m["output"].(map[string]any); ok {
+		if s := firstTaskOutputURL(out); s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+func firstStringInArray(m map[string]any, key string) string {
+	arr, ok := m[key].([]any)
+	if !ok {
+		return ""
+	}
+	for _, item := range arr {
+		if s, ok := item.(string); ok {
+			if s = strings.TrimSpace(s); s != "" {
+				return s
 			}
 		}
 	}
